@@ -6,6 +6,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/ArrowComponent.h"
+#include "Engine.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -142,6 +143,16 @@ void AFrogGameCharacter::MoveRight(float Value)
 }
 
 void AFrogGameCharacter::AutoAim() {
+	float TraceRange = FrogLength * 3;
+	FHitResult* HitResult = new FHitResult;
+	FVector StartTrace = TongueSpawn->GetComponentLocation();
+	FVector ForwardVector = TongueSpawn->GetForwardVector();
+	FVector EndTrace = ((ForwardVector * TraceRange) + StartTrace);
+	FCollisionQueryParams* TraceParams = new FCollisionQueryParams();
+
+	if (GetWorld()->LineTraceSingleByChannel(*HitResult, StartTrace, EndTrace, ECC_Visibility, *TraceParams)) {
+		DrawDebugLine(GetWorld(), StartTrace, EndTrace, FColor(255, 0, 0), true, 1.f);
+	}
 
 }
 
