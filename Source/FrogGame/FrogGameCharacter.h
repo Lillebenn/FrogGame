@@ -6,7 +6,7 @@
 #include "GameFramework/Character.h"
 #include "FrogGameCharacter.generated.h"
 
-UCLASS(config=Game)
+UCLASS(config=Game, Abstract)
 class AFrogGameCharacter : public ACharacter
 {
 	GENERATED_BODY()
