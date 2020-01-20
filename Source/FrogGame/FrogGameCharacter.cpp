@@ -5,6 +5,7 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
+#include "Components/ArrowComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -16,6 +17,9 @@ AFrogGameCharacter::AFrogGameCharacter()
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
+
+	// Set frog length
+	UpdateLength();
 
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
@@ -42,6 +46,10 @@ AFrogGameCharacter::AFrogGameCharacter()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+
+	// Create an arrow component
+	TongueSpawn = CreateDefaultSubobject<UArrowComponent>(TEXT("TongueSpawn"));
+	TongueSpawn->SetArrowColor(FLinearColor(1,0,0,0));
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
@@ -131,4 +139,12 @@ void AFrogGameCharacter::MoveRight(float Value)
 		// add movement in that direction
 		AddMovementInput(Direction, Value);
 	}
+}
+
+void AFrogGameCharacter::AutoAim() {
+
+}
+
+void AFrogGameCharacter::UpdateLength() {
+	FrogLength = GetCapsuleComponent()->GetScaledCapsuleRadius() * 2;
 }

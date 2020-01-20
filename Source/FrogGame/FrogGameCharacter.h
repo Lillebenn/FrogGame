@@ -18,6 +18,9 @@ class AFrogGameCharacter : public ACharacter
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+	class UArrowComponent* TongueSpawn;
 public:
 	AFrogGameCharacter();
 
@@ -28,6 +31,10 @@ public:
 	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
+
+	/** The length of the frogs body, used to calculate tongue length and raycasting area. **/
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character)
+	float FrogLength;
 
 protected:
 
@@ -62,6 +69,14 @@ protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
+
+private:
+
+	/** Creates a Raycast infront of the frog that applies a reticle to show what is edible **/
+	void AutoAim();
+
+	/** Updates the frogs length **/
+	void UpdateLength();
 
 public:
 	/** Returns CameraBoom subobject **/
