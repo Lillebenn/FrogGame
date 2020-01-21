@@ -49,9 +49,9 @@ AFrogGameCharacter::AFrogGameCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-	// Create an arrow component
-	TongueSpawn = CreateDefaultSubobject<UArrowComponent>(TEXT("TongueSpawn"));
-	TongueSpawn->SetArrowColor(FLinearColor(1,0,0,0));
+	// Create a spawn point for linetrace and tongue
+	RayMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RayMesh"));
+	RayMesh->SetupAttachment(RootComponent);
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
@@ -85,9 +85,6 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	// handle touch devices
 	PlayerInputComponent->BindTouch(IE_Pressed, this, &AFrogGameCharacter::TouchStarted);
 	PlayerInputComponent->BindTouch(IE_Released, this, &AFrogGameCharacter::TouchStopped);
-
-	// VR headset functionality
-	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AFrogGameCharacter::OnResetVR);
 }
 
 void AFrogGameCharacter::Tick(float DeltaTime) {
@@ -95,8 +92,8 @@ void AFrogGameCharacter::Tick(float DeltaTime) {
 
 	FHitResult OutHit;
 
-	FVector Start = TongueSpawn->GetComponentLocation();
-	FVector ForwardVector = TongueSpawn->GetForwardVector();
+	FVector Start = RayMesh->GetComponentLocation();
+	FVector ForwardVector = RayMesh->GetForwardVector();
 	FVector End = (Start + (ForwardVector * 1000.0f));
 
 	FCollisionQueryParams CollisionParams; 
@@ -168,8 +165,8 @@ void AFrogGameCharacter::MoveRight(float Value)
 
 void AFrogGameCharacter::AutoAim() {
 	FHitResult* HitResult = new FHitResult;
-	FVector StartTrace = TongueSpawn->GetComponentLocation();
-	FVector ForwardVector = TongueSpawn->GetForwardVector();
+	FVector StartTrace = RayMesh->GetComponentLocation();
+	FVector ForwardVector = RayMesh->GetForwardVector();
 	FVector EndTrace = (StartTrace + (ForwardVector * 2000.f));
 	FCollisionQueryParams* TraceParams = new FCollisionQueryParams();
 

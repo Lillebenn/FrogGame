@@ -19,8 +19,9 @@ class AFrogGameCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
 
+	/** ArrowComponent that will spawn the tongue projectile **/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	class UArrowComponent* TongueSpawn;
+		class UStaticMeshComponent* RayMesh;
 public:
 	AFrogGameCharacter();
 
