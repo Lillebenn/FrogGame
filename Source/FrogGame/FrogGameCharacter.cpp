@@ -63,6 +63,10 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 {
 	// Set up gameplay key bindings
 	check(PlayerInputComponent);
+
+	// This is here just to test if raycast works, will be automatic in future
+	PlayerInputComponent->BindAction("Raycast", IE_Pressed, this, &AFrogGameCharacter::AutoAim);
+
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
@@ -143,19 +147,20 @@ void AFrogGameCharacter::MoveRight(float Value)
 }
 
 void AFrogGameCharacter::AutoAim() {
-	float TraceRange = FrogLength * 3;
 	FHitResult* HitResult = new FHitResult;
 	FVector StartTrace = TongueSpawn->GetComponentLocation();
 	FVector ForwardVector = TongueSpawn->GetForwardVector();
-	FVector EndTrace = ((ForwardVector * TraceRange) + StartTrace);
+	FVector EndTrace = ((ForwardVector * 2000.f) + StartTrace);
 	FCollisionQueryParams* TraceParams = new FCollisionQueryParams();
 
 	if (GetWorld()->LineTraceSingleByChannel(*HitResult, StartTrace, EndTrace, ECC_Visibility, *TraceParams)) {
 		DrawDebugLine(GetWorld(), StartTrace, EndTrace, FColor(255, 0, 0), true, 1.f);
+
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("You hit: %s"), *HitResult->Actor->GetName()));
 	}
 
 }
 
 void AFrogGameCharacter::UpdateLength() {
 	FrogLength = GetCapsuleComponent()->GetScaledCapsuleRadius() * 2;
-}
+}	
