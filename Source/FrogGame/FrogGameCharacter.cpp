@@ -11,12 +11,12 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "DrawDebugHelpers.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AFrogGameCharacter
 
-AFrogGameCharacter::AFrogGameCharacter()
-{
+AFrogGameCharacter::AFrogGameCharacter() {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
@@ -90,11 +90,26 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 void AFrogGameCharacter::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
 
+	// Stuff for both
 	FHitResult OutHit;
-
 	FVector Start = RayMesh->GetComponentLocation();
 	FVector ForwardVector = RayMesh->GetForwardVector();
 	FVector End = (Start + (ForwardVector * 1000.0f));
+
+	float FrogRad = GetCapsuleComponent()->GetScaledCapsuleRadius();
+
+	// Stuff for Box
+	FVector HalfSize; // distance between the line and each side of the box. if distance is 0.5 in each direction the box will be 1x1x1.
+	HalfSize.X = FrogRad, HalfSize.Y = FrogRad, HalfSize.Z = FrogRad; 
+	FRotator Orientation = RayMesh->GetRelativeRotation();
+	ETraceTypeQuery TraceChannel;
+	bool bTraceComplex; //True to test against complex collision, false to test against simplified collision.
+	const TArray<AActor*> &ActorsToIgnore;
+	EDrawDebugTrace::Type DrawDebugType;
+	bool bIgnoreSelf = true;
+	FLinearColor TraceColor = FColor::Green;
+	FLinearColor TraceHitColor = FColor::Red;
+	float DrawTime; // hmm
 
 	FCollisionQueryParams CollisionParams; 
 
@@ -109,16 +124,15 @@ void AFrogGameCharacter::Tick(float DeltaTime) {
 			}
 		}
 	}
+	UKismetSystemLibrary::BoxTraceSingle(GetWorld(), Start, End, HalfSize, Orientation, TraceChannel, bTraceComplex, ActorsToIgnore, DrawDebugType, OutHit, bIgnoreSelf, TraceColor, TraceHitColor, DrawTime);
 
 }
 
-void AFrogGameCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
-{
+void AFrogGameCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location) {
 		Jump();
 }
 
-void AFrogGameCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location)
-{
+void AFrogGameCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location) {
 		StopJumping();
 }
 
@@ -128,16 +142,13 @@ void AFrogGameCharacter::TurnAtRate(float Rate)
 	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
 }
 
-void AFrogGameCharacter::LookUpAtRate(float Rate)
-{
+void AFrogGameCharacter::LookUpAtRate(float Rate) {
 	// calculate delta for this frame from the rate information
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 
-void AFrogGameCharacter::MoveForward(float Value)
-{
-	if ((Controller != NULL) && (Value != 0.0f))
-	{
+void AFrogGameCharacter::MoveForward(float Value) {
+	if ((Controller != NULL) && (Value != 0.0f)) {
 		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
@@ -148,10 +159,8 @@ void AFrogGameCharacter::MoveForward(float Value)
 	}
 }
 
-void AFrogGameCharacter::MoveRight(float Value)
-{
-	if ( (Controller != NULL) && (Value != 0.0f) )
-	{
+void AFrogGameCharacter::MoveRight(float Value) {
+	if ( (Controller != NULL) && (Value != 0.0f) ) {
 		// find out which way is right
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
