@@ -10,6 +10,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "DrawDebugHelpers.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AFrogGameCharacter
@@ -89,10 +90,29 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AFrogGameCharacter::OnResetVR);
 }
 
+void AFrogGameCharacter::Tick(float DeltaTime) {
+	Super::Tick(DeltaTime);
 
-void AFrogGameCharacter::OnResetVR()
-{
-	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
+	FHitResult OutHit;
+
+	FVector Start = TongueSpawn->GetComponentLocation();
+	FVector ForwardVector = TongueSpawn->GetForwardVector();
+	FVector End = (Start + (ForwardVector * 1000.0f));
+
+	FCollisionQueryParams CollisionParams; 
+
+	DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1, 0, 1);
+
+	bool IsHit = GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility, CollisionParams);
+
+	if (IsHit) {
+		if (OutHit.bBlockingHit) {
+			if (GEngine) {
+				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("You are hitting %s"), *OutHit.GetActor()->GetName()));
+			}
+		}
+	}
+
 }
 
 void AFrogGameCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
@@ -150,7 +170,7 @@ void AFrogGameCharacter::AutoAim() {
 	FHitResult* HitResult = new FHitResult;
 	FVector StartTrace = TongueSpawn->GetComponentLocation();
 	FVector ForwardVector = TongueSpawn->GetForwardVector();
-	FVector EndTrace = ((ForwardVector * 2000.f) + StartTrace);
+	FVector EndTrace = (StartTrace + (ForwardVector * 2000.f));
 	FCollisionQueryParams* TraceParams = new FCollisionQueryParams();
 
 	if (GetWorld()->LineTraceSingleByChannel(*HitResult, StartTrace, EndTrace, ECC_Visibility, *TraceParams)) {
