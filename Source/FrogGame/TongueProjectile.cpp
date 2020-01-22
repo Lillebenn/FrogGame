@@ -2,7 +2,9 @@
 
 
 #include "TongueProjectile.h"
+#include "FrogGameCharacter.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/TimelineComponent.h"
 #include "Engine.h"
 
 // Sets default values
@@ -29,17 +31,31 @@ ATongueProjectile::ATongueProjectile() {
 	TongueProjectile->Velocity.X = 5000;
 }
 
+void ATongueProjectile::TimelineProgress(float Value) {
+	FVector NewLoc = FMath::Lerp(StartLoc, EndLoc, Value);
+	SetActorLocation(NewLoc);
+}
+
 // Called when the game starts or when spawned
 void ATongueProjectile::BeginPlay() {
-Super::BeginPlay();
-FVector Location;
-Location = TongueMesh->GetComponentLocation();
+	Super::BeginPlay();
+
+	if (CurveFloat) {
+		FOnTimelineFloat TimeLineProgress;
+		TimeLineProgress.BindUFunction(this, FName("TimelineProgress"));
+		CurveTimeline.AddInterpFloat(CurveFloat, TimeLineProgress);
+		CurveTimeline.SetLooping(true);
+		
+		StartLoc = GetActorLocation();
+		EndLoc = OriginFrog->GetEnd();
+
+		CurveTimeline.PlayFromStart();
+}
 
 }
 
 // Called every frame
 void ATongueProjectile::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
-
+	CurveTimeline.TickTimeline(DeltaTime);
 }
-

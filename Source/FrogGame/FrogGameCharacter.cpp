@@ -222,3 +222,13 @@ void AFrogGameCharacter::UseTongue() {
 	// If PowerMeter is full & PowerMode is not already active, activate PowerMode here?
 	// Destroy TongueProjectile Actor
 }
+
+FVector AFrogGameCharacter::GetEnd()
+{
+	FVector Temp;
+	FVector Start = RayMesh->GetComponentLocation();
+	FVector ForwardVector = RayMesh->GetForwardVector();
+	FVector End = (Start + (ForwardVector * 1000.0f));
+	Temp = End;
+	return Temp;
+}

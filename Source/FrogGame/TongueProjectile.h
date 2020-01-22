@@ -4,7 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Components/TimelineComponent.h"
 #include "TongueProjectile.generated.h"
+
+class UCurveFloat;
 
 UCLASS()
 class FROGGAME_API ATongueProjectile : public AActor
@@ -14,6 +17,9 @@ class FROGGAME_API ATongueProjectile : public AActor
 public:	
 	// Sets default values for this actor's properties
 	ATongueProjectile();
+
+	UFUNCTION()
+	void TimelineProgress(float Value);
 
 	/** Sphere collision **/
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Tongue)
@@ -30,8 +36,22 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	FTimeline CurveTimeline;
+
+	UPROPERTY(EditAnywhere, Category = "Timeline")
+	UCurveFloat* CurveFloat;
+
+	UPROPERTY()
+	FVector StartLoc;
+	UPROPERTY()
+	FVector EndLoc; 
+	UPROPERTY(EditAnywhere, Category = "Timeline")
+	float ZOffset;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	UPROPERTY()
+	class AFrogGameCharacter* OriginFrog;
 };
