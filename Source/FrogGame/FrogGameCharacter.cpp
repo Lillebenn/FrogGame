@@ -49,9 +49,11 @@ AFrogGameCharacter::AFrogGameCharacter() {
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-	// Create a spawn point for linetrace and tongue
+	// Create a spawn point for linetrace, only used to linetrace so does not need to ever be visible.
 	RayMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RayMesh"));
 	RayMesh->SetupAttachment(RootComponent);
+	RayMesh->SetVisibility(false);
+
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
@@ -67,6 +69,8 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 
 	// This is here just to test if raycast works, will be automatic in future
 	PlayerInputComponent->BindAction("Raycast", IE_Pressed, this, &AFrogGameCharacter::AutoAim);
+
+	// PlayerInputComponent->BindAction("Eat", IE_Pressed, this, &AFrogGameCharacter::UseTongue);
 
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
@@ -90,15 +94,16 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 void AFrogGameCharacter::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
 
-	// Stuff for both
+	// Stuff for both Box and Line
 	FHitResult OutHit;
 	FVector Start = RayMesh->GetComponentLocation();
 	FVector ForwardVector = RayMesh->GetForwardVector();
 	FVector End = (Start + (ForwardVector * 1000.0f));
+    FCollisionQueryParams CollisionParams; 
 
+	/**
+    // Stuff for BoxTrace
 	float FrogRad = GetCapsuleComponent()->GetScaledCapsuleRadius();
-
-	// Stuff for Box
 	FVector HalfSize; // distance between the line and each side of the box. if distance is 0.5 in each direction the box will be 1x1x1.
 	HalfSize.X = FrogRad, HalfSize.Y = FrogRad, HalfSize.Z = FrogRad; 
 	FRotator Orientation = RayMesh->GetRelativeRotation();
@@ -110,9 +115,7 @@ void AFrogGameCharacter::Tick(float DeltaTime) {
 	FLinearColor TraceColor = FColor::Green;
 	FLinearColor TraceHitColor = FColor::Red;
 	float DrawTime; // hmm
-
-	FCollisionQueryParams CollisionParams; 
-
+	**/
 	DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1, 0, 1);
 
 	bool IsHit = GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility, CollisionParams);
@@ -124,8 +127,9 @@ void AFrogGameCharacter::Tick(float DeltaTime) {
 			}
 		}
 	}
+	/**
 	UKismetSystemLibrary::BoxTraceSingle(GetWorld(), Start, End, HalfSize, Orientation, TraceChannel, bTraceComplex, ActorsToIgnore, DrawDebugType, OutHit, bIgnoreSelf, TraceColor, TraceHitColor, DrawTime);
-
+	**/
 }
 
 void AFrogGameCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location) {
@@ -182,7 +186,10 @@ void AFrogGameCharacter::AutoAim() {
 	if (GetWorld()->LineTraceSingleByChannel(*HitResult, StartTrace, EndTrace, ECC_Visibility, *TraceParams)) {
 		DrawDebugLine(GetWorld(), StartTrace, EndTrace, FColor(255, 0, 0), true, 1.f);
 
+		// If hit actor is edible, display these.
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("You hit: %s"), *HitResult->Actor->GetName()));
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("%s is edible!"), *HitResult->Actor->GetName()));
+		// Set hit actor to be CurrentTarget.
 	}
 
 }
@@ -190,3 +197,25 @@ void AFrogGameCharacter::AutoAim() {
 void AFrogGameCharacter::UpdateLength() {
 	FrogLength = GetCapsuleComponent()->GetScaledCapsuleRadius() * 2;
 }	
+
+void AFrogGameCharacter::UseTongue() {
+	// Check if there is a CurrentTarget.
+
+	// if there is a CurrentTarget:
+	// {
+    // Shoot tongue at target
+	// Drag Target to frog
+	// Get SizePoints and PowerPoints from target.
+	// Delete Target
+	// Update scale (size) of frog
+	// Put PowerPoints into PowerMeter
+	// UpdateLength();
+	// }
+	
+	// If there isn't a currentTarget:
+	// {
+    // Shoot the tongue out in a straight line until it reaches the end of the linetrace.
+	// }
+	
+	// If PowerMeter is full & PowerMode is not already active, activate PowerMode here?
+}

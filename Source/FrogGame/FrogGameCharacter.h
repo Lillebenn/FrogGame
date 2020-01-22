@@ -19,9 +19,10 @@ class AFrogGameCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
 
-	/** ArrowComponent that will spawn the tongue projectile **/
+	/** Static mesh that is used to spawn linetraces **/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-		class UStaticMeshComponent* RayMesh;
+	class UStaticMeshComponent* RayMesh;
+
 public:
 	AFrogGameCharacter();
 
@@ -75,6 +76,9 @@ private:
 
 	/** Updates the frogs length **/
 	void UpdateLength();
+
+	/** Uses the tongue to eat something, and then grows **/
+	void UseTongue();
 
 public:
 
