@@ -10,7 +10,7 @@ ATongueProjectile::ATongueProjectile() {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	// Create the root CapsuleComponent to handle the pickup's collision
+	// Create the root CapsuleComponent to handle the Tongue's collision
 	BaseCollisionComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("BaseCapsuleComponent"));
 
 	// Set the SphereComponent as the root component.
@@ -20,6 +20,12 @@ ATongueProjectile::ATongueProjectile() {
 	TongueMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("TongueMesh"));
 	TongueMesh->SetSimulatePhysics(false);
 	TongueMesh->AttachTo(RootComponent);
+
+	// Creates the projectileMovement component and set some defaults.
+	TongueProjectile = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("TongueProjectile"));
+	TongueProjectile->InitialSpeed = 5000;
+	TongueProjectile->MaxSpeed = 5000;
+	TongueProjectile->Velocity.X = 5000;
 }
 
 // Called when the game starts or when spawned
