@@ -10,6 +10,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "TongueProjectile.h"
 #include "DrawDebugHelpers.h"
 #include "Kismet/KismetSystemLibrary.h"
 
@@ -200,6 +201,7 @@ void AFrogGameCharacter::UpdateLength() {
 
 void AFrogGameCharacter::UseTongue() {
 	// Check if there is a CurrentTarget.
+	// Spawn TongueProjectile Actor
 
 	// if there is a CurrentTarget:
 	// {
@@ -218,4 +220,5 @@ void AFrogGameCharacter::UseTongue() {
 	// }
 	
 	// If PowerMeter is full & PowerMode is not already active, activate PowerMode here?
+	// Destroy TongueProjectile Actor
 }

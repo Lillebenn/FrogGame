@@ -17,7 +17,7 @@ public:
 
 	/** Sphere collision **/
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Tongue)
-	class UCapsuleComponent* BaseCollisionComponent;
+	class USphereComponent* CollisionSphere;
 
 	/** StaticMeshComponent to represent the Tongue in the level */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Tongue)
