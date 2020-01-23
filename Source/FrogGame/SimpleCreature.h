@@ -44,6 +44,6 @@ public:
 
 	virtual void Consume(float FrogSize, const FString& BoneName) override;
 
-	virtual float GetSize() const override;
+	virtual FVector GetSize() const override;
 
 };

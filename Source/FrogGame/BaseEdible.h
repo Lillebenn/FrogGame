@@ -5,18 +5,23 @@
 #include "CoreMinimal.h"
 #include "DestructibleActor.h"
 #include "EdibleInfo.h"
+#include "Edible.h"
 #include "BaseEdible.generated.h"
 
 /**
  * 
  */
 UCLASS(Abstract)
-class FROGGAME_API ABaseEdible : public ADestructibleActor
+class FROGGAME_API ABaseEdible : public ADestructibleActor, public IEdible
 {
 	GENERATED_BODY()
 
 public:
+	ABaseEdible();
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Edible)
 	FEdibleInfo EdibleInfo;
 
+	virtual void Consume(float FrogSize, const FString& BoneName) override;
+
+	virtual FVector GetSize() const override;
 };

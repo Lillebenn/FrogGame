@@ -16,21 +16,22 @@ ASimpleCreature::ASimpleCreature()
 
 	NavCollider = CreateDefaultSubobject<UCapsuleComponent>(TEXT("NavCollider"));
 	const float CapsuleHeight{80.0f};
-	NavCollider->InitCapsuleSize(15.0f, CapsuleHeight);
+	const float Radius{15.f};
+	NavCollider->InitCapsuleSize(Radius, CapsuleHeight);
 	NavCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	RootComponent = NavCollider;
 
 	CreatureCollider = CreateDefaultSubobject<USphereComponent>(TEXT("Actual Collider"));
-	CreatureCollider->InitSphereRadius(15.0f);
+	CreatureCollider->InitSphereRadius(Radius);
 	CreatureCollider->SetRelativeLocation(FVector(0.0f, 0.0f, CapsuleHeight - 10.0f));
 	CreatureCollider->SetupAttachment(RootComponent);
 
 	CreatureMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Creature Mesh"));
 	CreatureMesh->SetupAttachment(CreatureCollider);
 
-
 	MovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComponent"));
 
+	EdibleInfo.RoughSize = FVector(Radius * 2.0f);
 }
 
 // Called when the game starts or when spawned
@@ -56,7 +57,7 @@ void ASimpleCreature::Consume(float FrogSize, const FString& BoneName)
 }
 
 
-float ASimpleCreature::GetSize() const
+FVector ASimpleCreature::GetSize() const
 {
-	return CreatureCollider->GetScaledSphereRadius();
+	return EdibleInfo.RoughSize;
 }

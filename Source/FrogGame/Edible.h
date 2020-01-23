@@ -27,7 +27,7 @@ public:
 	 * Don't use for detail-sensitive tasks. Very approximate.
 	 */
 	UFUNCTION()
-	virtual float GetSize() const = 0;
+	virtual FVector GetSize() const = 0;
 	// TODO: Figure out how to select/interact with individual mesh chunks.
 	UFUNCTION()
 	virtual void Consume(float FrogSize, const FString& BoneName) = 0;
