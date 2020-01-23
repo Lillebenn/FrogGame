@@ -4,10 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "Edible.h"
 #include "SimpleCreature.generated.h"
 
 UCLASS(Abstract)
-class FROGGAME_API ASimpleCreature : public APawn
+class FROGGAME_API ASimpleCreature : public APawn, public IEdible
 {
 	GENERATED_BODY()
 
@@ -37,5 +38,9 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	virtual void Consume(float FrogSize, const FString& BoneName) override;
+
+	virtual float GetSize() const override;
 
 };
