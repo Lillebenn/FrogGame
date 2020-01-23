@@ -5,6 +5,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/FloatingPawnMovement.h"
 #include "Components/CapsuleComponent.h"
+
 #include "Components/SphereComponent.h"
 
 // Sets default values
@@ -14,7 +15,7 @@ ASimpleCreature::ASimpleCreature()
 	PrimaryActorTick.bCanEverTick = true;
 
 	NavCollider = CreateDefaultSubobject<UCapsuleComponent>(TEXT("NavCollider"));
-	float CapsuleHeight{80.0f};
+	const float CapsuleHeight{80.0f};
 	NavCollider->InitCapsuleSize(15.0f, CapsuleHeight);
 	NavCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	RootComponent = NavCollider;
@@ -29,6 +30,7 @@ ASimpleCreature::ASimpleCreature()
 
 
 	MovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComponent"));
+
 }
 
 // Called when the game starts or when spawned

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "Edible.h"
+#include "EdibleInfo.h"
 #include "SimpleCreature.generated.h"
 
 UCLASS(Abstract)
@@ -26,7 +27,9 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	class UFloatingPawnMovement* MovementComponent;
-	
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Edible)
+	FEdibleInfo EdibleInfo;
 	
 protected:
 	// Called when the game starts or when spawned
