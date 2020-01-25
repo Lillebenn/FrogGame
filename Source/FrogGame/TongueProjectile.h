@@ -45,8 +45,6 @@ protected:
 	FVector StartLoc;
 	UPROPERTY()
 	FVector EndLoc; 
-	UPROPERTY(EditAnywhere, Category = "Timeline")
-	float ZOffset;
 
 public:	
 	// Called every frame
