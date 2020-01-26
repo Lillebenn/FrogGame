@@ -22,8 +22,7 @@ public:
 	// Collider to maintain proper height for navmesh.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Collision)
 	class UCapsuleComponent* NavCollider;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Collision)
-	class USphereComponent* CreatureCollider;
+
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	class UFloatingPawnMovement* MovementComponent;

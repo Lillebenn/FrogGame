@@ -6,7 +6,6 @@
 #include "GameFramework/FloatingPawnMovement.h"
 #include "Components/CapsuleComponent.h"
 
-#include "Components/SphereComponent.h"
 
 // Sets default values
 ASimpleCreature::ASimpleCreature()
@@ -21,17 +20,14 @@ ASimpleCreature::ASimpleCreature()
 	NavCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	RootComponent = NavCollider;
 
-	CreatureCollider = CreateDefaultSubobject<USphereComponent>(TEXT("Actual Collider"));
-	CreatureCollider->InitSphereRadius(Radius);
-	CreatureCollider->SetRelativeLocation(FVector(0.0f, 0.0f, CapsuleHeight - 10.0f));
-	CreatureCollider->SetupAttachment(RootComponent);
-
 	CreatureMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Creature Mesh"));
-	CreatureMesh->SetupAttachment(CreatureCollider);
+	CreatureMesh->SetupAttachment(NavCollider);
+	CreatureMesh->SetRelativeLocation(FVector(0, 0, (CapsuleHeight / 2.0f) + 10.0f));
 
 	MovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComponent"));
 
 	EdibleInfo.RoughSize = FVector(Radius * 2.0f);
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
 // Called when the game starts or when spawned
