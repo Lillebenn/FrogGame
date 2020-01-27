@@ -6,6 +6,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/TimelineComponent.h"
 #include "Engine.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 // Sets default values
 ATongueProjectile::ATongueProjectile() {
@@ -39,23 +40,9 @@ void ATongueProjectile::TimelineProgress(float Value) {
 // Called when the game starts or when spawned
 void ATongueProjectile::BeginPlay() {
 	Super::BeginPlay();
-
-	if (CurveFloat) {
-		FOnTimelineFloat TimeLineProgress;
-		TimeLineProgress.BindUFunction(this, FName("TimelineProgress"));
-		CurveTimeline.AddInterpFloat(CurveFloat, TimeLineProgress);
-		CurveTimeline.SetLooping(true);
-		
-		StartLoc = GetActorLocation();
-		EndLoc = OriginFrog->GetEnd();
-
-		CurveTimeline.PlayFromStart();
-}
-
 }
 
 // Called every frame
 void ATongueProjectile::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
-	CurveTimeline.TickTimeline(DeltaTime);
 }

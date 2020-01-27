@@ -45,6 +45,8 @@ protected:
 	FVector StartLoc;
 	UPROPERTY()
 	FVector EndLoc; 
+	UPROPERTY(BlueprintReadWrite, Category = Tongue)
+	FVector Location;
 
 public:	
 	// Called every frame
