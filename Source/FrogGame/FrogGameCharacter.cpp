@@ -55,6 +55,9 @@ AFrogGameCharacter::AFrogGameCharacter() {
 	RayMesh->SetupAttachment(RootComponent);
 	RayMesh->SetVisibility(false);
 
+	// The half-angle of the field of view gives us two right triangles. We use the tangent of these to check objects against a cone shape rather than the box trace.
+	Tangent = FMath::Tan(FollowCamera->FieldOfView / 2.0f);
+	
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
