@@ -80,6 +80,9 @@ private:
 	/** Uses the tongue to eat something, and then grows **/
 	void UseTongue();
 
+	UPROPERTY(VisibleAnywhere, Category = Camera)
+	float Tangent;
+
 public:
 
 	virtual void Tick(float DeltaTime) override;
