@@ -90,5 +90,7 @@ public:
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	
 	FVector GetEnd();
+
+	FVector GetTarget();
 };
 

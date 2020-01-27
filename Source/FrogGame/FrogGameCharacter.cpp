@@ -223,12 +223,15 @@ void AFrogGameCharacter::UseTongue() {
 	// Destroy TongueProjectile Actor
 }
 
-FVector AFrogGameCharacter::GetEnd()
-{
+FVector AFrogGameCharacter::GetEnd() {
 	FVector Temp;
 	FVector Start = RayMesh->GetComponentLocation();
 	FVector ForwardVector = RayMesh->GetForwardVector();
 	FVector End = (Start + (ForwardVector * 1000.0f));
 	Temp = End;
 	return Temp;
+}
+
+FVector AFrogGameCharacter::GetTarget() {
+	return FVector();
 }
