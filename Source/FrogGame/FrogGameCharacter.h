@@ -18,6 +18,11 @@ class AFrogGameCharacter : public ACharacter
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
+
+	/** Static mesh that is used to spawn linetraces **/
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+	class UStaticMeshComponent* RayMesh;
+
 public:
 	AFrogGameCharacter();
 
@@ -29,10 +34,11 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
 
-protected:
+	/** The length of the frogs body, used to calculate tongue length and raycasting area. **/
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character)
+	float FrogLength;
 
-	/** Resets HMD orientation in VR. */
-	void OnResetVR();
+protected:
 
 	/** Called for forwards/backward input */
 	void MoveForward(float Value);
@@ -63,10 +69,28 @@ protected:
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
 
+private:
+
+	/** Creates a Raycast infront of the frog that applies a reticle to show what is edible **/
+	void AutoAim();
+
+	/** Updates the frogs length **/
+	void UpdateLength();
+
+	/** Uses the tongue to eat something, and then grows **/
+	void UseTongue();
+
 public:
+
+	virtual void Tick(float DeltaTime) override;
+
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+	
+	FVector GetEnd();
+
+	FVector GetTarget();
 };
