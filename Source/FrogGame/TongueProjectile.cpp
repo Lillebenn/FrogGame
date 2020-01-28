@@ -23,7 +23,7 @@ ATongueProjectile::ATongueProjectile() {
 	//Create the static mesh component 
 	TongueMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("TongueMesh"));
 	TongueMesh->SetSimulatePhysics(false);
-	TongueMesh->AttachTo(RootComponent);
+	TongueMesh->SetupAttachment(RootComponent);
 
 	// Creates the projectileMovement component and set some defaults.
 	TongueProjectile = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("TongueProjectile"));

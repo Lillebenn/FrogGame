@@ -204,7 +204,6 @@ void AFrogGameCharacter::UpdateLength() {
 
 void AFrogGameCharacter::UseTongue() {
 	// Check if there is a CurrentTarget.
-	// Spawn TongueProjectile Actor
 
 	// if there is a CurrentTarget:
 	// {
@@ -223,7 +222,6 @@ void AFrogGameCharacter::UseTongue() {
 	// }
 	
 	// If PowerMeter is full & PowerMode is not already active, activate PowerMode here?
-	// Destroy TongueProjectile Actor
 }
 
 FVector AFrogGameCharacter::GetEnd() {
