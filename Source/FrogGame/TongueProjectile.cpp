@@ -55,8 +55,12 @@ void ATongueProjectile::OnComponentHit(UPrimitiveComponent* HitComp, AActor* Oth
 		if (Froggy)
 		{
 			Target = OtherActor;
-			Target->SetActorEnableCollision(false); // Turn off collision on the dragged object so we don't get affected by it on the way back.
-			IEdible::Execute_Consume(Target, Froggy->GetActorScale().Size(), ""); // Runs the object's custom consume function.
+			FAttachmentTransformRules InRule(EAttachmentRule::KeepWorld, false);
+			Target->AttachToActor(this, InRule);
+			Target->SetActorEnableCollision(false);
+			// Turn off collision on the dragged object so we don't get affected by it on the way back.
+			IEdible::Execute_Consume(Target, Froggy->GetActorScale().Size(), "");
+			// Runs the object's custom consume function.
 		}
 	}
 }
