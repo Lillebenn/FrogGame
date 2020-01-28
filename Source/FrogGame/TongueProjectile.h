@@ -32,6 +32,16 @@ public:
 	/** Projectile component **/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Tongue)
 	class UProjectileMovementComponent* TongueProjectile;
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void StartReturnTimeline();
+	UFUNCTION(BlueprintImplementableEvent)
+	void StartDragObjectTimeline();
+	UFUNCTION(BlueprintCallable)
+	void LerpMoveActor(AActor* MovedActor, float InAlpha);
+
+	UFUNCTION()
+	void OnComponentHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -46,12 +56,12 @@ protected:
 	UPROPERTY()
 	FVector EndLoc; 
 	UPROPERTY(BlueprintReadWrite, Category = Tongue)
-	FVector Location;
+	FVector OriginVector;
 
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	UPROPERTY()
-	class AFrogGameCharacter* OriginFrog;
+	UPROPERTY(BlueprintReadOnly)
+	AActor* Target;
 };

@@ -17,14 +17,14 @@ public:
 	// Sets default values for this pawn's properties
 	ASimpleCreature();
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Mesh)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Mesh)
 	UStaticMeshComponent* CreatureMesh;
 	// Collider to maintain proper height for navmesh.
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Collision)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Collision)
 	class UCapsuleComponent* NavCollider;
 
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UFloatingPawnMovement* MovementComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Edible)
@@ -41,7 +41,7 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	virtual void Consume(float FrogSize, const FString& BoneName) override;
+	virtual void Consume_Implementation(float FrogSize, const FString& BoneName) override;
 
 	virtual FVector GetSize() const override;
 

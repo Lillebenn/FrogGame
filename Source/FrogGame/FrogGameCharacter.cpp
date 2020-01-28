@@ -5,19 +5,19 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
-#include "Components/ArrowComponent.h"
 #include "Engine.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "TongueProjectile.h"
 #include "DrawDebugHelpers.h"
-#include "Kismet/KismetSystemLibrary.h"
+#include "CableComponent.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AFrogGameCharacter
 
-AFrogGameCharacter::AFrogGameCharacter() {
+AFrogGameCharacter::AFrogGameCharacter()
+{
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
@@ -47,7 +47,8 @@ AFrogGameCharacter::AFrogGameCharacter() {
 
 	// Create a follow camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
+	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+	// Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
 	// Create a spawn point for linetrace, only used to linetrace so does not need to ever be visible.
@@ -71,7 +72,7 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	// This is here just to test if raycast works, will be automatic in future
 	PlayerInputComponent->BindAction("Raycast", IE_Pressed, this, &AFrogGameCharacter::AutoAim);
 
-	// PlayerInputComponent->BindAction("Eat", IE_Pressed, this, &AFrogGameCharacter::UseTongue);
+	PlayerInputComponent->BindAction("Eat", IE_Pressed, this, &AFrogGameCharacter::Lickitung);
 
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
@@ -92,7 +93,8 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindTouch(IE_Released, this, &AFrogGameCharacter::TouchStopped);
 }
 
-void AFrogGameCharacter::Tick(float DeltaTime) {
+void AFrogGameCharacter::Tick(float DeltaTime)
+{
 	Super::Tick(DeltaTime);
 
 	// Stuff for both Box and Line
@@ -100,7 +102,7 @@ void AFrogGameCharacter::Tick(float DeltaTime) {
 	FVector Start = RayMesh->GetComponentLocation();
 	FVector ForwardVector = RayMesh->GetForwardVector();
 	FVector End = (Start + (ForwardVector * 1000.0f));
-    FCollisionQueryParams CollisionParams; 
+	FCollisionQueryParams CollisionParams;
 
 	/**
     // Stuff for BoxTrace
@@ -121,10 +123,15 @@ void AFrogGameCharacter::Tick(float DeltaTime) {
 
 	bool IsHit = GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility, CollisionParams);
 
-	if (IsHit) {
-		if (OutHit.bBlockingHit) {
-			if (GEngine) {
-				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("You are hitting %s"), *OutHit.GetActor()->GetName()));
+	if (IsHit)
+	{
+		if (OutHit.bBlockingHit)
+		{
+			if (GEngine)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red,
+				                                 FString::Printf(
+					                                 TEXT("You are hitting %s"), *OutHit.GetActor()->GetName()));
 			}
 		}
 	}
@@ -133,12 +140,14 @@ void AFrogGameCharacter::Tick(float DeltaTime) {
 	**/
 }
 
-void AFrogGameCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location) {
-		Jump();
+void AFrogGameCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
+{
+	Jump();
 }
 
-void AFrogGameCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location) {
-		StopJumping();
+void AFrogGameCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location)
+{
+	StopJumping();
 }
 
 void AFrogGameCharacter::TurnAtRate(float Rate)
@@ -147,13 +156,25 @@ void AFrogGameCharacter::TurnAtRate(float Rate)
 	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
 }
 
-void AFrogGameCharacter::LookUpAtRate(float Rate) {
+void AFrogGameCharacter::LookUpAtRate(float Rate)
+{
 	// calculate delta for this frame from the rate information
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 
-void AFrogGameCharacter::MoveForward(float Value) {
-	if ((Controller != NULL) && (Value != 0.0f)) {
+void AFrogGameCharacter::RemoveCable()
+{
+	if(Cable)
+	{
+		Cable->DestroyComponent();
+		bTongueSpawned = false;
+	}
+}
+
+void AFrogGameCharacter::MoveForward(float Value)
+{
+	if ((Controller != nullptr) && (Value != 0.0f))
+	{
 		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
@@ -164,12 +185,14 @@ void AFrogGameCharacter::MoveForward(float Value) {
 	}
 }
 
-void AFrogGameCharacter::MoveRight(float Value) {
-	if ( (Controller != NULL) && (Value != 0.0f) ) {
+void AFrogGameCharacter::MoveRight(float Value)
+{
+	if ((Controller != nullptr) && (Value != 0.0f))
+	{
 		// find out which way is right
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
-	
+
 		// get right vector 
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 		// add movement in that direction
@@ -177,34 +200,63 @@ void AFrogGameCharacter::MoveRight(float Value) {
 	}
 }
 
-void AFrogGameCharacter::AutoAim() {
+void AFrogGameCharacter::AutoAim()
+{
 	FHitResult* HitResult = new FHitResult;
 	FVector StartTrace = RayMesh->GetComponentLocation();
 	FVector ForwardVector = RayMesh->GetForwardVector();
 	FVector EndTrace = (StartTrace + (ForwardVector * 2000.f));
 	FCollisionQueryParams* TraceParams = new FCollisionQueryParams();
 
-	if (GetWorld()->LineTraceSingleByChannel(*HitResult, StartTrace, EndTrace, ECC_Visibility, *TraceParams)) {
+	if (GetWorld()->LineTraceSingleByChannel(*HitResult, StartTrace, EndTrace, ECC_Visibility, *TraceParams))
+	{
 		DrawDebugLine(GetWorld(), StartTrace, EndTrace, FColor(255, 0, 0), true, 1.f);
 
 		// If hit actor is edible, display these.
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("You hit: %s"), *HitResult->Actor->GetName()));
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("%s is edible!"), *HitResult->Actor->GetName()));
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+		                                 FString::Printf(TEXT("You hit: %s"), *HitResult->Actor->GetName()));
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green,
+		                                 FString::Printf(TEXT("%s is edible!"), *HitResult->Actor->GetName()));
 		// Set hit actor to be CurrentTarget.
 	}
-
 }
 
-void AFrogGameCharacter::UpdateLength() {
+void AFrogGameCharacter::UpdateLength()
+{
 	FrogLength = GetCapsuleComponent()->GetScaledCapsuleRadius() * 2;
-}	
+}
 
-void AFrogGameCharacter::UseTongue() {
+void AFrogGameCharacter::Lickitung()
+{
+	if (!bTongueSpawned)
+	{
+		Cable = NewObject<UCableComponent>(this, UCableComponent::StaticClass());
+
+		Cable->CableLength = 0.f;
+		Cable->NumSegments = 6;
+		Cable->CableGravityScale = 0.f;
+		Cable->SolverIterations = 3;
+
+		const FVector Location{RayMesh->GetComponentTransform().GetLocation()};
+		const FRotator Rotation{RayMesh->GetComponentTransform().GetRotation()};
+		Cable->SetRelativeLocation(Location);
+		Cable->SetRelativeRotation(Rotation);
+		ATongueProjectile* TongueCPP{
+			GetWorld()->SpawnActor<ATongueProjectile>(Tongue, RayMesh->GetComponentTransform())
+		};
+
+
+		Cable->SetAttachEndTo(TongueCPP, TEXT("None"));
+		Cable->RegisterComponent();
+
+
+		bTongueSpawned = true;
+	}
 	// Check if there is a CurrentTarget.
 
 	// if there is a CurrentTarget:
 	// {
-    // Shoot tongue at target
+	// Shoot tongue at target
 	// Drag Target to frog
 	// Get SizePoints and PowerPoints from target.
 	// Delete Target
@@ -212,16 +264,17 @@ void AFrogGameCharacter::UseTongue() {
 	// Put PowerPoints into PowerMeter
 	// UpdateLength();
 	// }
-	
+
 	// If there isn't a currentTarget:
 	// {
-    // Shoot the tongue out in a straight line until it reaches the end of the linetrace.
+	// Shoot the tongue out in a straight line until it reaches the end of the linetrace.
 	// }
-	
+
 	// If PowerMeter is full & PowerMode is not already active, activate PowerMode here?
 }
 
-FVector AFrogGameCharacter::GetEnd() {
+FVector AFrogGameCharacter::GetEnd()
+{
 	FVector Temp;
 	FVector Start = RayMesh->GetComponentLocation();
 	FVector ForwardVector = RayMesh->GetForwardVector();
@@ -230,6 +283,7 @@ FVector AFrogGameCharacter::GetEnd() {
 	return Temp;
 }
 
-FVector AFrogGameCharacter::GetTarget() {
+FVector AFrogGameCharacter::GetTarget()
+{
 	return FVector();
 }

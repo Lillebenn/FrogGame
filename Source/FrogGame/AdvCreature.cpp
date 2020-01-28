@@ -36,7 +36,7 @@ void AAdvCreature::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 }
 
-void AAdvCreature::Consume(float FrogSize, const FString& BoneName)
+void AAdvCreature::Consume_Implementation(float FrogSize, const FString& BoneName)
 {
 }
 

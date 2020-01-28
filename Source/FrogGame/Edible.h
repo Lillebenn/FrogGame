@@ -29,6 +29,6 @@ public:
 	UFUNCTION()
 	virtual FVector GetSize() const = 0;
 	// TODO: Figure out how to select/interact with individual mesh chunks.
-	UFUNCTION()
-	virtual void Consume(float FrogSize, const FString& BoneName) = 0;
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
+	void Consume(float FrogSize, const FString& BoneName);
 };

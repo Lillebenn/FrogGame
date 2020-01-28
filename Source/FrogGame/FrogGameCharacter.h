@@ -38,6 +38,17 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character)
 	float FrogLength;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	bool bTongueSpawned{false};
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class ATongueProjectile> Tongue;
+
+	UPROPERTY()
+	class UCableComponent* Cable;
+
+	UFUNCTION(BlueprintCallable)
+	void RemoveCable();
 protected:
 
 	/** Called for forwards/backward input */
@@ -78,7 +89,8 @@ private:
 	void UpdateLength();
 
 	/** Uses the tongue to eat something, and then grows **/
-	void UseTongue();
+	void Lickitung();
+
 
 public:
 
