@@ -255,13 +255,14 @@ void AFrogGameCharacter::Lickitung()
 		Cable = NewObject<UCableComponent>(this, UCableComponent::StaticClass());
 
 		Cable->CableLength = 0.f;
-		Cable->NumSegments = 6;
+		Cable->NumSegments = 1;
 		Cable->CableGravityScale = 0.f;
-		Cable->SolverIterations = 3;
+		Cable->SolverIterations = 1;
 		const FVector Location{RayMesh->GetComponentTransform().GetLocation()};
 		const FRotator Rotation{RayMesh->GetComponentTransform().GetRotation()};
 		Cable->SetRelativeLocation(Location);
 		Cable->SetRelativeRotation(Rotation);
+		Cable->EndLocation = FVector(0, 0, 0);
 		ATongueProjectile* TongueCPP{
 			GetWorld()->SpawnActor<ATongueProjectile>(Tongue, RayMesh->GetComponentTransform())
 		};
