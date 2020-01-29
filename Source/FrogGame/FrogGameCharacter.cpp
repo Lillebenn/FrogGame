@@ -102,6 +102,7 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 		if (ScaleLerp < 1.0f)
 		{
 			ScaleLerp += DeltaTime;
+			SetActorScale3D(FMath::Lerp(GetActorScale(), DesiredScale, ScaleLerp));
 		}
 	}
 	// Stuff for both Box and Line
@@ -185,10 +186,9 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 	{
 		FEdibleInfo Size{IEdible::Execute_GetInfo(OtherActor)}; // This probably happens much earlier than here.
 		OtherActor->Destroy();
-		// TEMP THIS SHOULD LERP/INTERP AND BE NOT A STATIC VALUE
 		ScaleLerp = 0.0f;
 		Lerping = true;
-		SetActorScale3D(FMath::Lerp(GetActorScale(), GetActorScale() * 1.1f, ScaleLerp));
+		DesiredScale = GetActorScale() * 1.1f;
 	}
 }
 

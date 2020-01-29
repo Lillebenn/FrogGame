@@ -92,6 +92,7 @@ private:
 
 	float ScaleLerp{0.0f};
 	bool Lerping{false};
+	FVector DesiredScale{0};
 
 
 public:
