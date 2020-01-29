@@ -36,12 +36,10 @@ void AAdvCreature::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 }
 
-void AAdvCreature::Consume_Implementation(float FrogSize, const FString& BoneName)
-{
-}
 
-FVector AAdvCreature::GetSize() const
+
+FEdibleInfo AAdvCreature::GetInfo_Implementation() const
 {
-	return EdibleInfo.RoughSize;
+	return EdibleInfo;
 }
 

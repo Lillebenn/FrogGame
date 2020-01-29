@@ -41,8 +41,7 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	virtual void Consume_Implementation(float FrogSize, const FString& BoneName) override;
 
-	virtual FVector GetSize() const override;
+	FEdibleInfo GetInfo_Implementation() const override;
 
 };

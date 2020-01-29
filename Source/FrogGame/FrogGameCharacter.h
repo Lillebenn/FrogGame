@@ -34,7 +34,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
 
-	/** The length of the frogs body, used to calculate tongue length and raycasting area. **/
+	/** The length of the frogs body, used to calculate tongue length and ray-casting area. **/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character)
 	float FrogLength;
 
@@ -47,8 +47,7 @@ public:
 	UPROPERTY()
 	class UCableComponent* Cable;
 
-	UFUNCTION(BlueprintCallable)
-	void RemoveCable();
+	void Consume(AActor* OtherActor);
 protected:
 
 	/** Called for forwards/backward input */

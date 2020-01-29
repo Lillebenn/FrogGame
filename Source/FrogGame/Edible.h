@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
+#include "EdibleInfo.h"
 #include "Edible.generated.h"
 
 // This class does not need to be modified.
@@ -26,9 +27,6 @@ public:
 	 * Returns the size of the destructible mesh's bounding box.
 	 * Don't use for detail-sensitive tasks. Very approximate.
 	 */
-	UFUNCTION()
-	virtual FVector GetSize() const = 0;
-	// TODO: Figure out how to select/interact with individual mesh chunks.
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
-	void Consume(float FrogSize, const FString& BoneName);
+	FEdibleInfo GetInfo() const;
 };

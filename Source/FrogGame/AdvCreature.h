@@ -34,7 +34,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Edible)
 	FEdibleInfo EdibleInfo;
 
-	virtual void Consume_Implementation(float FrogSize, const FString& BoneName) override;
 
-	virtual FVector GetSize() const override;
+	FEdibleInfo GetInfo_Implementation() const override;
 };

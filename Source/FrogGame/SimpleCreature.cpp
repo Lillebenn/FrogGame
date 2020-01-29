@@ -48,12 +48,9 @@ void ASimpleCreature::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
-void ASimpleCreature::Consume_Implementation(float FrogSize, const FString& BoneName)
-{
-}
 
 
-FVector ASimpleCreature::GetSize() const
+FEdibleInfo ASimpleCreature::GetInfo_Implementation() const
 {
-	return EdibleInfo.RoughSize;
+	return EdibleInfo;
 }

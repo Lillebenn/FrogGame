@@ -18,6 +18,7 @@ ATongueProjectile::ATongueProjectile()
 	// Create the root SphereComponent to handle the Tongue's collision
 	CollisionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionSphere"));
 	CollisionSphere->SetSphereRadius(1);
+	CollisionSphere->SetNotifyRigidBodyCollision(true);
 	CollisionSphere->OnComponentHit.AddDynamic(this, &ATongueProjectile::OnComponentHit);
 	// Set the SphereComponent as the root component.
 	RootComponent = CollisionSphere;
@@ -34,34 +35,33 @@ ATongueProjectile::ATongueProjectile()
 	TongueProjectile->Velocity.X = 5000;
 }
 
-void ATongueProjectile::TimelineProgress(float Value)
-{
-	FVector NewLoc = FMath::Lerp(StartLoc, EndLoc, Value);
-	SetActorLocation(NewLoc);
-}
 
 void ATongueProjectile::LerpMoveActor(AActor* MovedActor, const float InAlpha)
 {
 	MovedActor->SetActorLocation(FMath::Lerp(MovedActor->GetActorLocation(), OriginVector, InAlpha));
 }
 
+void ATongueProjectile::ConsumeObject()
+{
+	AFrogGameCharacter* Froggy{Cast<AFrogGameCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0))};
+
+	if (Froggy)
+	{
+		Froggy->Consume(Target);
+	}
+}
+
 void ATongueProjectile::OnComponentHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
                                        FVector NormalImpulse, const FHitResult& Hit)
 {
 	StartDragObjectTimeline();
-	if (OtherActor->Implements<UEdible>())
+	if (OtherActor->Implements<UEdible>()) // Temporary if check, won't be needed later
 	{
-		AFrogGameCharacter* Froggy{Cast<AFrogGameCharacter>(GetParentActor())};
-		if (Froggy)
-		{
-			Target = OtherActor;
-			FAttachmentTransformRules InRule(EAttachmentRule::KeepWorld, false);
-			Target->AttachToActor(this, InRule);
-			Target->SetActorEnableCollision(false);
-			// Turn off collision on the dragged object so we don't get affected by it on the way back.
-			IEdible::Execute_Consume(Target, Froggy->GetActorScale().Size(), "");
-			// Runs the object's custom consume function.
-		}
+		Target = OtherActor;
+		const FAttachmentTransformRules InRule(EAttachmentRule::KeepWorld, false);
+		Target->AttachToActor(this, InRule);
+		Target->SetActorEnableCollision(false);
+		// Turn off collision on the dragged object so we don't get affected by it on the way back.
 	}
 }
 

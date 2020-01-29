@@ -11,11 +11,8 @@ ABaseEdible::ABaseEdible()
 	//EdibleInfo.RoughSize = GetDestructibleComponent()->GetDestructibleMesh()->GetBounds().BoxExtent;
 }
 
-void ABaseEdible::Consume_Implementation(float FrogSize, const FString& BoneName)
-{
-}
 
-FVector ABaseEdible::GetSize() const
+FEdibleInfo ABaseEdible::GetInfo_Implementation() const
 {
-	return EdibleInfo.RoughSize;
+	return EdibleInfo;
 }

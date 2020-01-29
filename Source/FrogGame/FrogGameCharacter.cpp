@@ -12,6 +12,7 @@
 #include "TongueProjectile.h"
 #include "DrawDebugHelpers.h"
 #include "CableComponent.h"
+#include "Edible.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AFrogGameCharacter
@@ -129,9 +130,9 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 		{
 			if (GEngine)
 			{
-				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red,
+				/*GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red,
 				                                 FString::Printf(
-					                                 TEXT("You are hitting %s"), *OutHit.GetActor()->GetName()));
+					                                 TEXT("You are hitting %s"), *OutHit.GetActor()->GetName()));*/
 			}
 		}
 	}
@@ -162,12 +163,20 @@ void AFrogGameCharacter::LookUpAtRate(float Rate)
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 
-void AFrogGameCharacter::RemoveCable()
+
+void AFrogGameCharacter::Consume(AActor* OtherActor)
 {
-	if(Cable)
+	if (Cable)
 	{
 		Cable->DestroyComponent();
 		bTongueSpawned = false;
+	}
+	if (OtherActor->Implements<UEdible>())
+	{
+		FEdibleInfo Size{IEdible::Execute_GetInfo(OtherActor)}; // This probably happens much earlier than here.
+		OtherActor->Destroy();
+		// TEMP THIS SHOULD LERP/INTERP AND BE NOT A STATIC VALUE
+		SetActorScale3D(GetActorScale() * 1.1f);
 	}
 }
 
@@ -228,6 +237,7 @@ void AFrogGameCharacter::UpdateLength()
 
 void AFrogGameCharacter::Lickitung()
 {
+	// TODO: When activating this, set the target's collision channel to a custom one that only that object has. 
 	if (!bTongueSpawned)
 	{
 		Cable = NewObject<UCableComponent>(this, UCableComponent::StaticClass());

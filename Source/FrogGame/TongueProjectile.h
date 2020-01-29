@@ -18,8 +18,6 @@ public:
 	// Sets default values for this actor's properties
 	ATongueProjectile();
 
-	UFUNCTION()
-	void TimelineProgress(float Value);
 
 	/** Sphere collision **/
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Tongue)
@@ -33,23 +31,24 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Tongue)
 	class UProjectileMovementComponent* TongueProjectile;
 
+
+	
 	UFUNCTION(BlueprintImplementableEvent)
 	void StartReturnTimeline();
 	UFUNCTION(BlueprintImplementableEvent)
 	void StartDragObjectTimeline();
 	UFUNCTION(BlueprintCallable)
 	void LerpMoveActor(AActor* MovedActor, float InAlpha);
+	UFUNCTION(BlueprintCallable)
+	void ConsumeObject();
 
 	UFUNCTION()
 	void OnComponentHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	FTimeline CurveTimeline;
-
-	UPROPERTY(EditAnywhere, Category = "Timeline")
-	UCurveFloat* CurveFloat;
 
 	UPROPERTY()
 	FVector StartLoc;
@@ -65,3 +64,5 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	AActor* Target;
 };
+
+
