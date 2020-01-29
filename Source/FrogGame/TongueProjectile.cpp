@@ -76,6 +76,7 @@ void ATongueProjectile::BeginPlay()
 	TimerDel.BindUFunction(this, FName("StartReturnTimeline"));
 
 	GetWorldTimerManager().SetTimer(TimerHandle, TimerDel, 0.1f, false);
+
 }
 
 // Called every frame

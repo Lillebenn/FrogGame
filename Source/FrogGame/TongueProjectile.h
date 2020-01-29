@@ -31,6 +31,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Tongue)
 	class UProjectileMovementComponent* TongueProjectile;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Cable)
+	class UMaterial* CableMaterial;
 
 	
 	UFUNCTION(BlueprintImplementableEvent)

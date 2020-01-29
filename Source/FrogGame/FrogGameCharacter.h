@@ -90,6 +90,9 @@ private:
 	/** Uses the tongue to eat something, and then grows **/
 	void Lickitung();
 
+	float ScaleLerp{0.0f};
+	bool Lerping{false};
+
 
 public:
 

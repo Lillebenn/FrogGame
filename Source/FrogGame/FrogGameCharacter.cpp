@@ -97,7 +97,13 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 void AFrogGameCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	if (Lerping)
+	{
+		if (ScaleLerp < 1.0f)
+		{
+			ScaleLerp += DeltaTime;
+		}
+	}
 	// Stuff for both Box and Line
 	FHitResult OutHit;
 	FVector Start = RayMesh->GetComponentLocation();
@@ -171,12 +177,18 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 		Cable->DestroyComponent();
 		bTongueSpawned = false;
 	}
+	if (!OtherActor)
+	{
+		return;
+	}
 	if (OtherActor->Implements<UEdible>())
 	{
 		FEdibleInfo Size{IEdible::Execute_GetInfo(OtherActor)}; // This probably happens much earlier than here.
 		OtherActor->Destroy();
 		// TEMP THIS SHOULD LERP/INTERP AND BE NOT A STATIC VALUE
-		SetActorScale3D(GetActorScale() * 1.1f);
+		ScaleLerp = 0.0f;
+		Lerping = true;
+		SetActorScale3D(FMath::Lerp(GetActorScale(), GetActorScale() * 1.1f, ScaleLerp));
 	}
 }
 
@@ -246,7 +258,6 @@ void AFrogGameCharacter::Lickitung()
 		Cable->NumSegments = 6;
 		Cable->CableGravityScale = 0.f;
 		Cable->SolverIterations = 3;
-
 		const FVector Location{RayMesh->GetComponentTransform().GetLocation()};
 		const FRotator Rotation{RayMesh->GetComponentTransform().GetRotation()};
 		Cable->SetRelativeLocation(Location);
@@ -254,6 +265,7 @@ void AFrogGameCharacter::Lickitung()
 		ATongueProjectile* TongueCPP{
 			GetWorld()->SpawnActor<ATongueProjectile>(Tongue, RayMesh->GetComponentTransform())
 		};
+		Cable->SetMaterial(0, TongueCPP->CableMaterial);
 
 
 		Cable->SetAttachEndTo(TongueCPP, TEXT("None"));
