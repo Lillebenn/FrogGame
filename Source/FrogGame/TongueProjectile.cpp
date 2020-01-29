@@ -17,7 +17,8 @@ ATongueProjectile::ATongueProjectile()
 
 	// Create the root SphereComponent to handle the Tongue's collision
 	CollisionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionSphere"));
-	CollisionSphere->SetSphereRadius(1);
+	CollisionSphere->SetSphereRadius(16.0f);
+	CollisionSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	CollisionSphere->SetNotifyRigidBodyCollision(true);
 	CollisionSphere->OnComponentHit.AddDynamic(this, &ATongueProjectile::OnComponentHit);
 	// Set the SphereComponent as the root component.
@@ -26,61 +27,114 @@ ATongueProjectile::ATongueProjectile()
 	//Create the static mesh component 
 	TongueMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("TongueMesh"));
 	TongueMesh->SetSimulatePhysics(false);
+	TongueMesh->SetCollisionProfileName("NoCollision");
 	TongueMesh->SetupAttachment(RootComponent);
-
-	// Creates the projectileMovement component and set some defaults.
-	TongueProjectile = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("TongueProjectile"));
-	TongueProjectile->InitialSpeed = 5000;
-	TongueProjectile->MaxSpeed = 5000;
-	TongueProjectile->Velocity.X = 5000;
 }
 
 
-void ATongueProjectile::LerpMoveActor(AActor* MovedActor, const float InAlpha)
+void ATongueProjectile::VInterpTo(const FVector InterpTo, const float DeltaTime)
 {
-	MovedActor->SetActorLocation(FMath::Lerp(MovedActor->GetActorLocation(), OriginVector, InAlpha));
-}
-
-void ATongueProjectile::ConsumeObject()
-{
-	AFrogGameCharacter* Froggy{Cast<AFrogGameCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0))};
-
-	if (Froggy)
+	FHitResult HitResult = FHitResult(ForceInit);
+	if (!bShouldReturn)
 	{
-		Froggy->Consume(Target);
+		SetActorLocation(FMath::VInterpConstantTo(GetActorLocation(),
+		                                          InterpTo,
+		                                          DeltaTime, TongueSpeed), true, &HitResult);
 	}
+	else
+	{
+		SetActorLocation(FMath::VInterpConstantTo(GetActorLocation(),
+		                                          InterpTo,
+		                                          DeltaTime, TongueSpeed), false, &HitResult);
+	}
+	if (HitResult.IsValidBlockingHit() && !Target) // I feel like I'm adding a lot of useless shit because I'm tired lol
+	{
+		AActor* HitActor{HitResult.GetActor()};
+		bShouldReturn = true;
+	}
+}
+
+void ATongueProjectile::AttachEdible(AActor* EdibleActor)
+{
+	const FAttachmentTransformRules InRule(EAttachmentRule::KeepWorld, false);
+	EdibleActor->AttachToActor(this, InRule);
+	// Turn off collision on the dragged object so we don't get affected by it on the way back.
+	EdibleActor->SetActorEnableCollision(false);
 }
 
 void ATongueProjectile::OnComponentHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
                                        FVector NormalImpulse, const FHitResult& Hit)
 {
-	StartDragObjectTimeline();
 	if (OtherActor->Implements<UEdible>()) // Temporary if check, won't be needed later
 	{
-		Target = OtherActor;
-		const FAttachmentTransformRules InRule(EAttachmentRule::KeepWorld, false);
-		Target->AttachToActor(this, InRule);
-		Target->SetActorEnableCollision(false);
-		// Turn off collision on the dragged object so we don't get affected by it on the way back.
+		Target = OtherActor; // Target will also be set in a future auto aim function
+		AttachEdible(Target);
+		bShouldReturn = true;
 	}
 }
+
+void ATongueProjectile::SeekTarget(const float DeltaTime)
+{
+	if (Target)
+	{
+		VInterpTo(Target->GetActorLocation(), DeltaTime);
+		if ((Target->GetActorLocation() - GetActorLocation()).Size() <= CollisionSphere->GetScaledSphereRadius())
+		{
+			bShouldReturn = true;
+		}
+	}
+	else
+	{
+		VInterpTo(TargetLocation, DeltaTime); // Keep going until you hit something or reach the max distance
+		if ((TargetLocation - GetActorLocation()).Size() <= 10.f)
+		{
+			bShouldReturn = true;
+		}
+	}
+}
+
+void ATongueProjectile::Return(const float DeltaTime)
+{
+	if (Froggy)
+	{
+		const FVector ReturnPos{Froggy->GetRayMesh()->GetComponentLocation()};
+		VInterpTo(ReturnPos, DeltaTime);
+		if ((GetActorLocation() - ReturnPos).Size() <= CollisionSphere->GetScaledSphereRadius())
+		{
+			Froggy->bTongueSpawned = false;
+			Froggy->Consume(Target);
+
+			Destroy();
+		}
+	}
+}
+
 
 // Called when the game starts or when spawned
 void ATongueProjectile::BeginPlay()
 {
 	Super::BeginPlay();
 
-	OriginVector = GetActorLocation();
-	FTimerDelegate TimerDel;
-	FTimerHandle TimerHandle;
-	TimerDel.BindUFunction(this, FName("StartReturnTimeline"));
-
-	GetWorldTimerManager().SetTimer(TimerHandle, TimerDel, 0.1f, false);
-
+	Froggy = Cast<AFrogGameCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+	if (Froggy)
+	{
+		// Just taking the X scale since the scale should be uniform
+		const float ActualRange{TongueRange * Froggy->GetActorScale().X};
+		TargetLocation = Froggy->GetRayMesh()->GetComponentLocation() + (Froggy->GetActorForwardVector() * ActualRange);
+	}
 }
 
 // Called every frame
 void ATongueProjectile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (!bShouldReturn)
+	{
+		SeekTarget(DeltaTime);
+	}
+	else
+	{
+		Return(DeltaTime);
+	}
 }

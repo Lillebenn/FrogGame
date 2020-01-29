@@ -62,6 +62,11 @@ AFrogGameCharacter::AFrogGameCharacter()
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
 }
 
+UStaticMeshComponent* AFrogGameCharacter::GetRayMesh()
+{
+	return RayMesh;
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Input
 
@@ -188,7 +193,7 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 		OtherActor->Destroy();
 		ScaleLerp = 0.0f;
 		Lerping = true;
-		DesiredScale = GetActorScale() * 1.1f;
+		DesiredScale = GetActorScale() * 1.1f; // TODO: MAKE THIS NOT MAGIC VALUE
 	}
 }
 
@@ -257,12 +262,17 @@ void AFrogGameCharacter::Lickitung()
 		Cable->CableLength = 0.f;
 		Cable->NumSegments = 1;
 		Cable->CableGravityScale = 0.f;
-		Cable->SolverIterations = 1;
+		Cable->SolverIterations = 3;
+		Cable->EndLocation = FVector(5, 0, 0); // Zero vector seems to bug
+
+
 		const FVector Location{RayMesh->GetComponentTransform().GetLocation()};
 		const FRotator Rotation{RayMesh->GetComponentTransform().GetRotation()};
 		Cable->SetRelativeLocation(Location);
 		Cable->SetRelativeRotation(Rotation);
-		Cable->EndLocation = FVector(0, 0, 0);
+		const FAttachmentTransformRules InRule(EAttachmentRule::KeepWorld, false);
+		Cable->AttachToComponent(RayMesh, InRule);
+
 		ATongueProjectile* TongueCPP{
 			GetWorld()->SpawnActor<ATongueProjectile>(Tongue, RayMesh->GetComponentTransform())
 		};
