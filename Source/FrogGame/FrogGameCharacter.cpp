@@ -260,10 +260,11 @@ void AFrogGameCharacter::Lickitung()
 		Cable = NewObject<UCableComponent>(this, UCableComponent::StaticClass());
 
 		Cable->CableLength = 0.f;
-		Cable->NumSegments = 6;
+		Cable->NumSegments = 1;
 		Cable->CableGravityScale = 0.f;
 		Cable->SolverIterations = 3;
 		Cable->EndLocation = FVector(5, 0, 0); // Zero vector seems to bug
+
 
 		const FVector Location{RayMesh->GetComponentTransform().GetLocation()};
 		const FRotator Rotation{RayMesh->GetComponentTransform().GetRotation()};
@@ -271,6 +272,7 @@ void AFrogGameCharacter::Lickitung()
 		Cable->SetRelativeRotation(Rotation);
 		const FAttachmentTransformRules InRule(EAttachmentRule::KeepWorld, false);
 		Cable->AttachToComponent(RayMesh, InRule);
+
 		ATongueProjectile* TongueCPP{
 			GetWorld()->SpawnActor<ATongueProjectile>(Tongue, RayMesh->GetComponentTransform())
 		};
