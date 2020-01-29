@@ -13,8 +13,8 @@ UCLASS()
 class FROGGAME_API ATongueProjectile : public AActor
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	// Sets default values for this actor's properties
 	ATongueProjectile();
 
@@ -33,38 +33,35 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Cable)
 	class UMaterial* CableMaterial;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Tongue)
+	float TongueSpeed{2500.0f};
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tongue)
+	float TongueRange{700.0f};
+	void VInterpTo(FVector InterpTo, float DeltaTime);
+	void AttachEdible(AActor* EdibleActor);
 
-	
-	UFUNCTION(BlueprintImplementableEvent)
-	void StartReturnTimeline();
-	UFUNCTION(BlueprintImplementableEvent)
-	void StartDragObjectTimeline();
-	UFUNCTION(BlueprintCallable)
-	void LerpMoveActor(AActor* MovedActor, float InAlpha);
-	UFUNCTION(BlueprintCallable)
-	void ConsumeObject();
-
-	UFUNCTION()
-	void OnComponentHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
-
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-
-	UPROPERTY()
-	FVector StartLoc;
-	UPROPERTY()
-	FVector EndLoc; 
-	UPROPERTY(BlueprintReadWrite, Category = Tongue)
-	FVector OriginVector;
-
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
 
 	UPROPERTY(BlueprintReadOnly)
 	AActor* Target;
+	UPROPERTY()
+	class AFrogGameCharacter* Froggy;
+
+	bool bShouldReturn{false};
+	FVector TargetLocation;
+
+	UFUNCTION()
+	void OnComponentHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	                    FVector NormalImpulse, const FHitResult& Hit);
+
+private:
+	void SeekTarget(float DeltaTime);
+	void Return(float DeltaTime);
+protected:
+	// Called when the game starts or when spawned
+	void BeginPlay() override;
+
+
+public:
+	// Called every frame
+	void Tick(float DeltaTime) override;
 };
-
-
