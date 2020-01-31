@@ -7,12 +7,21 @@
 
 ABaseEdible::ABaseEdible()
 {
-	// Not sure if this is correct but should in theory get the box size of the mesh to use as a rough size estimate.
-	//EdibleInfo.RoughSize = GetDestructibleComponent()->GetDestructibleMesh()->GetBounds().BoxExtent;
 }
 
 
 FEdibleInfo ABaseEdible::GetInfo_Implementation() const
 {
 	return EdibleInfo;
+}
+
+void ABaseEdible::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// Not sure if this is correct but should in theory get the box size of the mesh to use as a rough size estimate.
+	if (GetDestructibleComponent())
+	{
+		EdibleInfo.RoughSize = GetDestructibleComponent()->GetDestructibleMesh()->GetBounds().GetBox().GetSize();
+	}
 }

@@ -12,7 +12,7 @@
 USTRUCT(BlueprintType)
 struct FEdibleInfo
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 	// Actual growth increase from eating this object is retrieved by multiplying by object size with this coefficient.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Edible)
@@ -23,4 +23,8 @@ struct FEdibleInfo
 	// Typically holds the bounding size of an object's collider. Probably not a very accurate representation of size.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Edible)
 	FVector RoughSize;
+
+	// Get size of character's bounding box/capsule, then increase scale by the percentage difference.
+	// (5/50 * 100, that's 10% so we increase the character's scale by 0.1 * the growth coefficient of the object)
+	// Since it's a 3d vector we just average out the 3 values and scale by the same value in every axis.
 };

@@ -22,4 +22,8 @@ public:
 	FEdibleInfo EdibleInfo;
 
 	FEdibleInfo GetInfo_Implementation() const override;
+
+	protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
 };
