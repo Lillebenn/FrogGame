@@ -3,10 +3,7 @@
 
 #include "TongueProjectile.h"
 #include "FrogGameCharacter.h"
-#include "Components/CapsuleComponent.h"
-#include "Components/TimelineComponent.h"
 #include "Engine.h"
-#include "Kismet/KismetSystemLibrary.h"
 #include "Edible.h"
 
 // Sets default values
@@ -66,11 +63,13 @@ void ATongueProjectile::AttachEdible(AActor* EdibleActor)
 void ATongueProjectile::OnComponentHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
                                        FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (OtherActor->Implements<UEdible>()) // Temporary if check, won't be needed later
+	if (OtherActor->Implements<UEdible>())
 	{
-		Target = OtherActor; // Target will also be set in a future auto aim function
-		AttachEdible(Target);
-		bShouldReturn = true;
+		if(Target)
+		{
+			AttachEdible(Target);
+			bShouldReturn = true;
+		}
 	}
 }
 
@@ -122,6 +121,10 @@ void ATongueProjectile::BeginPlay()
 		// Just taking the X scale since the scale should be uniform
 		const float ActualRange{TongueRange * Froggy->GetActorScale().X};
 		TargetLocation = Froggy->GetRayMesh()->GetComponentLocation() + (Froggy->GetActorForwardVector() * ActualRange);
+		if(Froggy->CurrentTarget)
+		{
+			Target = Froggy->CurrentTarget;
+		}
 	}
 }
 

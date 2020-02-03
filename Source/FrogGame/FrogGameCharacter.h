@@ -49,6 +49,9 @@ public:
 	UPROPERTY()
 	class UCableComponent* Cable;
 
+	UPROPERTY()
+	AActor* CurrentTarget;
+
 	void Consume(AActor* OtherActor);
 
 	UPROPERTY(VisibleAnywhere, Category = Character)
@@ -108,6 +111,9 @@ private:
 	float JumpModifier{0};
 	bool bIsCharging{false};
 
+	UFUNCTION()
+	void OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
 
 public:
 
@@ -120,3 +126,4 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };
+ 

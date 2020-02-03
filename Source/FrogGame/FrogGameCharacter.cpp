@@ -55,6 +55,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	BoxCollider->SetupAttachment(RootComponent);
 	BoxCollider->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	BoxCollider->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Overlap);
+	BoxCollider->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnBoxTraceEnd);
 	// Create a spawn point for linetrace, only used to linetrace so does not need to ever be visible.
 	RayMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RayMesh"));
 	RayMesh->SetupAttachment(RootComponent);
@@ -130,20 +131,40 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	AutoAim();
 }
 
+// TODO: Not sure if I like this running in tick. and iterating every single overlapping actor
+// In theory, I think we can save the closest object and only compare 
 void AFrogGameCharacter::AutoAim()
 {
 	TArray<AActor*> OverlappingActors;
 	BoxCollider->GetOverlappingActors(OverlappingActors);
+
 	for (AActor* Actor : OverlappingActors)
 	{
+		if (Actor == CurrentTarget) // Don't check against itself
+		{
+			continue;
+		}
 		if (Actor->Implements<UEdible>())
 		{
 			const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(Actor)};
-			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red,
-			                                 FString::Printf(TEXT("%s is in view."), *Actor->GetName()));
+
 			// If the actor's size is less than or equal to the frog's size 
 			if (SizeInfo.SizeTier < SizeTier && SizeInfo.SizeTier >= SizeTier - 2)
 			{
+				if (!CurrentTarget)
+				{
+					CurrentTarget = Actor;
+				}
+				// If this actor is closer to the player than the current target
+				if (Actor->GetDistanceTo(this) < CurrentTarget->GetDistanceTo(this))
+				{
+					CurrentTarget = Actor;
+					GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red,
+					                                 FString::Printf(
+						                                 TEXT("%s is the current target."), *CurrentTarget->GetName()));
+					// Need another calculation here to determine which is closer to the middle of the player's vision
+					// Also need to determine the point at which distance from the player becomes more or less important than distance from the view center
+				}
 			}
 		}
 	}
@@ -292,4 +313,18 @@ void AFrogGameCharacter::ExecuteJump()
 	// Remember to reset it.
 	//GetCharacterMovement()->JumpZVelocity = BaseJump;
 	JumpModifier = 0.f;
+}
+
+void AFrogGameCharacter::OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+                                       UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Lost sight of target!"));
+
+	if (OtherActor && (OtherActor != this) && OtherComp)
+	{
+		if (OtherActor == CurrentTarget)
+		{
+			CurrentTarget = nullptr;
+		}
+	}
 }

@@ -59,7 +59,7 @@ FEdibleInfo ASimpleCreature::GetInfo_Implementation() const
 void ASimpleCreature::CalculateBoundingSize()
 {
 	const FVector RoughSize = CreatureMesh->GetStaticMesh()->GetBoundingBox().GetSize();
-	const FVector AbsoluteSize{RoughSize.GetAbs()};
+	const FVector AbsoluteSize{RoughSize.GetAbsMin()};
 	// Get the average axis value of the bounding box
 	EdibleInfo.Size = (AbsoluteSize.X + AbsoluteSize.Y + AbsoluteSize.Z) / 3;
 }
