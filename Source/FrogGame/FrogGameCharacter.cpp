@@ -286,7 +286,7 @@ void AFrogGameCharacter::ExecuteJump()
 	bIsCharging = false;
 	JumpModifier = FMath::Clamp(JumpModifier, 0.f, 1.f);
 	GetCharacterMovement()->JumpZVelocity = BaseJump + (JumpBonus * JumpModifier);
-	UE_LOG(LogTemp, Warning, TEXT("%f"), GetCharacterMovement()->JumpZVelocity);
+	//UE_LOG(LogTemp, Warning, TEXT("%f"), GetCharacterMovement()->JumpZVelocity);
 	Jump();
 
 	// Remember to reset it.

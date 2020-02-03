@@ -37,11 +37,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
 
-	/** The length of the frogs body, used to calculate tongue length and ray-casting area. **/
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character)
-	float FrogLength;
-
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool bTongueSpawned{false};
 
@@ -107,14 +102,12 @@ private:
 
 	float BaseJump{450};
 	float JumpBonus{450};
-	UPROPERTY(EditAnywhere)
-	float ChargeSpeed{2.f};
+	// The speed at which the jump charges to max velocity when holding down spacebar.
+	UPROPERTY(EditAnywhere, Category = Character)
+	float ChargeSpeed{1.5f};
 	float JumpModifier{0};
 	bool bIsCharging{false};
 
-
-	/** Handles the charging of StartJump **/
-	FTimerHandle JumpChargeTimerHandle;
 
 public:
 
