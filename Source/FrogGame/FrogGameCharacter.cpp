@@ -57,7 +57,6 @@ AFrogGameCharacter::AFrogGameCharacter()
 	RayMesh->SetupAttachment(RootComponent);
 	RayMesh->SetVisibility(false);
 
-
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
 }
@@ -80,8 +79,8 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 
 	PlayerInputComponent->BindAction("Eat", IE_Pressed, this, &AFrogGameCharacter::Lickitung);
 
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
-	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AFrogGameCharacter::JumpCharge);
+	PlayerInputComponent->BindAction("Jump", IE_Released, this, &AFrogGameCharacter::FroggyJump);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &AFrogGameCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AFrogGameCharacter::MoveRight);
@@ -102,6 +101,15 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 void AFrogGameCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	UCharacterMovementComponent* CharMovement = GetCharacterMovement();
+	if (CharMovement)
+	{
+		CharMovement->JumpZVelocity = BaseJump;
+	}
+	if(IsHolding)
+		{
+		   Jumptick(DeltaTime);
+		}
 	if (Lerping)
 	{
 		if (ScaleLerp < 1.0f)
@@ -153,6 +161,11 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	**/
 }
 
+void AFrogGameCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
 void AFrogGameCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
 {
 	Jump();
@@ -174,7 +187,6 @@ void AFrogGameCharacter::LookUpAtRate(float Rate)
 	// calculate delta for this frame from the rate information
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
-
 
 void AFrogGameCharacter::Consume(AActor* OtherActor)
 {
@@ -289,7 +301,6 @@ void AFrogGameCharacter::Lickitung()
 		Cable->SetAttachEndTo(TongueCPP, TEXT("None"));
 		Cable->RegisterComponent();
 
-
 		bTongueSpawned = true;
 	}
 	// Check if there is a CurrentTarget.
@@ -311,6 +322,29 @@ void AFrogGameCharacter::Lickitung()
 	// }
 
 	// If PowerMeter is full & PowerMode is not already active, activate PowerMode here?
+}
+
+// Called in the jump function. For every second the player holds spacebar / bumper it increases the jumpcharge by 1 to a max of 3.
+void AFrogGameCharacter::JumpCharge()
+{
+	IsHolding = true;
+}
+
+void AFrogGameCharacter::Jumptick(float DeltaTime)
+{
+	JumpModifier = JumpModifier + DeltaTime;
+}
+
+void AFrogGameCharacter::FroggyJump()
+{
+	IsHolding = false;
+	JumpBonus = JumpBonus * JumpModifier;
+	BaseJump = BaseJump + JumpBonus;
+	Jump();
+
+	// Remember to reset it.
+	JumpModifier = 0;
+	JumpBonus = 450;
 }
 
 FVector AFrogGameCharacter::GetEnd()

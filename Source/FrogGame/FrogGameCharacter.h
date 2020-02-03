@@ -94,14 +94,33 @@ private:
 	/** Uses the tongue to eat something, and then grows **/
 	void Lickitung();
 
+	/** Lets the frog jump higher by charging a jump **/
+	void JumpCharge();
+
+	/** Modifier for jump **/
+	void Jumptick(float DeltaTime);
+
+	void FroggyJump();
+
 	float ScaleLerp{0.0f};
 	bool Lerping{false};
 	FVector DesiredScale{0};
+	// float JumpZVelocity{};
+	float BaseJump{450};
+	float JumpBonus{ 450 };
+	float DefaultVelocity{};
+	float JumpModifier = FMath::Clamp<float>(JumpModifier, 0.f, 1.f);
+	bool IsHolding{ false };
 
+
+	/** Handles the charging of JumpCharge **/
+	FTimerHandle JumpChargeTimerHandle;
 
 public:
 
 	virtual void Tick(float DeltaTime) override;
+
+	void BeginPlay();
 
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
