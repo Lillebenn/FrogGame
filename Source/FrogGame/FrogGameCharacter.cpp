@@ -4,6 +4,7 @@
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/BoxComponent.h"
 #include "Components/InputComponent.h"
 #include "Engine.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -22,8 +23,6 @@ AFrogGameCharacter::AFrogGameCharacter()
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
-	// Set frog length
-	UpdateLength();
 
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
@@ -52,6 +51,10 @@ AFrogGameCharacter::AFrogGameCharacter()
 	// Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
+	BoxCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxTrace"));
+	BoxCollider->SetupAttachment(RootComponent);
+	BoxCollider->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	BoxCollider->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Overlap);
 	// Create a spawn point for linetrace, only used to linetrace so does not need to ever be visible.
 	RayMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RayMesh"));
 	RayMesh->SetupAttachment(RootComponent);
@@ -60,6 +63,15 @@ AFrogGameCharacter::AFrogGameCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
+}
+
+void AFrogGameCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+	const FVector Viewport{GetWorld()->GetGameViewport()->Viewport->GetSizeXY()};
+	BoxCollider->SetBoxExtent(FVector(Tongue.GetDefaultObject()->TongueRange / 2.f, Viewport.X / 2.f,
+	                                  Viewport.Y / 2.f));
+	BoxCollider->SetRelativeLocation(FVector(BoxCollider->GetUnscaledBoxExtent().X, 0, 0));
 }
 
 UStaticMeshComponent* AFrogGameCharacter::GetRayMesh()
@@ -74,9 +86,6 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 {
 	// Set up gameplay key bindings
 	check(PlayerInputComponent);
-
-	// This is here just to test if raycast works, will be automatic in future
-	PlayerInputComponent->BindAction("Raycast", IE_Pressed, this, &AFrogGameCharacter::AutoAim);
 
 	PlayerInputComponent->BindAction("Eat", IE_Pressed, this, &AFrogGameCharacter::Lickitung);
 
@@ -93,11 +102,8 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindAxis("TurnRate", this, &AFrogGameCharacter::TurnAtRate);
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AFrogGameCharacter::LookUpAtRate);
-
-	// handle touch devices
-	PlayerInputComponent->BindTouch(IE_Pressed, this, &AFrogGameCharacter::TouchStarted);
-	PlayerInputComponent->BindTouch(IE_Released, this, &AFrogGameCharacter::TouchStopped);
 }
+
 
 void AFrogGameCharacter::Tick(float DeltaTime)
 {
@@ -107,60 +113,32 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 		if (ScaleLerp < 1.0f)
 		{
 			ScaleLerp += DeltaTime;
+			const FVector CurrentScale{GetActorScale()};
 			SetActorScale3D(FMath::Lerp(GetActorScale(), DesiredScale, ScaleLerp));
+			const float ScaleDelta{(GetActorScale() - CurrentScale).X};
+			UpdateCameraBoom(ScaleDelta);
 		}
 	}
-	// Stuff for both Box and Line
-	FHitResult OutHit;
-	FVector Start = RayMesh->GetComponentLocation();
-	FVector ForwardVector = RayMesh->GetForwardVector();
-	FVector End = (Start + (ForwardVector * 1000.0f));
-	FCollisionQueryParams CollisionParams;
+	AutoAim();
+}
 
-	/**
-    // Stuff for BoxTrace
-	float FrogRad = GetCapsuleComponent()->GetScaledCapsuleRadius();
-	FVector HalfSize; // distance between the line and each side of the box. if distance is 0.5 in each direction the box will be 1x1x1.
-	HalfSize.X = FrogRad, HalfSize.Y = FrogRad, HalfSize.Z = FrogRad; 
-	FRotator Orientation = RayMesh->GetRelativeRotation();
-	ETraceTypeQuery TraceChannel;
-	bool bTraceComplex; //True to test against complex collision, false to test against simplified collision.
-	const TArray<AActor*> &ActorsToIgnore;
-	EDrawDebugTrace::Type DrawDebugType;
-	bool bIgnoreSelf = true;
-	FLinearColor TraceColor = FColor::Green;
-	FLinearColor TraceHitColor = FColor::Red;
-	float DrawTime; // hmm
-	**/
-	DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1, 0, 1);
-
-	bool IsHit = GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility, CollisionParams);
-
-	if (IsHit)
+void AFrogGameCharacter::AutoAim()
+{
+	TArray<AActor*> OverlappingActors;
+	BoxCollider->GetOverlappingActors(OverlappingActors);
+	for (AActor* Actor : OverlappingActors)
 	{
-		if (OutHit.bBlockingHit)
+		if (Actor->Implements<UEdible>())
 		{
-			if (GEngine)
+			const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(Actor)};
+			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red,
+			                                 FString::Printf(TEXT("%s is in view."), *Actor->GetName()));
+			// If the actor's size is less than or equal to the frog's size 
+			if (SizeInfo.SizeTier < SizeTier && SizeInfo.SizeTier >= SizeTier - 2)
 			{
-				/*GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red,
-				                                 FString::Printf(
-					                                 TEXT("You are hitting %s"), *OutHit.GetActor()->GetName()));*/
 			}
 		}
 	}
-	/**
-	UKismetSystemLibrary::BoxTraceSingle(GetWorld(), Start, End, HalfSize, Orientation, TraceChannel, bTraceComplex, ActorsToIgnore, DrawDebugType, OutHit, bIgnoreSelf, TraceColor, TraceHitColor, DrawTime);
-	**/
-}
-
-void AFrogGameCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
-{
-	Jump();
-}
-
-void AFrogGameCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location)
-{
-	StopJumping();
 }
 
 void AFrogGameCharacter::TurnAtRate(float Rate)
@@ -189,7 +167,8 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 	}
 	if (OtherActor->Implements<UEdible>())
 	{
-		const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(OtherActor)}; // This probably happens much earlier than here. (When the target is being calculated)
+		const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(OtherActor)};
+		// This probably happens much earlier than here. (When the target is being calculated)
 		OtherActor->Destroy();
 		// just reset the lerp values
 		ScaleLerp = 0.0f;
@@ -200,9 +179,10 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 		const float SizeDiff{SizeInfo.Size / ScaledRadius * SizeInfo.GrowthCoefficient};
 		// If SizeInfo.Size = 10 and ScaledRadius = 50 then we get a value of 10/50 = 0.2 or 20%.
 		// Increase actor scale by this value. 
-		DesiredScale = GetActorScale() * SizeDiff;
+		DesiredScale = GetActorScale() * (1 + SizeDiff);
 	}
 }
+
 
 void AFrogGameCharacter::MoveForward(float Value)
 {
@@ -233,30 +213,17 @@ void AFrogGameCharacter::MoveRight(float Value)
 	}
 }
 
-void AFrogGameCharacter::AutoAim()
+void AFrogGameCharacter::UpdateCameraBoom(const float ScaleDelta)
 {
-	FHitResult* HitResult = new FHitResult;
-	FVector StartTrace = RayMesh->GetComponentLocation();
-	FVector ForwardVector = RayMesh->GetForwardVector();
-	FVector EndTrace = (StartTrace + (ForwardVector * 2000.f));
-	FCollisionQueryParams* TraceParams = new FCollisionQueryParams();
-
-	if (GetWorld()->LineTraceSingleByChannel(*HitResult, StartTrace, EndTrace, ECC_Visibility, *TraceParams))
-	{
-		DrawDebugLine(GetWorld(), StartTrace, EndTrace, FColor(255, 0, 0), true, 1.f);
-
-		// If hit actor is edible, display these.
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
-		                                 FString::Printf(TEXT("You hit: %s"), *HitResult->Actor->GetName()));
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green,
-		                                 FString::Printf(TEXT("%s is edible!"), *HitResult->Actor->GetName()));
-		// Set hit actor to be CurrentTarget.
-	}
-}
-
-void AFrogGameCharacter::UpdateLength()
-{
-	FrogLength = GetCapsuleComponent()->GetScaledCapsuleRadius() * 2;
+	const float NewDistance = CameraBoom->TargetArmLength + ((CameraBoom->TargetArmLength / 100) * ScaleDelta);
+	CameraBoom->TargetArmLength = NewDistance;
+	FVector Extent{BoxCollider->GetUnscaledBoxExtent()};
+	Extent.X = (Tongue.GetDefaultObject()->TongueRange / 2.f) * GetActorScale().X;
+	const float XDiff{Extent.X - BoxCollider->GetUnscaledBoxExtent().X};
+	BoxCollider->SetBoxExtent(Extent);
+	FVector NewPosition{BoxCollider->GetRelativeLocation()};
+	NewPosition.X += XDiff;
+	BoxCollider->SetRelativeLocation(NewPosition);
 }
 
 void AFrogGameCharacter::Lickitung()
@@ -292,38 +259,5 @@ void AFrogGameCharacter::Lickitung()
 
 		bTongueSpawned = true;
 	}
-	// Check if there is a CurrentTarget.
-
-	// if there is a CurrentTarget:
-	// {
-	// Shoot tongue at target
-	// Drag Target to frog
-	// Get SizePoints and PowerPoints from target.
-	// Delete Target
-	// Update scale (size) of frog
-	// Put PowerPoints into PowerMeter
-	// UpdateLength();
-	// }
-
-	// If there isn't a currentTarget:
-	// {
-	// Shoot the tongue out in a straight line until it reaches the end of the linetrace.
-	// }
-
 	// If PowerMeter is full & PowerMode is not already active, activate PowerMode here?
-}
-
-FVector AFrogGameCharacter::GetEnd()
-{
-	FVector Temp;
-	FVector Start = RayMesh->GetComponentLocation();
-	FVector ForwardVector = RayMesh->GetForwardVector();
-	FVector End = (Start + (ForwardVector * 1000.0f));
-	Temp = End;
-	return Temp;
-}
-
-FVector AFrogGameCharacter::GetTarget()
-{
-	return FVector();
 }

@@ -28,6 +28,7 @@ ASimpleCreature::ASimpleCreature()
 	MovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComponent"));
 
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+	// TODO: Make sure to disable AI Controller when grabbed by tongue.
 }
 
 // Called when the game starts or when spawned
