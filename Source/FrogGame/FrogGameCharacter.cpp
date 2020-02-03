@@ -36,7 +36,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	// Configure character movement
 	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // ...at this rotation rate
-	GetCharacterMovement()->JumpZVelocity = 600.f;
+	GetCharacterMovement()->JumpZVelocity = BaseJump;
 	GetCharacterMovement()->AirControl = 0.2f;
 
 	// Create a camera boom (pulls in towards the player if there is a collision)
@@ -88,8 +88,8 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 
 	PlayerInputComponent->BindAction("Eat", IE_Pressed, this, &AFrogGameCharacter::Lickitung);
 
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AFrogGameCharacter::JumpCharge);
-	PlayerInputComponent->BindAction("Jump", IE_Released, this, &AFrogGameCharacter::FroggyJump);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AFrogGameCharacter::StartJump);
+	PlayerInputComponent->BindAction("Jump", IE_Released, this, &AFrogGameCharacter::ExecuteJump);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &AFrogGameCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AFrogGameCharacter::MoveRight);
@@ -107,24 +107,24 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 void AFrogGameCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	UCharacterMovementComponent* CharMovement = GetCharacterMovement();
-	if (CharMovement)
+
+	if (bIsCharging)
 	{
-		CharMovement->JumpZVelocity = BaseJump;
+		ChargeJump(DeltaTime);
 	}
-	if(IsHolding)
-		{
-		   Jumptick(DeltaTime);
-		}
-	if (Lerping)
+	if (bScalingUp)
 	{
-		if (ScaleLerp < 1.0f)
+		if (ScaleAlpha < 1.0f)
 		{
-			ScaleLerp += DeltaTime;
+			ScaleAlpha += DeltaTime;
 			const FVector CurrentScale{GetActorScale()};
-			SetActorScale3D(FMath::Lerp(GetActorScale(), DesiredScale, ScaleLerp));
+			SetActorScale3D(FMath::Lerp(GetActorScale(), DesiredScale, ScaleAlpha));
 			const float ScaleDelta{(GetActorScale() - CurrentScale).X};
 			UpdateCameraBoom(ScaleDelta);
+		}
+		else
+		{
+			bScalingUp = false;
 		}
 	}
 	AutoAim();
@@ -149,10 +149,6 @@ void AFrogGameCharacter::AutoAim()
 	}
 }
 
-void AFrogGameCharacter::BeginPlay()
-{
-	Super::BeginPlay();
-}
 
 void AFrogGameCharacter::TurnAtRate(float Rate)
 {
@@ -183,8 +179,8 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 		// This probably happens much earlier than here. (When the target is being calculated)
 		OtherActor->Destroy();
 		// just reset the lerp values
-		ScaleLerp = 0.0f;
-		Lerping = true;
+		ScaleAlpha = 0.0f;
+		bScalingUp = true;
 		// We use the scaled radius value of the capsule collider to get an approximate size value for the main character.
 		const float ScaledRadius{GetCapsuleComponent()->GetScaledCapsuleRadius()};
 		// Compare this to the averaged bounding box size of the object being eaten and factor in the growth coefficient.
@@ -227,6 +223,7 @@ void AFrogGameCharacter::MoveRight(float Value)
 
 void AFrogGameCharacter::UpdateCameraBoom(const float ScaleDelta)
 {
+	// TODO: Comment this
 	const float NewDistance = CameraBoom->TargetArmLength + ((CameraBoom->TargetArmLength / 100) * ScaleDelta);
 	CameraBoom->TargetArmLength = NewDistance;
 	FVector Extent{BoxCollider->GetUnscaledBoxExtent()};
@@ -273,25 +270,26 @@ void AFrogGameCharacter::Lickitung()
 	// If PowerMeter is full & PowerMode is not already active, activate PowerMode here?
 }
 
-// Called in the jump function. For every second the player holds spacebar / bumper it increases the jumpcharge by 1 to a max of 3.
-void AFrogGameCharacter::JumpCharge()
+// Called in the jump function. For every second the player holds spacebar / bumper it increases the jump charge by 1 to a max of 3.
+void AFrogGameCharacter::StartJump()
 {
-	IsHolding = true;
+	bIsCharging = true;
 }
 
-void AFrogGameCharacter::Jumptick(float DeltaTime)
+void AFrogGameCharacter::ChargeJump(float DeltaTime)
 {
-	JumpModifier = JumpModifier + DeltaTime;
+	JumpModifier += (DeltaTime * ChargeSpeed); // The modifier determines what percentage of the jump bonus is applied
 }
 
-void AFrogGameCharacter::FroggyJump()
+void AFrogGameCharacter::ExecuteJump()
 {
-	IsHolding = false;
-	JumpBonus = JumpBonus * JumpModifier;
-	BaseJump = BaseJump + JumpBonus;
+	bIsCharging = false;
+	JumpModifier = FMath::Clamp(JumpModifier, 0.f, 1.f);
+	GetCharacterMovement()->JumpZVelocity = BaseJump + (JumpBonus * JumpModifier);
+	UE_LOG(LogTemp, Warning, TEXT("%f"), GetCharacterMovement()->JumpZVelocity);
 	Jump();
 
 	// Remember to reset it.
-	JumpModifier = 0;
-	JumpBonus = 450;
+	//GetCharacterMovement()->JumpZVelocity = BaseJump;
+	JumpModifier = 0.f;
 }

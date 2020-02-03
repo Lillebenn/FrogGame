@@ -88,39 +88,38 @@ protected:
 private:
 
 	/** Updates the frogs length **/
-	void UpdateCameraBoom(const float ScaleDelta);
+	void UpdateCameraBoom(float ScaleDelta);
 
 	/** Uses the tongue to eat something, and then grows **/
 	void Lickitung();
 
 	/** Lets the frog jump higher by charging a jump **/
-	void JumpCharge();
+	void StartJump();
 
 	/** Modifier for jump **/
-	void Jumptick(float DeltaTime);
+	void ChargeJump(float DeltaTime);
 
-	void FroggyJump();
+	void ExecuteJump();
 
-	float ScaleLerp{0.0f};
-	bool Lerping{false};
+	float ScaleAlpha{0.0f};
+	bool bScalingUp{false};
 	FVector DesiredScale{0};
-	// float JumpZVelocity{};
+
 	float BaseJump{450};
-	float JumpBonus{ 450 };
-	float DefaultVelocity{};
-	float JumpModifier = FMath::Clamp<float>(JumpModifier, 0.f, 1.f);
-	bool IsHolding{ false };
+	float JumpBonus{450};
+	UPROPERTY(EditAnywhere)
+	float ChargeSpeed{2.f};
+	float JumpModifier{0};
+	bool bIsCharging{false};
 
 
-	/** Handles the charging of JumpCharge **/
+	/** Handles the charging of StartJump **/
 	FTimerHandle JumpChargeTimerHandle;
 
 public:
 
 	void Tick(float DeltaTime) override;
 	void AutoAim();
-
-	void BeginPlay();
 
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
