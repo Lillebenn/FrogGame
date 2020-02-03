@@ -44,4 +44,7 @@ public:
 
 	FEdibleInfo GetInfo_Implementation() const override;
 
+private:
+	void CalculateBoundingSize();
+
 };

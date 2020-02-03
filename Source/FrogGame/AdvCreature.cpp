@@ -3,12 +3,15 @@
 
 #include "AdvCreature.h"
 #include "Components/CapsuleComponent.h"
+
 // Sets default values
 AAdvCreature::AAdvCreature()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	// For capsules we just use the radius value. Could potentially do a combination/average of the half-height and radius if the creature is particularly tall.
+	EdibleInfo.Size = GetCapsuleComponent()->GetScaledCapsuleRadius();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
@@ -16,27 +19,22 @@ AAdvCreature::AAdvCreature()
 void AAdvCreature::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 // Called every frame
 void AAdvCreature::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 // Called to bind functionality to input
 void AAdvCreature::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
 }
-
 
 
 FEdibleInfo AAdvCreature::GetInfo_Implementation() const
 {
 	return EdibleInfo;
 }
-

@@ -19,7 +19,6 @@ void ABaseEdible::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Not sure if this is correct but should in theory get the box size of the mesh to use as a rough size estimate.
 	if (GetDestructibleComponent())
 	{
 		const FVector RoughSize = GetDestructibleComponent()->GetDestructibleMesh()->GetBounds().GetBox().GetSize();

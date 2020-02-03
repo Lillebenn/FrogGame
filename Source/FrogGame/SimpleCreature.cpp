@@ -3,6 +3,7 @@
 
 #include "SimpleCreature.h"
 #include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
 #include "GameFramework/FloatingPawnMovement.h"
 #include "Components/CapsuleComponent.h"
 
@@ -26,7 +27,6 @@ ASimpleCreature::ASimpleCreature()
 
 	MovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComponent"));
 
-	//EdibleInfo.UniformSize = FVector(Radius * 2.0f);
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
@@ -34,6 +34,7 @@ ASimpleCreature::ASimpleCreature()
 void ASimpleCreature::BeginPlay()
 {
 	Super::BeginPlay();
+	CalculateBoundingSize();
 }
 
 // Called every frame
@@ -52,4 +53,12 @@ void ASimpleCreature::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 FEdibleInfo ASimpleCreature::GetInfo_Implementation() const
 {
 	return EdibleInfo;
+}
+
+void ASimpleCreature::CalculateBoundingSize()
+{
+	const FVector RoughSize = CreatureMesh->GetStaticMesh()->GetBoundingBox().GetSize();
+	const FVector AbsoluteSize{RoughSize.GetAbs()};
+	// Get the average axis value of the bounding box
+	EdibleInfo.Size = (AbsoluteSize.X + AbsoluteSize.Y + AbsoluteSize.Z) / 3;
 }
