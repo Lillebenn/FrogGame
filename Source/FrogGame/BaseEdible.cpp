@@ -7,6 +7,10 @@
 
 ABaseEdible::ABaseEdible()
 {
+	if(GetDestructibleComponent())
+	{
+		GetDestructibleComponent()->SetCollisionObjectType(ECC_GameTraceChannel1);
+	}
 }
 
 

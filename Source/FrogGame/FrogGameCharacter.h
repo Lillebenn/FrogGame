@@ -23,6 +23,8 @@ class AFrogGameCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UStaticMeshComponent* RayMesh;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+	class UBoxComponent* BoxCollider;
 public:
 	AFrogGameCharacter();
 
@@ -39,8 +41,12 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character)
 	float FrogLength;
 
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool bTongueSpawned{false};
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	uint8 SizeTier{1};
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class ATongueProjectile> Tongue;
@@ -54,6 +60,7 @@ public:
 	FVector ScaledCapsuleSize;
 protected:
 
+	void BeginPlay() override;
 	/** Called for forwards/backward input */
 	void MoveForward(float Value);
 
@@ -72,11 +79,6 @@ protected:
 	 */
 	void LookUpAtRate(float Rate);
 
-	/** Handler for when a touch input begins. */
-	void TouchStarted(ETouchIndex::Type FingerIndex, FVector Location);
-
-	/** Handler for when a touch input stops. */
-	void TouchStopped(ETouchIndex::Type FingerIndex, FVector Location);
 
 protected:
 	// APawn interface
@@ -85,11 +87,8 @@ protected:
 
 private:
 
-	/** Creates a Raycast infront of the frog that applies a reticle to show what is edible **/
-	void AutoAim();
-
 	/** Updates the frogs length **/
-	void UpdateLength();
+	void UpdateCameraBoom(const float ScaleDelta);
 
 	/** Uses the tongue to eat something, and then grows **/
 	void Lickitung();
@@ -118,7 +117,8 @@ private:
 
 public:
 
-	virtual void Tick(float DeltaTime) override;
+	void Tick(float DeltaTime) override;
+	void AutoAim();
 
 	void BeginPlay();
 
@@ -127,8 +127,4 @@ public:
 
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
-	
-	FVector GetEnd();
-
-	FVector GetTarget();
 };
