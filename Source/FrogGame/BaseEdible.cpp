@@ -22,6 +22,9 @@ void ABaseEdible::BeginPlay()
 	// Not sure if this is correct but should in theory get the box size of the mesh to use as a rough size estimate.
 	if (GetDestructibleComponent())
 	{
-		EdibleInfo.RoughSize = GetDestructibleComponent()->GetDestructibleMesh()->GetBounds().GetBox().GetSize();
+		const FVector RoughSize = GetDestructibleComponent()->GetDestructibleMesh()->GetBounds().GetBox().GetSize();
+		const FVector AbsoluteSize{RoughSize.GetAbs()};
+		// Get the average axis value of the bounding box
+		EdibleInfo.Size = (AbsoluteSize.X + AbsoluteSize.Y + AbsoluteSize.Z) / 3;
 	}
 }

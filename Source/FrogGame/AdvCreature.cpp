@@ -9,9 +9,6 @@ AAdvCreature::AAdvCreature()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	GetCapsuleComponent()->GetScaledCapsuleSize(EdibleInfo.RoughSize.X, EdibleInfo.RoughSize.Z);
-	EdibleInfo.RoughSize.Y = EdibleInfo.RoughSize.X;
-
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 

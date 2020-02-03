@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/Class.h"
 #include "EdibleInfo.generated.h"
 
 /**
@@ -20,11 +19,8 @@ struct FEdibleInfo
 	// Size tier of the object. Clamped to 10.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Edible, meta = (ClampMax = 10))
 	uint8 SizeTier{1};
-	// Typically holds the bounding size of an object's collider. Probably not a very accurate representation of size.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Edible)
-	FVector RoughSize;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Edible)
+	float Size;
 
-	// Get size of character's bounding box/capsule, then increase scale by the percentage difference.
-	// (5/50 * 100, that's 10% so we increase the character's scale by 0.1 * the growth coefficient of the object)
-	// Since it's a 3d vector we just average out the 3 values and scale by the same value in every axis.
 };

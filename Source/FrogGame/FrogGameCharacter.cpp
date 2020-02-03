@@ -189,11 +189,18 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 	}
 	if (OtherActor->Implements<UEdible>())
 	{
-		FEdibleInfo Size{IEdible::Execute_GetInfo(OtherActor)}; // This probably happens much earlier than here.
+		const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(OtherActor)}; // This probably happens much earlier than here. (When the target is being calculated)
 		OtherActor->Destroy();
+		// just reset the lerp values
 		ScaleLerp = 0.0f;
 		Lerping = true;
-		DesiredScale = GetActorScale() * 1.1f; // TODO: MAKE THIS NOT MAGIC VALUE
+		// We use the scaled radius value of the capsule collider to get an approximate size value for the main character.
+		const float ScaledRadius{GetCapsuleComponent()->GetScaledCapsuleRadius()};
+		// Compare this to the averaged bounding box size of the object being eaten and factor in the growth coefficient.
+		const float SizeDiff{SizeInfo.Size / ScaledRadius * SizeInfo.GrowthCoefficient};
+		// If SizeInfo.Size = 10 and ScaledRadius = 50 then we get a value of 10/50 = 0.2 or 20%.
+		// Increase actor scale by this value. 
+		DesiredScale = GetActorScale() * SizeDiff;
 	}
 }
 

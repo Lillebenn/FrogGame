@@ -26,7 +26,7 @@ ASimpleCreature::ASimpleCreature()
 
 	MovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComponent"));
 
-	EdibleInfo.RoughSize = FVector(Radius * 2.0f);
+	//EdibleInfo.UniformSize = FVector(Radius * 2.0f);
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
@@ -47,7 +47,6 @@ void ASimpleCreature::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
-
 
 
 FEdibleInfo ASimpleCreature::GetInfo_Implementation() const

@@ -23,7 +23,7 @@ public:
 
 	FEdibleInfo GetInfo_Implementation() const override;
 
-	protected:
+protected:
 	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	void BeginPlay() override;
 };

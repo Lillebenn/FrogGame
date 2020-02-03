@@ -49,6 +49,9 @@ public:
 	class UCableComponent* Cable;
 
 	void Consume(AActor* OtherActor);
+
+	UPROPERTY(VisibleAnywhere, Category = Character)
+	FVector ScaledCapsuleSize;
 protected:
 
 	/** Called for forwards/backward input */
