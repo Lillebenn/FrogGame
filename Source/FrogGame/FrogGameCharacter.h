@@ -40,7 +40,7 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	bool bTongueSpawned{false};
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, SaveGame, BlueprintReadOnly)
 	uint8 SizeTier{1};
 
 	UPROPERTY(EditDefaultsOnly)
@@ -54,7 +54,7 @@ public:
 
 	void Consume(AActor* OtherActor);
 
-	UPROPERTY(VisibleAnywhere, Category = Character)
+	UPROPERTY(VisibleAnywhere, SaveGame, Category = Character)
 	FVector ScaledCapsuleSize;
 protected:
 

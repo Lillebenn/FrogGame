@@ -71,6 +71,14 @@ USceneComponent* ASimpleCreature::GetTargetComponent_Implementation()
 {
 	return CreatureMesh;
 }
+// Custom behaviour when saving or loading
+void ASimpleCreature::ActorSaveDataLoaded_Implementation()
+{
+}
+
+void ASimpleCreature::ActorSaveDataSaved_Implementation()
+{
+}
 
 void ASimpleCreature::CalculateBoundingSize()
 {

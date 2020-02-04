@@ -6,13 +6,14 @@
 #include "GameFramework/Character.h"
 #include "EdibleInfo.h"
 #include "Edible.h"
+#include "Saveable.h"
 #include "AdvCreature.generated.h"
 
 /**
  * Creature with the ability to use animations and more advanced AI.
  */
 UCLASS(Abstract)
-class FROGGAME_API AAdvCreature : public ACharacter, public IEdible
+class FROGGAME_API AAdvCreature : public ACharacter, public IEdible, ISaveable
 {
 	GENERATED_BODY()
 
@@ -40,4 +41,7 @@ public:
 	void DisableActor_Implementation() override;
 
 	USceneComponent* GetTargetComponent_Implementation() override;
+
+	void ActorSaveDataSaved_Implementation() override;
+	void ActorSaveDataLoaded_Implementation() override;
 };

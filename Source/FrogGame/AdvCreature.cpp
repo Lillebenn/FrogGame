@@ -53,3 +53,11 @@ USceneComponent* AAdvCreature::GetTargetComponent_Implementation()
 {
 	return GetCapsuleComponent();
 }
+// Custom behaviour when saving or loading
+void AAdvCreature::ActorSaveDataLoaded_Implementation()
+{
+}
+
+void AAdvCreature::ActorSaveDataSaved_Implementation()
+{
+}

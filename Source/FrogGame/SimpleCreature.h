@@ -6,10 +6,11 @@
 #include "GameFramework/Pawn.h"
 #include "Edible.h"
 #include "EdibleInfo.h"
+#include "Saveable.h"
 #include "SimpleCreature.generated.h"
 
 UCLASS(Abstract)
-class FROGGAME_API ASimpleCreature : public APawn, public IEdible
+class FROGGAME_API ASimpleCreature : public APawn, public IEdible, public ISaveable
 {
 	GENERATED_BODY()
 
@@ -27,7 +28,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UFloatingPawnMovement* MovementComponent;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Edible)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Edible)
 	FEdibleInfo EdibleInfo;
 
 protected:
@@ -47,6 +48,9 @@ public:
 	void DisableActor_Implementation() override;
 
 	USceneComponent* GetTargetComponent_Implementation() override;
+
+	void ActorSaveDataLoaded_Implementation() override;
+	void ActorSaveDataSaved_Implementation() override;
 
 	
 private:
