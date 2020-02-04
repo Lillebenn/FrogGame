@@ -11,7 +11,7 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "TongueProjectile.h"
-#include "DrawDebugHelpers.h"
+#include "FrogGameInstance.h"
 #include "CableComponent.h"
 #include "Edible.h"
 
@@ -92,6 +92,9 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AFrogGameCharacter::StartJump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &AFrogGameCharacter::ExecuteJump);
 
+	PlayerInputComponent->BindAction("TestSave", IE_Pressed, this, &AFrogGameCharacter::SaveGame);
+	PlayerInputComponent->BindAction("TestLoad", IE_Pressed, this, &AFrogGameCharacter::LoadGame);
+	
 	PlayerInputComponent->BindAxis("MoveForward", this, &AFrogGameCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AFrogGameCharacter::MoveRight);
 
@@ -322,4 +325,16 @@ void AFrogGameCharacter::OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AAct
 			CurrentTarget = nullptr;
 		}
 	}
+}
+
+void AFrogGameCharacter::SaveGame() 
+{
+	UFrogGameInstance* GameInstance{Cast<UFrogGameInstance>(GetGameInstance())};
+	GameInstance->SaveCurrentToSlot();
+}
+
+void AFrogGameCharacter::LoadGame() 
+{
+	UFrogGameInstance* GameInstance{Cast<UFrogGameInstance>(GetGameInstance())};
+	GameInstance->LoadCurrentSave();
 }

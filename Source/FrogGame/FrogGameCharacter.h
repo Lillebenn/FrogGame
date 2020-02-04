@@ -115,6 +115,10 @@ private:
 	void OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                   int32 OtherBodyIndex);
 
+	void SaveGame();
+
+
+	void LoadGame();
 
 public:
 
