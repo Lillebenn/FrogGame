@@ -5,8 +5,10 @@
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
 #include "FrogGameUI.h"
+#include "FrogSaveGame.h"
 #include "FrogGameInstance.generated.h"
 
+struct FActorSaveData;
 /**
  * 
  */
@@ -60,7 +62,7 @@ private:
 
 	void Shutdown() override;
 	FActorSaveData SerializeActor(AActor* Actor) const;
-	FSaveGameArchive ReadSaveData(FActorSaveData& ActorRecord) const;
+	FSaveGameArchive ReadSaveData(const FActorSaveData& ActorRecord) const;
 	void SaveActors(const FString& SaveSlotName) const;
 	void LoadActors() const;
 private:

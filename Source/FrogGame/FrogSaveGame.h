@@ -51,5 +51,4 @@ public:
 	uint32 UserIndex{0};
 
 	TArray<FActorSaveData> SavedActors;
-
 };
