@@ -28,4 +28,8 @@ public:
 	 */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	FEdibleInfo GetInfo() const;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
+	void DisableActor();
+
 };

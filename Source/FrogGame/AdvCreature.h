@@ -36,4 +36,6 @@ public:
 
 
 	FEdibleInfo GetInfo_Implementation() const override;
+
+	void DisableActor_Implementation() override;
 };

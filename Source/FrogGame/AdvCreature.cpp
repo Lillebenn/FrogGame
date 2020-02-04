@@ -3,6 +3,7 @@
 
 #include "AdvCreature.h"
 #include "Components/CapsuleComponent.h"
+#include "GameFramework/Controller.h"
 
 // Sets default values
 AAdvCreature::AAdvCreature()
@@ -37,4 +38,13 @@ void AAdvCreature::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 FEdibleInfo AAdvCreature::GetInfo_Implementation() const
 {
 	return EdibleInfo;
+}
+
+void AAdvCreature::DisableActor_Implementation()
+{
+	AController* AI{GetController()};
+	if (AI)
+	{
+		AI->UnPossess();
+	}
 }

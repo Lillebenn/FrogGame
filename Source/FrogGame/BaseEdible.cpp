@@ -19,6 +19,11 @@ FEdibleInfo ABaseEdible::GetInfo_Implementation() const
 	return EdibleInfo;
 }
 
+void ABaseEdible::DisableActor_Implementation()
+{
+
+}
+
 void ABaseEdible::BeginPlay()
 {
 	Super::BeginPlay();
