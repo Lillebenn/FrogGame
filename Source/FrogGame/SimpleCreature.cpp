@@ -67,6 +67,11 @@ void ASimpleCreature::DisableActor_Implementation()
 	}
 }
 
+USceneComponent* ASimpleCreature::GetTargetComponent_Implementation()
+{
+	return CreatureMesh;
+}
+
 void ASimpleCreature::CalculateBoundingSize()
 {
 	const FVector RoughSize = CreatureMesh->GetStaticMesh()->GetBoundingBox().GetSize();

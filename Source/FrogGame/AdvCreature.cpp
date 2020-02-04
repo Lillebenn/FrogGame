@@ -48,3 +48,8 @@ void AAdvCreature::DisableActor_Implementation()
 		AI->UnPossess();
 	}
 }
+
+USceneComponent* AAdvCreature::GetTargetComponent_Implementation()
+{
+	return GetCapsuleComponent();
+}

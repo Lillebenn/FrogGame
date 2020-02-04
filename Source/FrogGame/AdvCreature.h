@@ -38,4 +38,6 @@ public:
 	FEdibleInfo GetInfo_Implementation() const override;
 
 	void DisableActor_Implementation() override;
+
+	USceneComponent* GetTargetComponent_Implementation() override;
 };

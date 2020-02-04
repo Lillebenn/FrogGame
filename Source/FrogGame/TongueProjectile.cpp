@@ -65,16 +65,16 @@ void ATongueProjectile::OnComponentHit(UPrimitiveComponent* HitComp, AActor* Oth
 		if (Target)
 		{
 			AttachEdible(Target);
-			bShouldReturn = true;
 		}
 	}
+	bShouldReturn = true;
 }
 
 void ATongueProjectile::SeekTarget(const float DeltaTime)
 {
 	if (Target)
 	{
-		VInterpTo(Target->GetActorLocation(), DeltaTime);
+		VInterpTo(IEdible::Execute_GetTargetComponent(Target)->GetComponentLocation(), DeltaTime);
 	}
 	else
 	{
