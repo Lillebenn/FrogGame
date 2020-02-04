@@ -23,7 +23,7 @@ class FROGGAME_API ISaveable
 public:
 	// Functions that can be used for implementing custom behaviour when saving and loading
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Saveable Actor")
-		void ActorSaveDataLoaded();
+	void ActorSaveDataLoaded();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Saveable Actor")
-		void ActorSaveDataSaved();
+	void ActorSaveDataSaved();
 };

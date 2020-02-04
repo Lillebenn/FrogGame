@@ -24,7 +24,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Collision)
 	class UCapsuleComponent* NavCollider;
 
-	
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UFloatingPawnMovement* MovementComponent;
 
@@ -33,14 +33,14 @@ public:
 
 protected:
 	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	void BeginPlay() override;
 
-public:	
+public:
 	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	void Tick(float DeltaTime) override;
 
 	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 
 	FEdibleInfo GetInfo_Implementation() const override;
@@ -52,8 +52,7 @@ public:
 	void ActorSaveDataLoaded_Implementation() override;
 	void ActorSaveDataSaved_Implementation() override;
 
-	
+
 private:
 	void CalculateBoundingSize();
-
 };

@@ -8,6 +8,7 @@
 #include "Saveable.h"
 #include "SaveSlotSettings.h"
 #include "Engine/World.h"
+
 UFrogGameInstance::UFrogGameInstance(const FObjectInitializer& ObjectInitializer) : UGameInstance(ObjectInitializer)
 {
 	SaveInfo = Cast<USaveSlotSettings>(UGameplayStatics::LoadGameFromSlot("SaveSlotSettings", 0));
@@ -22,6 +23,7 @@ UFrogGameInstance::UFrogGameInstance(const FObjectInitializer& ObjectInitializer
 		}
 	}
 }
+
 void UFrogGameInstance::CreateNewSave(const FString& SaveName)
 {
 	CurrentSave = Cast<UFrogSaveGame>(UGameplayStatics::CreateSaveGameObject(UFrogSaveGame::StaticClass()));
@@ -31,7 +33,7 @@ void UFrogGameInstance::CreateNewSave(const FString& SaveName)
 
 void UFrogGameInstance::LoadSaveGame(const FString& SaveName)
 {
-	if (UFrogSaveGame * LoadedGame{ Cast<UFrogSaveGame>(UGameplayStatics::LoadGameFromSlot(SaveName, 0)) })
+	if (UFrogSaveGame* LoadedGame{Cast<UFrogSaveGame>(UGameplayStatics::LoadGameFromSlot(SaveName, 0))})
 	{
 		CurrentSave = LoadedGame;
 		CurrentSaveName = SaveName;
@@ -66,7 +68,8 @@ TSet<FString> UFrogGameInstance::GetAllSaveNames() const
 void UFrogGameInstance::Shutdown()
 {
 	// I have a feeling actors may be destroyed before this is called, but putting this here for now.
-	SaveCurrentToSlot(); // Save the game before quitting. We always set the current save to be the one last saved to, so this should just update that file.
+	SaveCurrentToSlot();
+	// Save the game before quitting. We always set the current save to be the one last saved to, so this should just update that file.
 }
 
 FActorSaveData UFrogGameInstance::SerializeActor(AActor* Actor) const
@@ -81,9 +84,10 @@ FActorSaveData UFrogGameInstance::SerializeActor(AActor* Actor) const
 	Actor->Serialize(Ar);
 	return ActorRecord;
 }
+
 void UFrogGameInstance::SaveActors(const FString& SaveSlotName) const
 {
-	UFrogSaveGame* SaveSlot{ Cast<UFrogSaveGame>(UGameplayStatics::LoadGameFromSlot(SaveSlotName, 0)) };
+	UFrogSaveGame* SaveSlot{Cast<UFrogSaveGame>(UGameplayStatics::LoadGameFromSlot(SaveSlotName, 0))};
 	if (!SaveSlot)
 	{
 		return;
@@ -117,13 +121,14 @@ void UFrogGameInstance::LoadActors() const
 		if (SpawnClass)
 		{
 			AActor* NewActor = GetWorld()->SpawnActor(SpawnClass, &SpawnPos, &SpawnRot, SpawnParams);
-
-			NewActor->Serialize(ReadSaveData(ActorRecord));
+			FSaveGameArchive Ar{ReadSaveData(ActorRecord)};
+			NewActor->Serialize(Ar);
 			NewActor->SetActorTransform(ActorRecord.ActorTransform);
 			ISaveable::Execute_ActorSaveDataLoaded(NewActor);
 		}
 	}
 }
+
 FSaveGameArchive UFrogGameInstance::ReadSaveData(const FActorSaveData& ActorRecord) const
 {
 	FMemoryReader MemoryReader(ActorRecord.ActorData, true);
