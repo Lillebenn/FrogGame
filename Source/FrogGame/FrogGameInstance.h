@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "FrogGameUI.h"
 #include "FrogSaveGame.h"
 #include "FrogGameInstance.generated.h"
 
@@ -33,6 +34,31 @@ public:
 	}
 
 	void SetCurrentSaveName(const FString& NewName) { CurrentSaveName = NewName; }
+	
+protected:
+	// Dynamic reference to the blueprint class.
+	TSubclassOf<class UUserWidget> InGameUIClass;
+
+	// Internal reference to the blueprint for gameplay logic
+	UPROPERTY(BlueprintReadWrite, Category = "UI")
+	class UFrogGameUI* InGameUI;
+
+public:
+
+	UFrogGameInstance(const FObjectInitializer & ObjectInitialzer);
+
+	FORCEINLINE class UFrogGameUI* GetInGameUI() const { return InGameUI; }
+
+
+public:
+
+	void LoadIngameUI();
+
+
+private:
+
+	// Reference to the Grid
+	class AGrid* CurrentGrid;
 
 	void Shutdown() override;
 

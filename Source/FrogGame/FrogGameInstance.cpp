@@ -9,10 +9,25 @@
 #include "SaveSlotSettings.h"
 #include "Engine/World.h"
 #include "FrogGameCharacter.h"
+#include "UObject/ConstructorHelpers.h"
 
 UFrogGameInstance::UFrogGameInstance(const FObjectInitializer& ObjectInitializer) : UGameInstance(ObjectInitializer)
 {
 	SaveInfo = Cast<USaveSlotSettings>(UGameplayStatics::LoadGameFromSlot(TEXT("SaveSlotSettings"), 0));
+
+
+UFrogGameInstance::UFrogGameInstance(const FObjectInitializer& ObjectInitializer) : UGameInstance(ObjectInitializer)
+{
+	// PS: I recommend using TSubclassOf and manually assigning the widget in BP
+	// Find the widget and assign 
+	static ConstructorHelpers::FClassFinder<UUserWidget> InGameUIBPClass(TEXT("/Content/Blueprints/FGIngame"));
+
+	if (InGameUIBPClass.Class != nullptr)
+	{
+		InGameUIClass = InGameUIBPClass.Class;
+	}
+
+	SaveInfo = Cast<USaveSlotSettings>(UGameplayStatics::LoadGameFromSlot("SaveSlotSettings", 0));
 	// Load the save slot info.
 	if (SaveInfo)
 	{

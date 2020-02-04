@@ -28,6 +28,16 @@ class AFrogGameCharacter : public ACharacter
 public:
 	AFrogGameCharacter();
 
+	/** Accessor Function for Current Score */
+	UFUNCTION(BlueprintCallable, Category = "Score")
+	float GetCurrentScore();
+
+    /** Updates the players score 
+	* @Param Score This is the amount to increase the players score by. This should only be positive!
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Score")
+	void UpdateCurrentScore(float Score);
+
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseTurnRate;
@@ -119,6 +129,13 @@ private:
 
 
 	void LoadGame();
+
+	// Hud stuff
+
+	/** The Players current score */
+	UPROPERTY(EditAnywhere, Category = "Score")
+	float CurrentScore;
+
 
 public:
 
