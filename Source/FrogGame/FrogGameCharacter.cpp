@@ -11,7 +11,7 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "TongueProjectile.h"
-#include "DrawDebugHelpers.h"
+#include "FrogGameInstance.h"
 #include "CableComponent.h"
 #include "Edible.h"
 
@@ -61,8 +61,20 @@ AFrogGameCharacter::AFrogGameCharacter()
 	RayMesh->SetupAttachment(RootComponent);
 	RayMesh->SetVisibility(false);
 
+	CurrentScore = 0.f;
+
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
+}
+
+float AFrogGameCharacter::GetCurrentScore()
+{
+	return CurrentScore;
+}
+
+void AFrogGameCharacter::UpdateCurrentScore(float Score)
+{
+	CurrentScore = CurrentScore + Score;
 }
 
 void AFrogGameCharacter::BeginPlay()
@@ -92,6 +104,9 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AFrogGameCharacter::StartJump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &AFrogGameCharacter::ExecuteJump);
 
+	PlayerInputComponent->BindAction("TestSave", IE_Pressed, this, &AFrogGameCharacter::SaveGame);
+	PlayerInputComponent->BindAction("TestLoad", IE_Pressed, this, &AFrogGameCharacter::LoadGame);
+	
 	PlayerInputComponent->BindAxis("MoveForward", this, &AFrogGameCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AFrogGameCharacter::MoveRight);
 
@@ -205,6 +220,7 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 		// If SizeInfo.Size = 10 and ScaledRadius = 50 then we get a value of 10/50 = 0.2 or 20%.
 		// Increase actor scale by this value. 
 		DesiredScale = GetActorScale() * (1 + SizeDiff);
+		UpdateCurrentScore(SizeInfo.ScorePoints);
 	}
 }
 
@@ -322,4 +338,16 @@ void AFrogGameCharacter::OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AAct
 			CurrentTarget = nullptr;
 		}
 	}
+}
+
+void AFrogGameCharacter::SaveGame() 
+{
+	UFrogGameInstance* GameInstance{Cast<UFrogGameInstance>(GetGameInstance())};
+	GameInstance->SaveCurrentToSlot();
+}
+
+void AFrogGameCharacter::LoadGame() 
+{
+	UFrogGameInstance* GameInstance{Cast<UFrogGameInstance>(GetGameInstance())};
+	GameInstance->LoadCurrentSave();
 }

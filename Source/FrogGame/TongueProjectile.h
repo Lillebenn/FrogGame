@@ -41,7 +41,7 @@ public:
 	float TongueInSpeed{4500.0f};
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tongue)
 	float TongueRange{700.0f};
-	void VInterpTo(FVector InterpTo, const float TongueSpeed, float DeltaTime);
+	void VInterpTo(FVector InterpTo, float TongueSpeed, float DeltaTime);
 	void AttachEdible(AActor* EdibleActor);
 
 

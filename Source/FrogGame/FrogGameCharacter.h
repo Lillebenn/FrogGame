@@ -28,6 +28,16 @@ class AFrogGameCharacter : public ACharacter
 public:
 	AFrogGameCharacter();
 
+	/** Accessor Function for Current Score */
+	UFUNCTION(BlueprintCallable, Category = "Score")
+	float GetCurrentScore();
+
+    /** Updates the players score 
+	* @Param Score This is the amount to increase the players score by. This should only be positive!
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Score")
+	void UpdateCurrentScore(float Score);
+
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseTurnRate;
@@ -40,7 +50,7 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	bool bTongueSpawned{false};
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, SaveGame, BlueprintReadOnly)
 	uint8 SizeTier{1};
 
 	UPROPERTY(EditDefaultsOnly)
@@ -54,7 +64,7 @@ public:
 
 	void Consume(AActor* OtherActor);
 
-	UPROPERTY(VisibleAnywhere, Category = Character)
+	UPROPERTY(VisibleAnywhere, SaveGame, Category = Character)
 	FVector ScaledCapsuleSize;
 protected:
 
@@ -112,7 +122,19 @@ private:
 	bool bIsCharging{false};
 
 	UFUNCTION()
-	void OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	void OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	                   int32 OtherBodyIndex);
+
+	void SaveGame();
+
+
+	void LoadGame();
+
+	// Hud stuff
+
+	/** The Players current score */
+	UPROPERTY(EditAnywhere, Category = "Score")
+	float CurrentScore;
 
 
 public:
@@ -126,4 +148,3 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };
- 

@@ -13,5 +13,4 @@ UCLASS()
 class FROGGAME_API UFrogGameUI : public UUserWidget
 {
 	GENERATED_BODY()
-	
 };

@@ -6,10 +6,11 @@
 #include "GameFramework/Pawn.h"
 #include "Edible.h"
 #include "EdibleInfo.h"
+#include "Saveable.h"
 #include "SimpleCreature.generated.h"
 
 UCLASS(Abstract)
-class FROGGAME_API ASimpleCreature : public APawn, public IEdible
+class FROGGAME_API ASimpleCreature : public APawn, public IEdible, public ISaveable
 {
 	GENERATED_BODY()
 
@@ -23,23 +24,23 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Collision)
 	class UCapsuleComponent* NavCollider;
 
-	
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UFloatingPawnMovement* MovementComponent;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Edible)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Edible)
 	FEdibleInfo EdibleInfo;
 
 protected:
 	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	void BeginPlay() override;
 
-public:	
+public:
 	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	void Tick(float DeltaTime) override;
 
 	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 
 	FEdibleInfo GetInfo_Implementation() const override;
@@ -48,8 +49,10 @@ public:
 
 	USceneComponent* GetTargetComponent_Implementation() override;
 
-	
+	void ActorSaveDataLoaded_Implementation() override;
+	void ActorSaveDataSaved_Implementation() override;
+
+
 private:
 	void CalculateBoundingSize();
-
 };
