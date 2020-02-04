@@ -104,7 +104,6 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AFrogGameCharacter::LookUpAtRate);
 }
 
-
 void AFrogGameCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -170,7 +169,6 @@ void AFrogGameCharacter::AutoAim()
 	}
 }
 
-
 void AFrogGameCharacter::TurnAtRate(float Rate)
 {
 	// calculate delta for this frame from the rate information
@@ -211,7 +209,6 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 		DesiredScale = GetActorScale() * (1 + SizeDiff);
 	}
 }
-
 
 void AFrogGameCharacter::MoveForward(float Value)
 {

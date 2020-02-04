@@ -12,7 +12,8 @@
 				"Engine",
 				"ApexDestruction",
 				"CoreUObject",
-				"AIModule"
+				"AIModule",
+				"UMG"
 			]
 		}
 	],
