@@ -2,7 +2,25 @@
 
 #include "FrogGameGameMode.h"
 #include "FrogGameCharacter.h"
+#include "Kismet/GameplayStatics.h"
 #include "UObject/ConstructorHelpers.h"
+
+void AFrogGameGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+
+	AFrogGameCharacter* MyCharacter = Cast<AFrogGameCharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
+
+	if (FrogGameHUDClass != nullptr)
+	{
+		CurrentWidget = CreateWidget<UUserWidget>(GetWorld(), FrogGameHUDClass);
+
+			if (CurrentWidget != nullptr)
+			{
+				CurrentWidget->AddToViewport();
+			}
+	}
+}
 
 AFrogGameGameMode::AFrogGameGameMode()
 {

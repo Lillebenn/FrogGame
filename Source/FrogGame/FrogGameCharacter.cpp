@@ -61,8 +61,20 @@ AFrogGameCharacter::AFrogGameCharacter()
 	RayMesh->SetupAttachment(RootComponent);
 	RayMesh->SetVisibility(false);
 
+	CurrentScore = 0.f;
+
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
+}
+
+float AFrogGameCharacter::GetCurrentScore()
+{
+	return CurrentScore;
+}
+
+void AFrogGameCharacter::UpdateCurrentScore(float Score)
+{
+	CurrentScore = CurrentScore + Score;
 }
 
 void AFrogGameCharacter::BeginPlay()
@@ -207,6 +219,7 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 		// If SizeInfo.Size = 10 and ScaledRadius = 50 then we get a value of 10/50 = 0.2 or 20%.
 		// Increase actor scale by this value. 
 		DesiredScale = GetActorScale() * (1 + SizeDiff);
+		UpdateCurrentScore(SizeInfo.ScorePoints);
 	}
 }
 
