@@ -135,6 +135,7 @@ void AFrogGameCharacter::AutoAim()
 {
 	TArray<AActor*> OverlappingActors;
 	BoxCollider->GetOverlappingActors(OverlappingActors);
+	const FVector BoxOrigin{BoxCollider->GetComponentLocation()};
 
 	for (AActor* Actor : OverlappingActors)
 	{
@@ -153,15 +154,14 @@ void AFrogGameCharacter::AutoAim()
 				{
 					CurrentTarget = Actor;
 				}
-				// If this actor is closer to the player than the current target
-				if (Actor->GetDistanceTo(this) < CurrentTarget->GetDistanceTo(this))
+				// If this actor is closer to the center of the box collider than the current target is
+				if (FVector::Dist(BoxOrigin, Actor->GetActorLocation()) < FVector::Dist(
+					BoxOrigin, CurrentTarget->GetActorLocation()))
 				{
 					CurrentTarget = Actor;
 					GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red,
 					                                 FString::Printf(
 						                                 TEXT("%s is the current target."), *CurrentTarget->GetName()));
-					// Need another calculation here to determine which is closer to the middle of the player's vision
-					// Also need to determine the point at which distance from the player becomes more or less important than distance from the view center
 				}
 			}
 		}
