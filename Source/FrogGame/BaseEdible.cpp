@@ -19,6 +19,16 @@ FEdibleInfo ABaseEdible::GetInfo_Implementation() const
 	return EdibleInfo;
 }
 
+void ABaseEdible::DisableActor_Implementation()
+{
+
+}
+
+USceneComponent* ABaseEdible::GetTargetComponent_Implementation()
+{
+	return GetDestructibleComponent();
+}
+
 void ABaseEdible::BeginPlay()
 {
 	Super::BeginPlay();

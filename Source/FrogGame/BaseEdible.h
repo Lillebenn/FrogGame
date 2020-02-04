@@ -23,6 +23,10 @@ public:
 
 	FEdibleInfo GetInfo_Implementation() const override;
 
+	void DisableActor_Implementation() override;
+
+	USceneComponent* GetTargetComponent_Implementation() override;
+
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;

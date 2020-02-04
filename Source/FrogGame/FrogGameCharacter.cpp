@@ -104,7 +104,6 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AFrogGameCharacter::LookUpAtRate);
 }
 
-
 void AFrogGameCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -115,7 +114,7 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	}
 	if (bScalingUp)
 	{
-		if (ScaleAlpha < 1.0f)
+		if (ScaleAlpha <= 1.0f)
 		{
 			ScaleAlpha += DeltaTime;
 			const FVector CurrentScale{GetActorScale()};
@@ -132,11 +131,11 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 }
 
 // TODO: Not sure if I like this running in tick. and iterating every single overlapping actor
-// In theory, I think we can save the closest object and only compare 
 void AFrogGameCharacter::AutoAim()
 {
 	TArray<AActor*> OverlappingActors;
 	BoxCollider->GetOverlappingActors(OverlappingActors);
+	const FVector BoxOrigin{BoxCollider->GetComponentLocation()};
 
 	for (AActor* Actor : OverlappingActors)
 	{
@@ -155,21 +154,19 @@ void AFrogGameCharacter::AutoAim()
 				{
 					CurrentTarget = Actor;
 				}
-				// If this actor is closer to the player than the current target
-				if (Actor->GetDistanceTo(this) < CurrentTarget->GetDistanceTo(this))
+				// If this actor is closer to the center of the box collider than the current target is
+				if (FVector::Dist(BoxOrigin, Actor->GetActorLocation()) < FVector::Dist(
+					BoxOrigin, CurrentTarget->GetActorLocation()))
 				{
 					CurrentTarget = Actor;
 					GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red,
 					                                 FString::Printf(
 						                                 TEXT("%s is the current target."), *CurrentTarget->GetName()));
-					// Need another calculation here to determine which is closer to the middle of the player's vision
-					// Also need to determine the point at which distance from the player becomes more or less important than distance from the view center
 				}
 			}
 		}
 	}
 }
-
 
 void AFrogGameCharacter::TurnAtRate(float Rate)
 {
@@ -197,7 +194,6 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 	if (OtherActor->Implements<UEdible>())
 	{
 		const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(OtherActor)};
-		// This probably happens much earlier than here. (When the target is being calculated)
 		OtherActor->Destroy();
 		// just reset the lerp values
 		ScaleAlpha = 0.0f;
@@ -211,7 +207,6 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 		DesiredScale = GetActorScale() * (1 + SizeDiff);
 	}
 }
-
 
 void AFrogGameCharacter::MoveForward(float Value)
 {
@@ -318,7 +313,7 @@ void AFrogGameCharacter::ExecuteJump()
 void AFrogGameCharacter::OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
                                        UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Lost sight of target!"));
+	//UE_LOG(LogTemp, Warning, TEXT("Lost sight of target!"));
 
 	if (OtherActor && (OtherActor != this) && OtherComp)
 	{

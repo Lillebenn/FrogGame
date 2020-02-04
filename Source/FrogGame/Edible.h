@@ -28,4 +28,11 @@ public:
 	 */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	FEdibleInfo GetInfo() const;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
+	void DisableActor();
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
+	USceneComponent* GetTargetComponent();
+
 };

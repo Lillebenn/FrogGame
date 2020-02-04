@@ -29,7 +29,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Edible)
 	FEdibleInfo EdibleInfo;
-	
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -44,6 +44,11 @@ public:
 
 	FEdibleInfo GetInfo_Implementation() const override;
 
+	void DisableActor_Implementation() override;
+
+	USceneComponent* GetTargetComponent_Implementation() override;
+
+	
 private:
 	void CalculateBoundingSize();
 
