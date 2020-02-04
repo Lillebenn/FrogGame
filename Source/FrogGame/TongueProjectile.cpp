@@ -29,7 +29,7 @@ ATongueProjectile::ATongueProjectile()
 	TongueMesh->SetupAttachment(RootComponent);
 }
 
-void ATongueProjectile::VInterpTo(const FVector InterpTo, const float DeltaTime)
+void ATongueProjectile::VInterpTo(const FVector InterpTo, const float TongueSpeed, const float DeltaTime)
 {
 	FHitResult HitResult = FHitResult(ForceInit);
 	const bool bSweep = !bShouldReturn; // If the tongue is returning, we don't care about checking for collisions
@@ -74,11 +74,12 @@ void ATongueProjectile::SeekTarget(const float DeltaTime)
 {
 	if (Target)
 	{
-		VInterpTo(IEdible::Execute_GetTargetComponent(Target)->GetComponentLocation(), DeltaTime);
+		VInterpTo(IEdible::Execute_GetTargetComponent(Target)->GetComponentLocation(), TongueOutSpeed, DeltaTime);
 	}
 	else
 	{
-		VInterpTo(TargetLocation, DeltaTime); // Keep going until you hit something or reach the max distance
+		VInterpTo(TargetLocation, TongueOutSpeed, DeltaTime);
+		// Keep going until you hit something or reach the max distance
 		if (FVector::Dist(TargetLocation, GetActorLocation()) <= 5.f)
 		{
 			bShouldReturn = true;
@@ -91,7 +92,7 @@ void ATongueProjectile::Return(const float DeltaTime)
 	if (Froggy)
 	{
 		const FVector ReturnPos{Froggy->GetRayMesh()->GetComponentLocation()};
-		VInterpTo(ReturnPos, DeltaTime);
+		VInterpTo(ReturnPos, TongueInSpeed, DeltaTime);
 		if (FVector::Dist(GetActorLocation(), ReturnPos) <= CollisionSphere->GetScaledSphereRadius())
 		{
 			Froggy->bTongueSpawned = false;
