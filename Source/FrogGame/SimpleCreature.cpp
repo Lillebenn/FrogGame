@@ -6,6 +6,7 @@
 #include "Engine/StaticMesh.h"
 #include "GameFramework/FloatingPawnMovement.h"
 #include "Components/CapsuleComponent.h"
+#include "GameFramework/Controller.h"
 
 
 // Sets default values
@@ -54,6 +55,29 @@ void ASimpleCreature::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 FEdibleInfo ASimpleCreature::GetInfo_Implementation() const
 {
 	return EdibleInfo;
+}
+
+void ASimpleCreature::DisableActor_Implementation()
+{
+	// Not 100% sure if this is necessary, but we don't need the AI to keep running after being snatched.
+	AController* AI{GetController()};
+	if (AI)
+	{
+		AI->UnPossess();
+	}
+}
+
+USceneComponent* ASimpleCreature::GetTargetComponent_Implementation()
+{
+	return CreatureMesh;
+}
+// Custom behaviour when saving or loading
+void ASimpleCreature::ActorSaveDataLoaded_Implementation()
+{
+}
+
+void ASimpleCreature::ActorSaveDataSaved_Implementation()
+{
 }
 
 void ASimpleCreature::CalculateBoundingSize()

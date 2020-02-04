@@ -16,7 +16,7 @@ ATongueProjectile::ATongueProjectile()
 	CollisionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionSphere"));
 	CollisionSphere->SetSphereRadius(16.0f);
 	CollisionSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	CollisionSphere->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECollisionResponse::ECR_Block);
+	CollisionSphere->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Block);
 	CollisionSphere->SetNotifyRigidBodyCollision(true);
 	CollisionSphere->OnComponentHit.AddDynamic(this, &ATongueProjectile::OnComponentHit);
 	// Set the SphereComponent as the root component.
@@ -29,25 +29,22 @@ ATongueProjectile::ATongueProjectile()
 	TongueMesh->SetupAttachment(RootComponent);
 }
 
-
-void ATongueProjectile::VInterpTo(const FVector InterpTo, const float DeltaTime)
+void ATongueProjectile::VInterpTo(const FVector InterpTo, const float TongueSpeed, const float DeltaTime)
 {
 	FHitResult HitResult = FHitResult(ForceInit);
-	if (!bShouldReturn)
+	const bool bSweep = !bShouldReturn; // If the tongue is returning, we don't care about checking for collisions
+
+	SetActorLocation(FMath::VInterpConstantTo(GetActorLocation(),
+	                                          InterpTo,
+	                                          DeltaTime, TongueSpeed), bSweep, &HitResult);
+	if (Target)
 	{
-		SetActorLocation(FMath::VInterpConstantTo(GetActorLocation(),
-		                                          InterpTo,
-		                                          DeltaTime, TongueSpeed), true, &HitResult);
+		return;
 	}
-	else
+
+	if (HitResult.IsValidBlockingHit())
 	{
-		SetActorLocation(FMath::VInterpConstantTo(GetActorLocation(),
-		                                          InterpTo,
-		                                          DeltaTime, TongueSpeed), false, &HitResult);
-	}
-	if (HitResult.IsValidBlockingHit() && !Target) // I feel like I'm adding a lot of useless shit because I'm tired lol
-	{
-		AActor* HitActor{HitResult.GetActor()};
+		Target = HitResult.GetActor();
 		bShouldReturn = true;
 	}
 }
@@ -65,28 +62,25 @@ void ATongueProjectile::OnComponentHit(UPrimitiveComponent* HitComp, AActor* Oth
 {
 	if (OtherActor->Implements<UEdible>())
 	{
-		if(Target)
+		if (Target)
 		{
 			AttachEdible(Target);
-			bShouldReturn = true;
 		}
 	}
+	bShouldReturn = true;
 }
 
 void ATongueProjectile::SeekTarget(const float DeltaTime)
 {
 	if (Target)
 	{
-		VInterpTo(Target->GetActorLocation(), DeltaTime);
-		if ((Target->GetActorLocation() - GetActorLocation()).Size() <= CollisionSphere->GetScaledSphereRadius())
-		{
-			bShouldReturn = true;
-		}
+		VInterpTo(IEdible::Execute_GetTargetComponent(Target)->GetComponentLocation(), TongueOutSpeed, DeltaTime);
 	}
 	else
 	{
-		VInterpTo(TargetLocation, DeltaTime); // Keep going until you hit something or reach the max distance
-		if ((TargetLocation - GetActorLocation()).Size() <= 10.f)
+		VInterpTo(TargetLocation, TongueOutSpeed, DeltaTime);
+		// Keep going until you hit something or reach the max distance
+		if (FVector::Dist(TargetLocation, GetActorLocation()) <= 5.f)
 		{
 			bShouldReturn = true;
 		}
@@ -98,8 +92,8 @@ void ATongueProjectile::Return(const float DeltaTime)
 	if (Froggy)
 	{
 		const FVector ReturnPos{Froggy->GetRayMesh()->GetComponentLocation()};
-		VInterpTo(ReturnPos, DeltaTime);
-		if ((GetActorLocation() - ReturnPos).Size() <= CollisionSphere->GetScaledSphereRadius())
+		VInterpTo(ReturnPos, TongueInSpeed, DeltaTime);
+		if (FVector::Dist(GetActorLocation(), ReturnPos) <= CollisionSphere->GetScaledSphereRadius())
 		{
 			Froggy->bTongueSpawned = false;
 			Froggy->Consume(Target);
@@ -121,7 +115,7 @@ void ATongueProjectile::BeginPlay()
 		// Just taking the X scale since the scale should be uniform
 		const float ActualRange{TongueRange * Froggy->GetActorScale().X};
 		TargetLocation = Froggy->GetRayMesh()->GetComponentLocation() + (Froggy->GetActorForwardVector() * ActualRange);
-		if(Froggy->CurrentTarget)
+		if (Froggy->CurrentTarget)
 		{
 			Target = Froggy->CurrentTarget;
 		}

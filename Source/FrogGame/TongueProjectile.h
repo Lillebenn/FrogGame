@@ -33,11 +33,15 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Cable)
 	class UMaterial* CableMaterial;
+	// Speed at which the tongue snaps out at a target
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Tongue)
-	float TongueSpeed{2500.0f};
+	float TongueOutSpeed{2500.0f};
+	// Speed at which the tongue returns.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Tongue)
+	float TongueInSpeed{4500.0f};
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tongue)
 	float TongueRange{700.0f};
-	void VInterpTo(FVector InterpTo, float DeltaTime);
+	void VInterpTo(FVector InterpTo, const float TongueSpeed, float DeltaTime);
 	void AttachEdible(AActor* EdibleActor);
 
 

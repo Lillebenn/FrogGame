@@ -14,6 +14,24 @@ UCLASS()
 class FROGGAME_API UFrogGameInstance : public UGameInstance
 {
 	GENERATED_BODY()
+public:
+	explicit UFrogGameInstance(const FObjectInitializer& ObjectInitializer);
+	void CreateNewSave(const FString& SaveName);
+	void LoadSaveGame(const FString& SaveName);
+	class UFrogSaveGame* LoadCurrentSave();
+	void SaveCurrentToSlot();
+	/**
+	 * @brief Get all the save slot names in existence.
+	 * We assume UserIndex will always be 0, so we can simply get a list of all the save slot names to display and load in a UMG Widget.
+	 */
+	TSet<FString> GetAllSaveNames() const;
+
+	FString GetCurrentSaveName() const
+	{
+		return CurrentSaveName;
+	}
+
+	void SetCurrentSaveName(const FString& NewName) { CurrentSaveName = NewName; }
 	
 protected:
 	// Dynamic reference to the blueprint class.
@@ -40,4 +58,16 @@ private:
 	// Reference to the Grid
 	class AGrid* CurrentGrid;
 
+	void Shutdown() override;
+	FActorSaveData SerializeActor(AActor* Actor) const;
+	FSaveGameArchive ReadSaveData(FActorSaveData& ActorRecord) const;
+	void SaveActors(const FString& SaveSlotName) const;
+	void LoadActors() const;
+private:
+	UPROPERTY()
+	FString CurrentSaveName;
+	UPROPERTY()
+	class UFrogSaveGame* CurrentSave{nullptr};
+	UPROPERTY()
+	class USaveSlotSettings* SaveInfo{nullptr};
 };

@@ -15,7 +15,7 @@ struct FEdibleInfo
 
 	// Actual growth increase from eating this object is retrieved by multiplying by object size with this coefficient.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Edible)
-	float GrowthCoefficient{1.f};
+	float GrowthCoefficient{0.5f};
 	// Amount of Score granted for eating this edible.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Edible)
 	float ScorePoints{1.f};
