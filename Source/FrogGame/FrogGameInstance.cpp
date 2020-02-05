@@ -17,7 +17,7 @@ UFrogGameInstance::UFrogGameInstance(const FObjectInitializer& ObjectInitializer
 {
 	// PS: I recommend using TSubclassOf and manually assigning the widget in BP
 	// Find the widget and assign 
-	static ConstructorHelpers::FClassFinder<UUserWidget> InGameUIBPClass(TEXT("/Content/Blueprints/FGIngame"));
+	static ConstructorHelpers::FClassFinder<UUserWidget> InGameUIBPClass(TEXT("/Content/Blueprints/HUD/FGIngame"));
 
 	if (InGameUIBPClass.Class != nullptr)
 	{
