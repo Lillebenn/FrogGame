@@ -24,6 +24,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Score", Meta = (BlueprintProtected = "true"))
 	TSubclassOf<class UUserWidget> FrogGameHUDClass;
 
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class AFrogGameCharacter> CharacterBP;
 	UPROPERTY()
 	class UUserWidget* CurrentWidget;
 };

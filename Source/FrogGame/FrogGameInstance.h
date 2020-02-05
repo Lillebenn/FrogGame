@@ -34,7 +34,10 @@ public:
 	}
 
 	void SetCurrentSaveName(const FString& NewName) { CurrentSaveName = NewName; }
-	
+
+	FORCEINLINE class UFrogGameUI* GetInGameUI() const { return InGameUI; }
+
+	void LoadInGameUI();
 protected:
 	// Dynamic reference to the blueprint class.
 	TSubclassOf<class UUserWidget> InGameUIClass;
@@ -42,17 +45,6 @@ protected:
 	// Internal reference to the blueprint for gameplay logic
 	UPROPERTY(BlueprintReadWrite, Category = "UI")
 	class UFrogGameUI* InGameUI;
-
-public:
-
-	UFrogGameInstance(const FObjectInitializer & ObjectInitialzer);
-
-	FORCEINLINE class UFrogGameUI* GetInGameUI() const { return InGameUI; }
-
-
-public:
-
-	void LoadIngameUI();
 
 
 private:
@@ -62,8 +54,6 @@ private:
 
 	void Shutdown() override;
 
-
-private:
 	UPROPERTY()
 	FString CurrentSaveName;
 	UPROPERTY()

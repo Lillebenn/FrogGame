@@ -11,9 +11,6 @@
 #include "FrogGameCharacter.h"
 #include "UObject/ConstructorHelpers.h"
 
-UFrogGameInstance::UFrogGameInstance(const FObjectInitializer& ObjectInitializer) : UGameInstance(ObjectInitializer)
-{
-	SaveInfo = Cast<USaveSlotSettings>(UGameplayStatics::LoadGameFromSlot(TEXT("SaveSlotSettings"), 0));
 
 
 UFrogGameInstance::UFrogGameInstance(const FObjectInitializer& ObjectInitializer) : UGameInstance(ObjectInitializer)
