@@ -4,6 +4,7 @@
 #include "AdvCreature.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/Controller.h"
+#include "FrogGameInstance.h"
 
 // Sets default values
 AAdvCreature::AAdvCreature()
@@ -44,10 +45,13 @@ FEdibleInfo AAdvCreature::GetInfo_Implementation() const
 
 void AAdvCreature::DisableActor_Implementation()
 {
+	// Not 100% sure if this is necessary, but we don't need the AI to keep running after being snatched.
 	AController* AI{GetController()};
 	if (AI)
 	{
+		AI->StopMovement();
 		AI->UnPossess();
+		AI->Destroy();
 	}
 }
 
@@ -55,14 +59,32 @@ USceneComponent* AAdvCreature::GetTargetComponent_Implementation()
 {
 	return GetCapsuleComponent();
 }
+
 // Custom behaviour when saving or loading
 void AAdvCreature::ActorSaveDataLoaded_Implementation()
 {
 }
 
-FTransform AAdvCreature::GetStartTransform()
+FTransform AAdvCreature::GetStartTransform_Implementation()
 {
 	return StartTransform;
+}
+
+void AAdvCreature::ResetActor_Implementation()
+{
+	AController* AI{GetController()};
+	AI->Reset();
+	SetActorTransform(StartTransform);
+}
+
+void AAdvCreature::OnDisabled_Implementation()
+{
+	DisableActor_Implementation();
+	UFrogGameInstance* FrogInstance{Cast<UFrogGameInstance>(GetWorld()->GetGameInstance())};
+	if (FrogInstance)
+	{
+		FrogInstance->OnActorDestroyed(this);
+	}
 }
 
 void AAdvCreature::ActorSaveDataSaved_Implementation()

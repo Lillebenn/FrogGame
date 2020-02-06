@@ -23,4 +23,13 @@ void AFrogGameMode::BeginPlay()
 		}
 	}
 	Cast<UFrogGameInstance>(GetGameInstance())->CreateCheckpoint();
+	if(bNewLevel)
+	{
+		UFrogGameInstance* Instance{Cast<UFrogGameInstance>(GetGameInstance())};
+		if(Instance)
+		{
+			Instance->LoadCurrentSave();
+			bNewLevel = false;
+		}
+	}
 }

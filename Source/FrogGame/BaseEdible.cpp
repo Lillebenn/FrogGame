@@ -19,10 +19,6 @@ FEdibleInfo ABaseEdible::GetInfo_Implementation() const
 	return EdibleInfo;
 }
 
-void ABaseEdible::DisableActor_Implementation()
-{
-
-}
 
 USceneComponent* ABaseEdible::GetTargetComponent_Implementation()
 {
@@ -37,7 +33,7 @@ void ABaseEdible::ActorSaveDataLoaded_Implementation()
 {
 }
 
-FTransform ABaseEdible::GetStartTransform()
+FTransform ABaseEdible::GetStartTransform_Implementation()
 {
 	return GetTransform();
 }

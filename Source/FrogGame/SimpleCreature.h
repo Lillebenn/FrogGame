@@ -37,7 +37,6 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
-
 public:
 	// Called every frame
 	void Tick(float DeltaTime) override;
@@ -56,10 +55,9 @@ public:
 
 	void ActorSaveDataLoaded_Implementation() override;
 	void ActorSaveDataSaved_Implementation() override;
+	void ResetActor_Implementation() override;
 
-	void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
-	FTransform GetStartTransform() override;
+	FTransform GetStartTransform_Implementation() override;
 private:
 	void CalculateBoundingSize();
 };

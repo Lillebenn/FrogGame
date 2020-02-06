@@ -20,7 +20,7 @@ public:
 	explicit UFrogGameInstance(const FObjectInitializer& ObjectInitializer);
 	void CreateNewSave(const FString& SaveName);
 	void LoadSaveGame(const FString& SaveName);
-	class UFrogSaveGame* LoadCurrentSave() const;
+	void LoadCurrentSave() const;
 	void SaveCurrentToSlot() const;
 
 
@@ -76,7 +76,8 @@ private:
 	UPROPERTY()
 	class USaveSlotSettings* SaveInfo{nullptr};
 
-
+	void LoadPlayerInfo(UFrogSaveGame* SaveGame) const;
 	void SaveActors(const FString& SaveSlotName) const;
-	void LoadActors(UFrogSaveGame* SaveGame) const;
+	void LoadSaveGame();
+	void LoadRespawnActors(UFrogSaveGame* SaveGame) const;
 };

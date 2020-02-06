@@ -39,7 +39,9 @@ public:
 	void ActorSaveDataSaved_Implementation() override;
 	void ActorSaveDataLoaded_Implementation() override;
 
-	FTransform GetStartTransform() override;
+	FTransform GetStartTransform_Implementation() override;
+	void ResetActor_Implementation() override;
+	void OnDisabled_Implementation() override;
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;

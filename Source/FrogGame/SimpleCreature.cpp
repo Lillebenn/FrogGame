@@ -95,12 +95,16 @@ void ASimpleCreature::ActorSaveDataSaved_Implementation()
 {
 }
 
-void ASimpleCreature::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void ASimpleCreature::ResetActor_Implementation()
 {
-	Super::EndPlay(EndPlayReason);
+	AController* AI{GetController()};
+	AI->Reset();
+	SetActorTransform(StartTransform);
 }
 
-FTransform ASimpleCreature::GetStartTransform()
+
+
+FTransform ASimpleCreature::GetStartTransform_Implementation()
 {
 	return StartTransform;
 }

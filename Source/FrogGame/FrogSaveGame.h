@@ -56,4 +56,5 @@ public:
 
 	TArray<FActorSaveData> SavedActors;
 	FActorSaveData PlayerCharacter;
+	FName LevelName;
 };

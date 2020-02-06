@@ -17,7 +17,7 @@ class AFrogGameMode : public AGameModeBase
 
 public:
 	AFrogGameMode();
-
+	bool bNewLevel{false};
 protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "User Interface", Meta = (BlueprintProtected = "true"))

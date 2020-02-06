@@ -37,5 +37,4 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	USceneComponent* GetTargetComponent();
 
-	virtual FTransform GetStartTransform();
 };
