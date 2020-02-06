@@ -36,6 +36,10 @@ struct FSaveGameArchive : public FObjectAndNameAsStringProxyArchive
 	}
 };
 
+struct FPlayerData
+{
+};
+
 /**
  * 
  */

@@ -38,6 +38,7 @@ void ASimpleCreature::BeginPlay()
 {
 	Super::BeginPlay();
 	CalculateBoundingSize();
+	StartTransform = GetTransform();
 }
 
 // Called every frame
@@ -64,7 +65,9 @@ void ASimpleCreature::DisableActor_Implementation()
 	AController* AI{GetController()};
 	if (AI)
 	{
+		AI->StopMovement();
 		AI->UnPossess();
+		AI->Destroy();
 	}
 }
 
@@ -72,6 +75,17 @@ USceneComponent* ASimpleCreature::GetTargetComponent_Implementation()
 {
 	return CreatureMesh;
 }
+
+void ASimpleCreature::OnDisabled_Implementation()
+{
+	DisableActor_Implementation();
+	UFrogGameInstance* FrogInstance{Cast<UFrogGameInstance>(GetWorld()->GetGameInstance())};
+	if (FrogInstance)
+	{
+		FrogInstance->OnActorDestroyed(this);
+	}
+}
+
 // Custom behaviour when saving or loading
 void ASimpleCreature::ActorSaveDataLoaded_Implementation()
 {
@@ -83,12 +97,12 @@ void ASimpleCreature::ActorSaveDataSaved_Implementation()
 
 void ASimpleCreature::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	UFrogGameInstance* FrogInstance{Cast<UFrogGameInstance>(GetWorld()->GetGameInstance())};
-	if(FrogInstance)
-	{
-		FrogInstance->OnActorDestroyed(this);
-	}
 	Super::EndPlay(EndPlayReason);
+}
+
+FTransform ASimpleCreature::GetStartTransform()
+{
+	return StartTransform;
 }
 
 void ASimpleCreature::CalculateBoundingSize()

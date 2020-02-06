@@ -31,6 +31,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Edible)
 	FEdibleInfo EdibleInfo;
 
+
+	UPROPERTY()
+	FTransform StartTransform;
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
@@ -49,12 +52,14 @@ public:
 
 	USceneComponent* GetTargetComponent_Implementation() override;
 
+	void OnDisabled_Implementation() override;
+
 	void ActorSaveDataLoaded_Implementation() override;
 	void ActorSaveDataSaved_Implementation() override;
 
 	void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-
+	FTransform GetStartTransform() override;
 private:
 	void CalculateBoundingSize();
 };

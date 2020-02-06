@@ -20,6 +20,8 @@ AAdvCreature::AAdvCreature()
 void AAdvCreature::BeginPlay()
 {
 	Super::BeginPlay();
+
+	StartTransform = GetTransform();
 }
 
 // Called every frame
@@ -56,6 +58,11 @@ USceneComponent* AAdvCreature::GetTargetComponent_Implementation()
 // Custom behaviour when saving or loading
 void AAdvCreature::ActorSaveDataLoaded_Implementation()
 {
+}
+
+FTransform AAdvCreature::GetStartTransform()
+{
+	return StartTransform;
 }
 
 void AAdvCreature::ActorSaveDataSaved_Implementation()

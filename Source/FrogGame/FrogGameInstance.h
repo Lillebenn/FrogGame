@@ -23,6 +23,7 @@ public:
 	class UFrogSaveGame* LoadCurrentSave() const;
 	void SaveCurrentToSlot() const;
 
+
 	void OnActorDestroyed(AActor* Actor) const;
 
 	void CreateCheckpoint();
@@ -56,12 +57,15 @@ public:
 		return CurrentSave;
 	}
 
+	static FActorSaveData SaveData(AActor* Actor);
+
 private:
 
 	// Reference to the Grid
 	class AGrid* CurrentGrid;
 
 	void Shutdown() override;
+
 
 	UPROPERTY()
 	FString CurrentSaveName;
@@ -72,8 +76,6 @@ private:
 	UPROPERTY()
 	class USaveSlotSettings* SaveInfo{nullptr};
 
-	FActorSaveData SerializeActor(AActor* Actor) const;
-	FSaveGameArchive ReadSaveData(const FActorSaveData& ActorRecord) const;
 
 	void SaveActors(const FString& SaveSlotName) const;
 	void LoadActors(UFrogSaveGame* SaveGame) const;

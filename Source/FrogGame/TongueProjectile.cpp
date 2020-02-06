@@ -55,6 +55,7 @@ void ATongueProjectile::AttachEdible(AActor* EdibleActor)
 	EdibleActor->AttachToActor(this, InRule);
 	// Turn off collision on the dragged object so we don't get affected by it on the way back.
 	EdibleActor->SetActorEnableCollision(false);
+	IEdible::Execute_OnDisabled(EdibleActor);
 }
 
 void ATongueProjectile::OnComponentHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,

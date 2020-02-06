@@ -348,6 +348,5 @@ void AFrogGameCharacter::SaveGame()
 
 void AFrogGameCharacter::LoadGame() 
 {
-	UFrogGameInstance* GameInstance{Cast<UFrogGameInstance>(GetGameInstance())};
-	GameInstance->LoadCurrentSave();
+	Cast<UFrogGameInstance>(GetGameInstance())->LoadCheckpoint();
 }

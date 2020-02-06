@@ -3,6 +3,7 @@
 #include "FrogGameMode.h"
 #include "FrogGameCharacter.h"
 #include "Kismet/GameplayStatics.h"
+#include "FrogGameInstance.h"
 
 AFrogGameMode::AFrogGameMode()
 {
@@ -21,4 +22,5 @@ void AFrogGameMode::BeginPlay()
 			CurrentWidget->AddToViewport();
 		}
 	}
+	Cast<UFrogGameInstance>(GetGameInstance())->CreateCheckpoint();
 }

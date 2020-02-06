@@ -33,6 +33,9 @@ public:
 	void DisableActor();
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
+	void OnDisabled();
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	USceneComponent* GetTargetComponent();
 
+	virtual FTransform GetStartTransform();
 };

@@ -37,6 +37,11 @@ void ABaseEdible::ActorSaveDataLoaded_Implementation()
 {
 }
 
+FTransform ABaseEdible::GetStartTransform()
+{
+	return GetTransform();
+}
+
 void ABaseEdible::BeginPlay()
 {
 	Super::BeginPlay();

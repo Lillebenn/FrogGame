@@ -64,8 +64,6 @@ public:
 
 	void Consume(AActor* OtherActor);
 
-	UPROPERTY(VisibleAnywhere, SaveGame, Category = Character)
-	FVector ScaledCapsuleSize;
 protected:
 
 	void BeginPlay() override;
@@ -133,7 +131,7 @@ private:
 	// Hud stuff
 
 	/** The Players current score */
-	UPROPERTY(EditAnywhere, Category = "Score")
+	UPROPERTY(EditAnywhere, SaveGame, Category = "Score")
 	float CurrentScore;
 
 

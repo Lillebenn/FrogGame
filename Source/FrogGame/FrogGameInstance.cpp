@@ -38,7 +38,6 @@ UFrogGameInstance::UFrogGameInstance(const FObjectInitializer& ObjectInitializer
 			CreateNewSave("New Save");
 		}
 	}
-	CreateCheckpoint();
 }
 
 void UFrogGameInstance::CreateNewSave(const FString& SaveName)
@@ -91,7 +90,7 @@ TSet<FString> UFrogGameInstance::GetAllSaveNames() const
 void UFrogGameInstance::Shutdown()
 {
 	// I have a feeling actors may be destroyed before this is called, but putting this here for now.
-	SaveCurrentToSlot();
+	//SaveCurrentToSlot();
 	// Save the game before quitting. We always set the current save to be the one last saved to, so this should just update that file.
 }
 
@@ -108,12 +107,12 @@ void UFrogGameInstance::SaveActors(const FString& SaveSlotName) const
 	SaveSlot->SavedActors.Empty(); // Clear the array so we don't get duplicates.
 	for (auto Actor : Actors)
 	{
-		SaveSlot->SavedActors.Add(SerializeActor(Actor));
+		SaveSlot->SavedActors.Add(SaveData(Actor));
 		ISaveable::Execute_ActorSaveDataSaved(Actor);
 	}
 	//if (AFrogGameCharacter* Froggy{Cast<AFrogGameCharacter>(GetWorld()->GetFirstPlayerController()->GetCharacter())})
 	//{
-	//	SaveSlot->PlayerCharacter = SerializeActor(Froggy);
+	//	SaveSlot->PlayerCharacter = SaveData(Froggy);
 	//}
 	// Execute some player logic when saving here if you want
 	if (!UGameplayStatics::SaveGameToSlot(SaveSlot, SaveSlotName, 0))
@@ -127,39 +126,41 @@ void UFrogGameInstance::LoadActors(UFrogSaveGame* SaveGame) const
 	for (FActorSaveData ActorRecord : SaveGame->SavedActors)
 	{
 		FVector SpawnPos = ActorRecord.ActorTransform.GetLocation();
-		FRotator SpawnRot = ActorRecord.ActorTransform.Rotator();
+		FRotator SpawnRot = ActorRecord.ActorTransform.GetRotation().Rotator();
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.Name = ActorRecord.ActorName;
 		UClass* SpawnClass = FindObject<UClass>(ANY_PACKAGE, *ActorRecord.ActorClass);
 		if (SpawnClass)
 		{
 			AActor* NewActor = GetWorld()->SpawnActor(SpawnClass, &SpawnPos, &SpawnRot, SpawnParams);
-			FSaveGameArchive Ar{ReadSaveData(ActorRecord)};
+			FMemoryReader MemoryReader(ActorRecord.ActorData, true);
+			FSaveGameArchive Ar(MemoryReader);
 			NewActor->Serialize(Ar);
-			NewActor->SetActorTransform(ActorRecord.ActorTransform);
 			ISaveable::Execute_ActorSaveDataLoaded(NewActor);
 		}
 	}
 	// Load data to the frog character here.
-	//AFrogGameCharacter* Froggy{Cast<AFrogGameCharacter>(GetPrimaryPlayerController()->GetCharacter())};
-	//FSaveGameArchive Ar{ReadSaveData(CurrentSave->PlayerCharacter)};
-	//Froggy->Serialize(Ar);
-	//Froggy->SetActorTransform(CurrentSave->PlayerCharacter.ActorTransform);
+	AFrogGameCharacter* Froggy{Cast<AFrogGameCharacter>(GetWorld()->GetFirstPlayerController()->GetCharacter())};
+	if (Froggy)
+	{
+		FActorSaveData PlayerRecord{SaveGame->PlayerCharacter};
+		FMemoryReader MemoryReader(PlayerRecord.ActorData, true);
+		FSaveGameArchive Ar(MemoryReader);
+		Froggy->Serialize(Ar);
+		Froggy->SetActorTransform(PlayerRecord.ActorTransform);
+	}
 }
 
-FSaveGameArchive UFrogGameInstance::ReadSaveData(const FActorSaveData& ActorRecord) const
-{
-	FMemoryReader MemoryReader(ActorRecord.ActorData, true);
-	FSaveGameArchive Ar(MemoryReader);
-	return Ar;
-}
 
-FActorSaveData UFrogGameInstance::SerializeActor(AActor* Actor) const
+
+FActorSaveData UFrogGameInstance::SaveData(AActor* Actor)
 {
 	FActorSaveData ActorRecord;
-	ActorRecord.ActorName = FName(*Actor->GetName());
 	ActorRecord.ActorClass = Actor->GetClass()->GetPathName();
+	ActorRecord.ActorName = FName(*Actor->GetName());
 	ActorRecord.ActorTransform = Actor->GetTransform();
+	FVector Location{Actor->GetActorLocation()};
+	UE_LOG(LogTemp, Warning, TEXT("%f, %f, %f"), Location.X, Location.Y, Location.Z);
 
 	FMemoryWriter MemoryWriter(ActorRecord.ActorData, true);
 	FSaveGameArchive Ar(MemoryWriter);
@@ -173,7 +174,7 @@ void UFrogGameInstance::CreateCheckpoint()
 	Checkpoint->SaveSlotName = TEXT("Checkpoint");
 	if (AFrogGameCharacter* Froggy = Cast<AFrogGameCharacter>(GetWorld()->GetFirstPlayerController()->GetCharacter()))
 	{
-		Checkpoint->PlayerCharacter = SerializeActor(Froggy);
+		Checkpoint->PlayerCharacter = SaveData(Froggy);
 	}
 }
 
@@ -183,6 +184,7 @@ void UFrogGameInstance::LoadCheckpoint() const
 	{
 		LoadActors(Checkpoint);
 	}
+	Checkpoint->SavedActors.Empty();
 }
 
 void UFrogGameInstance::OnNewCheckpoint() const
@@ -193,7 +195,7 @@ void UFrogGameInstance::OnNewCheckpoint() const
 		if (AFrogGameCharacter* Froggy = Cast<AFrogGameCharacter>(
 			GetWorld()->GetFirstPlayerController()->GetCharacter()))
 		{
-			Checkpoint->PlayerCharacter = SerializeActor(Froggy);
+			Checkpoint->PlayerCharacter = SaveData(Froggy);
 		}
 	}
 }
@@ -202,7 +204,7 @@ void UFrogGameInstance::OnActorDestroyed(AActor* Actor) const
 {
 	if (Checkpoint)
 	{
-		Checkpoint->SavedActors.Add(SerializeActor(Actor));
+		Checkpoint->SavedActors.Add(SaveData(Actor));
 		ISaveable::Execute_ActorSaveDataSaved(Actor);
 	}
 }
