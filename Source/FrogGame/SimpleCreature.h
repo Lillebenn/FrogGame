@@ -52,6 +52,8 @@ public:
 	void ActorSaveDataLoaded_Implementation() override;
 	void ActorSaveDataSaved_Implementation() override;
 
+	void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
 
 private:
 	void CalculateBoundingSize();

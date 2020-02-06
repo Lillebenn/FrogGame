@@ -12,18 +12,8 @@
 #include "UObject/ConstructorHelpers.h"
 
 
-
 UFrogGameInstance::UFrogGameInstance(const FObjectInitializer& ObjectInitializer) : UGameInstance(ObjectInitializer)
 {
-	// PS: I recommend using TSubclassOf and manually assigning the widget in BP
-	// Find the widget and assign 
-	static ConstructorHelpers::FClassFinder<UUserWidget> InGameUIBPClass(TEXT("/Content/Blueprints/HUD/FGIngame"));
-
-	if (InGameUIBPClass.Class != nullptr)
-	{
-		InGameUIClass = InGameUIBPClass.Class;
-	}
-
 	SaveInfo = Cast<USaveSlotSettings>(UGameplayStatics::LoadGameFromSlot("SaveSlotSettings", 0));
 	// Load the save slot info.
 	if (SaveInfo)
@@ -48,6 +38,7 @@ UFrogGameInstance::UFrogGameInstance(const FObjectInitializer& ObjectInitializer
 			CreateNewSave("New Save");
 		}
 	}
+	CreateCheckpoint();
 }
 
 void UFrogGameInstance::CreateNewSave(const FString& SaveName)
@@ -60,6 +51,7 @@ void UFrogGameInstance::CreateNewSave(const FString& SaveName)
 	SaveInfo->SaveSlotNames.Add(CurrentSaveName);
 	UGameplayStatics::SaveGameToSlot(CurrentSave, CurrentSaveName, 0);
 }
+
 
 void UFrogGameInstance::LoadSaveGame(const FString& SaveName)
 {
@@ -77,7 +69,7 @@ void UFrogGameInstance::LoadSaveGame(const FString& SaveName)
 
 UFrogSaveGame* UFrogGameInstance::LoadCurrentSave() const
 {
-	LoadActors();
+	LoadActors(GetCurrentSave());
 	return Cast<UFrogSaveGame>(UGameplayStatics::LoadGameFromSlot(CurrentSaveName, 0));
 }
 
@@ -89,6 +81,7 @@ void UFrogGameInstance::SaveCurrentToSlot() const
 		// Maybe save some other info as well.
 	}
 }
+
 
 TSet<FString> UFrogGameInstance::GetAllSaveNames() const
 {
@@ -129,14 +122,10 @@ void UFrogGameInstance::SaveActors(const FString& SaveSlotName) const
 	}
 }
 
-void UFrogGameInstance::LoadActors() const
+void UFrogGameInstance::LoadActors(UFrogSaveGame* SaveGame) const
 {
-	for (FActorSaveData ActorRecord : CurrentSave->SavedActors)
+	for (FActorSaveData ActorRecord : SaveGame->SavedActors)
 	{
-		// TODO: Should do some stuff here to determine if object was destroyed (or changed) since last save, and only in that case should we respawn/refill the actor with the given variables.
-		// Currently this would load EVERYTHING again
-		// A checkpoint system might be nice, with tags on objects to denote which checkpoint it's part of.
-		// So that if the player dies in one checkpoint we only need to check and reset the actors between that checkpoint and the next, instead of the whole level. 
 		FVector SpawnPos = ActorRecord.ActorTransform.GetLocation();
 		FRotator SpawnRot = ActorRecord.ActorTransform.Rotator();
 		FActorSpawnParameters SpawnParams;
@@ -176,4 +165,44 @@ FActorSaveData UFrogGameInstance::SerializeActor(AActor* Actor) const
 	FSaveGameArchive Ar(MemoryWriter);
 	Actor->Serialize(Ar);
 	return ActorRecord;
+}
+
+void UFrogGameInstance::CreateCheckpoint()
+{
+	Checkpoint = Cast<UFrogSaveGame>(UGameplayStatics::CreateSaveGameObject(UFrogSaveGame::StaticClass()));
+	Checkpoint->SaveSlotName = TEXT("Checkpoint");
+	if (AFrogGameCharacter* Froggy = Cast<AFrogGameCharacter>(GetWorld()->GetFirstPlayerController()->GetCharacter()))
+	{
+		Checkpoint->PlayerCharacter = SerializeActor(Froggy);
+	}
+}
+
+void UFrogGameInstance::LoadCheckpoint() const
+{
+	if (Checkpoint)
+	{
+		LoadActors(Checkpoint);
+	}
+}
+
+void UFrogGameInstance::OnNewCheckpoint() const
+{
+	if (Checkpoint)
+	{
+		Checkpoint->SavedActors.Empty();
+		if (AFrogGameCharacter* Froggy = Cast<AFrogGameCharacter>(
+			GetWorld()->GetFirstPlayerController()->GetCharacter()))
+		{
+			Checkpoint->PlayerCharacter = SerializeActor(Froggy);
+		}
+	}
+}
+
+void UFrogGameInstance::OnActorDestroyed(AActor* Actor) const
+{
+	if (Checkpoint)
+	{
+		Checkpoint->SavedActors.Add(SerializeActor(Actor));
+		ISaveable::Execute_ActorSaveDataSaved(Actor);
+	}
 }

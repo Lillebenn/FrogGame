@@ -22,6 +22,12 @@ public:
 	void LoadSaveGame(const FString& SaveName);
 	class UFrogSaveGame* LoadCurrentSave() const;
 	void SaveCurrentToSlot() const;
+
+	void OnActorDestroyed(AActor* Actor) const;
+
+	void CreateCheckpoint();
+	void LoadCheckpoint() const;
+	void OnNewCheckpoint() const;
 	/**
 	 * @brief Get all the save slot names in existence.
 	 * We assume UserIndex will always be 0, so we can simply get a list of all the save slot names to display and load in a UMG Widget.
@@ -35,17 +41,20 @@ public:
 
 	void SetCurrentSaveName(const FString& NewName) { CurrentSaveName = NewName; }
 
-	FORCEINLINE class UFrogGameUI* GetInGameUI() const { return InGameUI; }
+	//FORCEINLINE class UFrogGameUI* GetInGameUI() const { return InGameUI; }
 
-	void LoadInGameUI();
-protected:
-	// Dynamic reference to the blueprint class.
-	TSubclassOf<class UUserWidget> InGameUIClass;
-
-	// Internal reference to the blueprint for gameplay logic
-	UPROPERTY(BlueprintReadWrite, Category = "UI")
-	class UFrogGameUI* InGameUI;
-
+	//void LoadInGameUI();
+	//protected:
+	//	// Dynamic reference to the blueprint class.
+	//	TSubclassOf<class UUserWidget> InGameUIClass;
+	//
+	//	// Internal reference to the blueprint for gameplay logic
+	//	UPROPERTY(BlueprintReadWrite, Category = "UI")
+	//	class UFrogGameUI* InGameUI;
+	UFrogSaveGame* GetCurrentSave() const
+	{
+		return CurrentSave;
+	}
 
 private:
 
@@ -59,11 +68,13 @@ private:
 	UPROPERTY()
 	class UFrogSaveGame* CurrentSave{nullptr};
 	UPROPERTY()
+	class UFrogSaveGame* Checkpoint{nullptr};
+	UPROPERTY()
 	class USaveSlotSettings* SaveInfo{nullptr};
 
 	FActorSaveData SerializeActor(AActor* Actor) const;
 	FSaveGameArchive ReadSaveData(const FActorSaveData& ActorRecord) const;
 
 	void SaveActors(const FString& SaveSlotName) const;
-	void LoadActors() const;
+	void LoadActors(UFrogSaveGame* SaveGame) const;
 };

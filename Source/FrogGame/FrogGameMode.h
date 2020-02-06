@@ -14,21 +14,17 @@ class AFrogGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 
-		virtual void BeginPlay() override; // Override beginplay from the baseclass.
 
 public:
 	AFrogGameMode();
 
 protected:
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Score", Meta = (BlueprintProtected = "true"))
-	TSubclassOf<class UUserWidget> FrogGameHUDClass;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "User Interface", Meta = (BlueprintProtected = "true"))
+	TSubclassOf<class UUserWidget> FrogHUDClass;
 
-	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<class AFrogGameCharacter> CharacterBP;
 	UPROPERTY()
 	class UUserWidget* CurrentWidget;
+
+	void BeginPlay() override;
 };
-
-	
-

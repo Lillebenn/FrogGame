@@ -7,6 +7,7 @@
 #include "GameFramework/FloatingPawnMovement.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/Controller.h"
+#include "FrogGameInstance.h"
 
 
 // Sets default values
@@ -78,6 +79,16 @@ void ASimpleCreature::ActorSaveDataLoaded_Implementation()
 
 void ASimpleCreature::ActorSaveDataSaved_Implementation()
 {
+}
+
+void ASimpleCreature::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	UFrogGameInstance* FrogInstance{Cast<UFrogGameInstance>(GetWorld()->GetGameInstance())};
+	if(FrogInstance)
+	{
+		FrogInstance->OnActorDestroyed(this);
+	}
+	Super::EndPlay(EndPlayReason);
 }
 
 void ASimpleCreature::CalculateBoundingSize()
