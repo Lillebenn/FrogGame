@@ -88,7 +88,7 @@ void ATongueProjectile::OnComponentHit(UPrimitiveComponent* HitComp, AActor* Oth
 
 void ATongueProjectile::SeekTarget(const float DeltaTime)
 {
-/*	if (!BoneTarget.IsNone() && Target)
+	if (!BoneTarget.IsNone() && Target)
 	{
 		const FVector TargetLoc{
 			Cast<UDestructibleComponent>(Target->GetComponentByClass(UDestructibleComponent::StaticClass()))->
@@ -96,7 +96,7 @@ void ATongueProjectile::SeekTarget(const float DeltaTime)
 		};
 		VInterpTo(TargetLoc, TongueOutSpeed, DeltaTime);
 	}
-	else */if (Target)
+	else if (Target)
 	{
 		VInterpTo(IEdible::Execute_GetTargetComponent(Target)->GetComponentLocation(), TongueOutSpeed, DeltaTime);
 	}

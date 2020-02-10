@@ -57,17 +57,17 @@ void ABaseEdible::BeginPlay()
 		const FVector AbsoluteSize{RoughSize.GetAbs()};
 		// Get the average axis value of the bounding box
 		EdibleInfo.Size = (AbsoluteSize.X + AbsoluteSize.Y + AbsoluteSize.Z) / 3;
-		//UDestructibleMesh* DestructibleMesh{GetDestructibleComponent()->GetDestructibleMesh()};
-		//if (DestructibleMesh)
-		//{
-		//	FDestructibleSpecialHierarchyDepths Hierarchy;
-		//	Hierarchy.bEnableDebris = false;
-		//	Hierarchy.SupportDepth = 1;
-		//	DestructibleMesh->DefaultDestructibleParameters.SpecialHierarchyDepths = Hierarchy;
-		//	DestructibleMesh->FractureSettings->CellSiteCount = EdibleInfo.NumChunks;
-		//}
-		//// Temp for testing
-		//GetDestructibleComponent()->ApplyDamage(1000, GetActorLocation(), GetActorLocation(), 100);
+		UDestructibleMesh* DestructibleMesh{GetDestructibleComponent()->GetDestructibleMesh()};
+		if (DestructibleMesh)
+		{
+			FDestructibleSpecialHierarchyDepths Hierarchy;
+			Hierarchy.bEnableDebris = false;
+			Hierarchy.SupportDepth = 1;
+			DestructibleMesh->DefaultDestructibleParameters.SpecialHierarchyDepths = Hierarchy;
+			DestructibleMesh->FractureSettings->CellSiteCount = EdibleInfo.NumChunks;
+		}
+		// Temp for testing
+		GetDestructibleComponent()->ApplyDamage(1000, GetActorLocation(), GetActorLocation(), 100);
 
 		//Destroy();
 	}

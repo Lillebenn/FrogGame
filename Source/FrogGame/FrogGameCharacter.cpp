@@ -202,26 +202,25 @@ void AFrogGameCharacter::AutoAim()
 			{
 				const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(Actor)};
 				// Breaking something produces pieces two tiers smaller, so the actor must be exactly the size of the player
-				//if (Actor->GetComponentByClass(UDestructibleComponent::StaticClass()) && SizeInfo.SizeTier == SizeTier)
-				//{
-				//	UDestructibleComponent* Destructible{
-				//		Cast<UDestructibleComponent>(
-				//			Actor->GetComponentByClass(UDestructibleComponent::StaticClass()))
-				//	};
-				//	GetClosestChunk(Destructible);
-				//	CurrentTarget = Actor;
-				//}
-				//	// If the actor's size is less than or equal to the frog's size 
-				//else
-				if (SizeInfo.SizeTier < SizeTier && SizeInfo.SizeTier <= MaxSize)
+				if (Actor->GetComponentByClass(UDestructibleComponent::StaticClass()) && SizeInfo.SizeTier == SizeTier)
+				{
+					UDestructibleComponent* Destructible{
+						Cast<UDestructibleComponent>(
+							Actor->GetComponentByClass(UDestructibleComponent::StaticClass()))
+					};
+					GetClosestChunk(Destructible);
+					CurrentTarget = Actor;
+				}
+					// If the actor's size is less than or equal to the frog's size 
+				else if (SizeInfo.SizeTier < SizeTier && SizeInfo.SizeTier <= MaxSize)
 				{
 					CurrentTarget = Actor;
 					BoneTarget = FName();
 				}
-				//else
-				//{
-				//	BoneTarget = FName();
-				//}
+				else
+				{
+					BoneTarget = FName();
+				}
 			}
 		}
 	}
@@ -254,19 +253,18 @@ void AFrogGameCharacter::Consume(AActor* OtherActor, FName BoneName)
 	{
 		const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(OtherActor)};
 		float ActualSize{SizeInfo.Size};
-		//if (!BoneName.IsNone())
-		//{
-		//	UDestructibleComponent* Destructible{
-		//		Cast<UDestructibleComponent>(OtherActor->GetComponentByClass(UDestructibleComponent::StaticClass()))
-		//	};
-		//	Destructible->HideBoneByName(BoneName, PBO_Term);
-		//	ActualSize /= SizeInfo.NumChunks; // Assuming that the actor splits into roughly same size chunks.
-		//}
-		//else
-		//{
-		//	OtherActor->Destroy();
-		//}
-		OtherActor->Destroy();
+		if (!BoneName.IsNone())
+		{
+			UDestructibleComponent* Destructible{
+				Cast<UDestructibleComponent>(OtherActor->GetComponentByClass(UDestructibleComponent::StaticClass()))
+			};
+			Destructible->HideBoneByName(BoneName, PBO_Term);
+			ActualSize /= SizeInfo.NumChunks; // Assuming that the actor splits into roughly same size chunks.
+		}
+		else
+		{
+			OtherActor->Destroy();
+		}
 		// just reset the lerp values
 		ScaleAlpha = 0.0f;
 		bScalingUp = true;
@@ -314,7 +312,8 @@ void AFrogGameCharacter::MoveRight(float Value)
 void AFrogGameCharacter::UpdateCameraBoom(const float ScaleDelta)
 {
 	// TODO: Comment this
-	const float NewDistance = CameraBoom->TargetArmLength + ((CameraBoom->TargetArmLength / 100) * ScaleDelta);
+	const float BoomDelta{(CameraBoom->TargetArmLength) * ScaleDelta};
+	const float NewDistance{CameraBoom->TargetArmLength + BoomDelta};
 	CameraBoom->TargetArmLength = NewDistance;
 	FVector Extent{BoxCollider->GetUnscaledBoxExtent()};
 	Extent.X = (Tongue.GetDefaultObject()->TongueRange / 2.f) * GetActorScale().X;
@@ -371,9 +370,8 @@ void AFrogGameCharacter::Hitmonchan()
 	if (bPowerMode)
 	{
 		// Add execution here
-		
 	}
-	else 
+	else
 	{
 		// Does nothing if player is not in power mode.
 	}

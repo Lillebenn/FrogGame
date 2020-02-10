@@ -34,6 +34,10 @@ public:
 
 	UPROPERTY()
 	FTransform StartTransform;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Mesh)
+	bool bIsFlying{false};
+	
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;

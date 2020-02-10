@@ -25,12 +25,10 @@ ASimpleCreature::ASimpleCreature()
 
 	CreatureMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Creature Mesh"));
 	CreatureMesh->SetupAttachment(NavCollider);
-	CreatureMesh->SetRelativeLocation(FVector(0, 0, (CapsuleHeight / 2.0f) + 10.0f));
 
 	MovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComponent"));
 
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
-	// TODO: Make sure to disable AI Controller when grabbed by tongue.
 }
 
 // Called when the game starts or when spawned
@@ -39,6 +37,10 @@ void ASimpleCreature::BeginPlay()
 	Super::BeginPlay();
 	CalculateBoundingSize();
 	StartTransform = GetTransform();
+	if(bIsFlying)
+	{
+		CreatureMesh->SetRelativeLocation(FVector(0, 0, 50.f));
+	}
 }
 
 // Called every frame
