@@ -18,10 +18,10 @@ struct FEdibleInfo
 	float GrowthCoefficient{0.5f};
 	// Ammount of Points earned towards getting powermode gained when eating this object.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Edible)
-	float PowerPoints{ 1.f };
+	float PowerPoints{ 0.1f };
 	// Amount of Score granted for eating this edible.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Edible)
-	float ScorePoints{0.1f};
+	float ScorePoints{500.f};
 	// Size tier of the object. Clamped to 10.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Edible, meta = (ClampMax = 10))
 	uint8 SizeTier{0};

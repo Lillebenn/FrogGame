@@ -86,6 +86,10 @@ float AFrogGameCharacter::GetCurrentPowerPoints()
 void AFrogGameCharacter::UpdatePowerPoints(float Points)
 {
 	CurrentPowerPoints = CurrentPowerPoints + Points;
+	if (CurrentPowerPoints > MaxPowerPoints)
+	{
+		CurrentPowerPoints = MaxPowerPoints;
+	}
 }
 
 void AFrogGameCharacter::BeginPlay()
@@ -111,6 +115,7 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	check(PlayerInputComponent);
 
 	PlayerInputComponent->BindAction("Eat", IE_Pressed, this, &AFrogGameCharacter::Lickitung);
+	PlayerInputComponent->BindAction("PowerMode", IE_Pressed, this, &AFrogGameCharacter::PowerMode);
 
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AFrogGameCharacter::StartJump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &AFrogGameCharacter::ExecuteJump);
@@ -133,7 +138,15 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 void AFrogGameCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	if (bPowerMode)
+	{
+		PowerDrain(DeltaTime);
+		if (CurrentPowerPoints <= 0)
+		{
+			bPowerMode = false;
+			// Put in set back to frog mesh & rig here
+		}
+	}
 	if (bIsCharging)
 	{
 		ChargeJump(DeltaTime);
@@ -336,6 +349,19 @@ void AFrogGameCharacter::ExecuteJump()
 	// Remember to reset it.
 	//GetCharacterMovement()->JumpZVelocity = BaseJump;
 	JumpModifier = 0.f;
+}
+
+void AFrogGameCharacter::PowerMode()
+{
+	CurrentPowerPoints = MaxPowerPoints;
+	bPowerMode = true;
+	// Change from frog mesh and rig to powerfrog mesh & rig here.
+}
+
+void AFrogGameCharacter::PowerDrain(float DeltaTime)
+{
+	float DrainPoints = (DeltaTime * DrainSpeed);
+	UpdatePowerPoints(DrainPoints);
 }
 
 void AFrogGameCharacter::OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,

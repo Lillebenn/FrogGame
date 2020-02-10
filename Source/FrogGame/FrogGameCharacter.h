@@ -116,10 +116,16 @@ private:
 
 	void ExecuteJump();
 
+	/** Changing to Powermode **/
+	void PowerMode();
+
+	void PowerDrain(float DeltaTime);
+
 	float ScaleAlpha{0.0f};
 	bool bScalingUp{false};
 	FVector DesiredScale{0};
 
+	// Jump stuff
 	float BaseJump{450};
 	float JumpBonus{450};
 	// The speed at which the jump charges to max velocity when holding down spacebar.
@@ -127,6 +133,10 @@ private:
 	float ChargeSpeed{1.5f};
 	float JumpModifier{0};
 	bool bIsCharging{false};
+
+	// PowerMode Stuff
+	bool bPowerMode{false};
+	float DrainSpeed{ -0.075f };
 
 	UFUNCTION()
 	void OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
@@ -143,7 +153,8 @@ private:
 	UPROPERTY(EditAnywhere, SaveGame, Category = "Score")
 	float CurrentScore;
 	float CurrentPowerPoints;
-
+	float MaxPowerPoints{ 1.f };
+	
 
 public:
 
