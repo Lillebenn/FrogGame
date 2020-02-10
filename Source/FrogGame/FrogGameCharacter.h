@@ -111,6 +111,9 @@ private:
 	/** Lets the frog jump higher by charging a jump **/
 	void StartJump();
 
+	/** Uses fist to punch something, can only be used in power mode **/
+	void Hitmonchan();
+
 	/** Modifier for jump **/
 	void ChargeJump(float DeltaTime);
 

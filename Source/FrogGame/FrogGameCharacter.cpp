@@ -115,6 +115,9 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	check(PlayerInputComponent);
 
 	PlayerInputComponent->BindAction("Eat", IE_Pressed, this, &AFrogGameCharacter::Lickitung);
+	PlayerInputComponent->BindAction("Punch", IE_Pressed, this, &AFrogGameCharacter::Hitmonchan);
+
+	// This is here for test purposes, will activate when the powerbar is filled up.
 	PlayerInputComponent->BindAction("PowerMode", IE_Pressed, this, &AFrogGameCharacter::PowerMode);
 
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AFrogGameCharacter::StartJump);
@@ -331,6 +334,14 @@ void AFrogGameCharacter::Lickitung()
 void AFrogGameCharacter::StartJump()
 {
 	bIsCharging = true;
+}
+
+void AFrogGameCharacter::Hitmonchan()
+{
+	if (bPowerMode)
+	{
+		// Add execution here
+	}
 }
 
 void AFrogGameCharacter::ChargeJump(float DeltaTime)
