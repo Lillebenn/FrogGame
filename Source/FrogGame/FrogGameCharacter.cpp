@@ -62,6 +62,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	RayMesh->SetVisibility(false);
 
 	CurrentScore = 0.f;
+	CurrentPowerPoints = 0.f;
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
@@ -75,6 +76,16 @@ float AFrogGameCharacter::GetCurrentScore()
 void AFrogGameCharacter::UpdateCurrentScore(float Score)
 {
 	CurrentScore = CurrentScore + Score;
+}
+
+float AFrogGameCharacter::GetCurrentPowerPoints()
+{
+	return CurrentPowerPoints;
+}
+
+void AFrogGameCharacter::UpdatePowerPoints(float Points)
+{
+	CurrentPowerPoints = CurrentPowerPoints + Points;
 }
 
 void AFrogGameCharacter::BeginPlay()
@@ -221,6 +232,7 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 		// Increase actor scale by this value. 
 		DesiredScale = GetActorScale() * (1 + SizeDiff);
 		UpdateCurrentScore(SizeInfo.ScorePoints);
+		UpdatePowerPoints(SizeInfo.PowerPoints);
 	}
 }
 

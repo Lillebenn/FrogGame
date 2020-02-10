@@ -38,6 +38,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Score")
 	void UpdateCurrentScore(float Score);
 
+	UFUNCTION(BlueprintCallable, Category = "PowerMode")
+	float GetCurrentPowerPoints();
+
+	/**
+	* @Param Points This is the amount to increase the players powerpoints by. This should only be positive on objects!
+	*/
+	UFUNCTION(BlueprintCallable, Category = "PowerMode")
+	void UpdatePowerPoints(float Points);
+
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseTurnRate;
@@ -133,6 +142,7 @@ private:
 	/** The Players current score */
 	UPROPERTY(EditAnywhere, SaveGame, Category = "Score")
 	float CurrentScore;
+	float CurrentPowerPoints;
 
 
 public:
