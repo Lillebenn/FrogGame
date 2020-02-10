@@ -341,6 +341,11 @@ void AFrogGameCharacter::Hitmonchan()
 	if (bPowerMode)
 	{
 		// Add execution here
+		
+	}
+	else 
+	{
+		// Does nothing if player is not in power mode.
 	}
 }
 
