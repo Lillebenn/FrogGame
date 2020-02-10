@@ -38,6 +38,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Score")
 	void UpdateCurrentScore(float Score);
 
+	UFUNCTION(BlueprintCallable, Category = "PowerMode")
+	float GetCurrentPowerPoints();
+
+	/**
+	* @Param Points This is the amount to increase the players powerpoints by. This should only be positive on objects!
+	*/
+	UFUNCTION(BlueprintCallable, Category = "PowerMode")
+	void UpdatePowerPoints(float Points);
+
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseTurnRate;
@@ -107,15 +116,24 @@ private:
 	/** Lets the frog jump higher by charging a jump **/
 	void StartJump();
 
+	/** Uses fist to punch something, can only be used in power mode **/
+	void Hitmonchan();
+
 	/** Modifier for jump **/
 	void ChargeJump(float DeltaTime);
 
 	void ExecuteJump();
 
+	/** Changing to Powermode **/
+	void PowerMode();
+
+	void PowerDrain(float DeltaTime);
+
 	float ScaleAlpha{0.0f};
 	bool bScalingUp{false};
 	FVector DesiredScale{0};
 
+	// Jump stuff
 	float BaseJump{450};
 	float JumpBonus{450};
 	// The speed at which the jump charges to max velocity when holding down spacebar.
@@ -123,6 +141,10 @@ private:
 	float ChargeSpeed{1.5f};
 	float JumpModifier{0};
 	bool bIsCharging{false};
+
+	// PowerMode Stuff
+	bool bPowerMode{false};
+	float DrainSpeed{ -0.075f };
 
 	UFUNCTION()
 	void OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
@@ -139,7 +161,9 @@ private:
 	/** The Players current score */
 	UPROPERTY(EditAnywhere, SaveGame, Category = "Score")
 	float CurrentScore;
-
+	float CurrentPowerPoints;
+	float MaxPowerPoints{ 1.f };
+	
 
 public:
 

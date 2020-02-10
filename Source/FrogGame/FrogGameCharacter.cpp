@@ -63,6 +63,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	RayMesh->SetVisibility(false);
 
 	CurrentScore = 0.f;
+	CurrentPowerPoints = 0.f;
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
@@ -76,6 +77,20 @@ float AFrogGameCharacter::GetCurrentScore()
 void AFrogGameCharacter::UpdateCurrentScore(float Score)
 {
 	CurrentScore = CurrentScore + Score;
+}
+
+float AFrogGameCharacter::GetCurrentPowerPoints()
+{
+	return CurrentPowerPoints;
+}
+
+void AFrogGameCharacter::UpdatePowerPoints(float Points)
+{
+	CurrentPowerPoints = CurrentPowerPoints + Points;
+	if (CurrentPowerPoints > MaxPowerPoints)
+	{
+		CurrentPowerPoints = MaxPowerPoints;
+	}
 }
 
 void AFrogGameCharacter::BeginPlay()
@@ -101,6 +116,10 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	check(PlayerInputComponent);
 
 	PlayerInputComponent->BindAction("Eat", IE_Pressed, this, &AFrogGameCharacter::Lickitung);
+	PlayerInputComponent->BindAction("Punch", IE_Pressed, this, &AFrogGameCharacter::Hitmonchan);
+
+	// This is here for test purposes, will activate when the powerbar is filled up.
+	PlayerInputComponent->BindAction("PowerMode", IE_Pressed, this, &AFrogGameCharacter::PowerMode);
 
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AFrogGameCharacter::StartJump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &AFrogGameCharacter::ExecuteJump);
@@ -123,7 +142,15 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 void AFrogGameCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	if (bPowerMode)
+	{
+		PowerDrain(DeltaTime);
+		if (CurrentPowerPoints <= 0)
+		{
+			bPowerMode = false;
+			// Put in set back to frog mesh & rig here
+		}
+	}
 	if (bIsCharging)
 	{
 		ChargeJump(DeltaTime);
@@ -251,6 +278,7 @@ void AFrogGameCharacter::Consume(AActor* OtherActor, FName BoneName)
 		// Increase actor scale by this value. 
 		DesiredScale = GetActorScale() * (1 + SizeDiff);
 		UpdateCurrentScore(SizeInfo.ScorePoints);
+		UpdatePowerPoints(SizeInfo.PowerPoints);
 	}
 }
 
@@ -338,6 +366,19 @@ void AFrogGameCharacter::StartJump()
 	bIsCharging = true;
 }
 
+void AFrogGameCharacter::Hitmonchan()
+{
+	if (bPowerMode)
+	{
+		// Add execution here
+		
+	}
+	else 
+	{
+		// Does nothing if player is not in power mode.
+	}
+}
+
 void AFrogGameCharacter::ChargeJump(float DeltaTime)
 {
 	JumpModifier += (DeltaTime * ChargeSpeed); // The modifier determines what percentage of the jump bonus is applied
@@ -354,6 +395,19 @@ void AFrogGameCharacter::ExecuteJump()
 	// Remember to reset it.
 	//GetCharacterMovement()->JumpZVelocity = BaseJump;
 	JumpModifier = 0.f;
+}
+
+void AFrogGameCharacter::PowerMode()
+{
+	CurrentPowerPoints = MaxPowerPoints;
+	bPowerMode = true;
+	// Change from frog mesh and rig to powerfrog mesh & rig here.
+}
+
+void AFrogGameCharacter::PowerDrain(float DeltaTime)
+{
+	float DrainPoints = (DeltaTime * DrainSpeed);
+	UpdatePowerPoints(DrainPoints);
 }
 
 void AFrogGameCharacter::OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
