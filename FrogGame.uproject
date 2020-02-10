@@ -19,8 +19,8 @@
 	],
 	"Plugins": [
 		{
-			"Name": "ApexDestruction",
-			"Enabled": true
+			"Name": "CLionSourceCodeAccess",
+			"Enabled": false
 		}
 	]
 }
