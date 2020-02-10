@@ -50,8 +50,11 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	bool bTongueSpawned{false};
 
-	UPROPERTY(VisibleAnywhere, SaveGame, BlueprintReadOnly)
-	uint8 SizeTier{1};
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	uint8 SizeTier{2};
+
+	UPROPERTY(EditDefaultsOnly)
+	uint8 EdibleThreshold{2};
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class ATongueProjectile> Tongue;
@@ -61,8 +64,10 @@ public:
 
 	UPROPERTY()
 	AActor* CurrentTarget;
+	UPROPERTY()
+	FName BoneTarget{TEXT("None")};
 
-	void Consume(AActor* OtherActor);
+	void Consume(AActor* OtherActor, FName BoneName = FName());
 
 protected:
 
@@ -128,6 +133,7 @@ private:
 
 	void LoadGame();
 
+	void GetClosestChunk(class UDestructibleComponent* Component);
 	// Hud stuff
 
 	/** The Players current score */

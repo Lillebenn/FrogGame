@@ -22,16 +22,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Edible)
 	FEdibleInfo EdibleInfo;
 
+	// Interface stuff
 	FEdibleInfo GetInfo_Implementation() const override;
-
 	void DisableActor_Implementation() override;
-
 	USceneComponent* GetTargetComponent_Implementation() override;
 	void ActorSaveDataSaved_Implementation() override;
 	void ActorSaveDataLoaded_Implementation() override;
 
 	FTransform GetStartTransform() override;
+
+	
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
+
 };

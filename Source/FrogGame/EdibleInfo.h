@@ -22,8 +22,10 @@ struct FEdibleInfo
 	// Size tier of the object. Clamped to 10.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Edible, meta = (ClampMax = 10))
 	uint8 SizeTier{0};
-	
+
+	// Number of pieces dropped by the object after being "destroyed".
+	UPROPERTY(EditDefaultsOnly, Category = "Destruction")
+	int32 NumChunks{10};
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Edible)
 	float Size;
-
 };

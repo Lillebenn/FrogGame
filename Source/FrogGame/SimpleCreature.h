@@ -25,7 +25,7 @@ public:
 	class UCapsuleComponent* NavCollider;
 
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly)
 	class UFloatingPawnMovement* MovementComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Edible)

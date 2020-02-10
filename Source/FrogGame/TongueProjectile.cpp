@@ -4,6 +4,7 @@
 #include "TongueProjectile.h"
 #include "FrogGameCharacter.h"
 #include "Engine.h"
+#include "DestructibleComponent.h"
 #include "Edible.h"
 
 // Sets default values
@@ -27,6 +28,7 @@ ATongueProjectile::ATongueProjectile()
 	TongueMesh->SetSimulatePhysics(false);
 	TongueMesh->SetCollisionProfileName("NoCollision");
 	TongueMesh->SetupAttachment(RootComponent);
+
 }
 
 void ATongueProjectile::VInterpTo(const FVector InterpTo, const float TongueSpeed, const float DeltaTime)
@@ -53,8 +55,17 @@ void ATongueProjectile::AttachEdible(AActor* EdibleActor)
 {
 	const FAttachmentTransformRules InRule(EAttachmentRule::KeepWorld, false);
 	EdibleActor->AttachToActor(this, InRule);
+
 	// Turn off collision on the dragged object so we don't get affected by it on the way back.
 	EdibleActor->SetActorEnableCollision(false);
+	IEdible::Execute_OnDisabled(EdibleActor);
+}
+
+void ATongueProjectile::AttachEdible(AActor* EdibleActor, FName BoneName) const
+{
+	UDestructibleComponent* Destructible{
+		Cast<UDestructibleComponent>(EdibleActor->GetComponentByClass(UDestructibleComponent::StaticClass()))
+	};	
 	IEdible::Execute_OnDisabled(EdibleActor);
 }
 
@@ -63,7 +74,11 @@ void ATongueProjectile::OnComponentHit(UPrimitiveComponent* HitComp, AActor* Oth
 {
 	if (OtherActor->Implements<UEdible>())
 	{
-		if (Target)
+		if (!BoneTarget.IsNone() && Target)
+		{
+			AttachEdible(Target, BoneTarget);
+		}
+		else if (Target)
 		{
 			AttachEdible(Target);
 		}
@@ -73,7 +88,15 @@ void ATongueProjectile::OnComponentHit(UPrimitiveComponent* HitComp, AActor* Oth
 
 void ATongueProjectile::SeekTarget(const float DeltaTime)
 {
-	if (Target)
+/*	if (!BoneTarget.IsNone() && Target)
+	{
+		const FVector TargetLoc{
+			Cast<UDestructibleComponent>(Target->GetComponentByClass(UDestructibleComponent::StaticClass()))->
+			GetBoneLocation(BoneTarget)
+		};
+		VInterpTo(TargetLoc, TongueOutSpeed, DeltaTime);
+	}
+	else */if (Target)
 	{
 		VInterpTo(IEdible::Execute_GetTargetComponent(Target)->GetComponentLocation(), TongueOutSpeed, DeltaTime);
 	}
@@ -81,7 +104,7 @@ void ATongueProjectile::SeekTarget(const float DeltaTime)
 	{
 		VInterpTo(TargetLocation, TongueOutSpeed, DeltaTime);
 		// Keep going until you hit something or reach the max distance
-		if (FVector::Dist(TargetLocation, GetActorLocation()) <= 5.f)
+		if (FVector::Dist(TargetLocation, GetActorLocation()) <= 0.5f)
 		{
 			bShouldReturn = true;
 		}
@@ -94,10 +117,12 @@ void ATongueProjectile::Return(const float DeltaTime)
 	{
 		const FVector ReturnPos{Froggy->GetRayMesh()->GetComponentLocation()};
 		VInterpTo(ReturnPos, TongueInSpeed, DeltaTime);
+
 		if (FVector::Dist(GetActorLocation(), ReturnPos) <= CollisionSphere->GetScaledSphereRadius())
 		{
 			Froggy->bTongueSpawned = false;
-			Froggy->Consume(Target);
+
+			Froggy->Consume(Target, BoneTarget);
 
 			Destroy();
 		}
@@ -116,9 +141,14 @@ void ATongueProjectile::BeginPlay()
 		// Just taking the X scale since the scale should be uniform
 		const float ActualRange{TongueRange * Froggy->GetActorScale().X};
 		TargetLocation = Froggy->GetRayMesh()->GetComponentLocation() + (Froggy->GetActorForwardVector() * ActualRange);
+
 		if (Froggy->CurrentTarget)
 		{
 			Target = Froggy->CurrentTarget;
+			if (!Froggy->BoneTarget.IsNone())
+			{
+				BoneTarget = Froggy->BoneTarget;
+			}
 		}
 	}
 }

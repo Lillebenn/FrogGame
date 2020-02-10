@@ -10,6 +10,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "DestructibleComponent.h"
 #include "TongueProjectile.h"
 #include "FrogGameInstance.h"
 #include "CableComponent.h"
@@ -106,7 +107,7 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 
 	PlayerInputComponent->BindAction("TestSave", IE_Pressed, this, &AFrogGameCharacter::SaveGame);
 	PlayerInputComponent->BindAction("TestLoad", IE_Pressed, this, &AFrogGameCharacter::LoadGame);
-	
+
 	PlayerInputComponent->BindAxis("MoveForward", this, &AFrogGameCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AFrogGameCharacter::MoveRight);
 
@@ -151,33 +152,49 @@ void AFrogGameCharacter::AutoAim()
 	TArray<AActor*> OverlappingActors;
 	BoxCollider->GetOverlappingActors(OverlappingActors);
 	const FVector BoxOrigin{BoxCollider->GetComponentLocation()};
-
+	int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
+	if (MaxSize < 0)
+	{
+		MaxSize = 0;
+	}
 	for (AActor* Actor : OverlappingActors)
 	{
-		if (Actor == CurrentTarget) // Don't check against itself
+		if (Actor == CurrentTarget /*&& !Actor->GetComponentByClass(UDestructibleComponent::StaticClass())*/)
+			// Don't check against itself
 		{
 			continue;
 		}
 		if (Actor->Implements<UEdible>())
 		{
-			const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(Actor)};
-
-			// If the actor's size is less than or equal to the frog's size 
-			if (SizeInfo.SizeTier < SizeTier && SizeInfo.SizeTier >= SizeTier - 2)
+			// If this actor is closer to the center of the box collider than the current target is
+			const float DistToActor{FVector::Dist(BoxOrigin, Actor->GetActorLocation())};
+			const float DistToCurrentTarget{
+				CurrentTarget ? FVector::Dist(BoxOrigin, CurrentTarget->GetActorLocation()) : 5000.f
+			};
+			if (DistToActor < DistToCurrentTarget)
 			{
-				if (!CurrentTarget)
+				const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(Actor)};
+				// Breaking something produces pieces two tiers smaller, so the actor must be exactly the size of the player
+				//if (Actor->GetComponentByClass(UDestructibleComponent::StaticClass()) && SizeInfo.SizeTier == SizeTier)
+				//{
+				//	UDestructibleComponent* Destructible{
+				//		Cast<UDestructibleComponent>(
+				//			Actor->GetComponentByClass(UDestructibleComponent::StaticClass()))
+				//	};
+				//	GetClosestChunk(Destructible);
+				//	CurrentTarget = Actor;
+				//}
+				//	// If the actor's size is less than or equal to the frog's size 
+				//else
+				if (SizeInfo.SizeTier < SizeTier && SizeInfo.SizeTier <= MaxSize)
 				{
 					CurrentTarget = Actor;
+					BoneTarget = FName();
 				}
-				// If this actor is closer to the center of the box collider than the current target is
-				if (FVector::Dist(BoxOrigin, Actor->GetActorLocation()) < FVector::Dist(
-					BoxOrigin, CurrentTarget->GetActorLocation()))
-				{
-					CurrentTarget = Actor;
-					GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red,
-					                                 FString::Printf(
-						                                 TEXT("%s is the current target."), *CurrentTarget->GetName()));
-				}
+				//else
+				//{
+				//	BoneTarget = FName();
+				//}
 			}
 		}
 	}
@@ -195,7 +212,7 @@ void AFrogGameCharacter::LookUpAtRate(float Rate)
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 
-void AFrogGameCharacter::Consume(AActor* OtherActor)
+void AFrogGameCharacter::Consume(AActor* OtherActor, FName BoneName)
 {
 	if (Cable)
 	{
@@ -209,6 +226,19 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 	if (OtherActor->Implements<UEdible>())
 	{
 		const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(OtherActor)};
+		float ActualSize{SizeInfo.Size};
+		//if (!BoneName.IsNone())
+		//{
+		//	UDestructibleComponent* Destructible{
+		//		Cast<UDestructibleComponent>(OtherActor->GetComponentByClass(UDestructibleComponent::StaticClass()))
+		//	};
+		//	Destructible->HideBoneByName(BoneName, PBO_Term);
+		//	ActualSize /= SizeInfo.NumChunks; // Assuming that the actor splits into roughly same size chunks.
+		//}
+		//else
+		//{
+		//	OtherActor->Destroy();
+		//}
 		OtherActor->Destroy();
 		// just reset the lerp values
 		ScaleAlpha = 0.0f;
@@ -216,7 +246,7 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 		// We use the scaled radius value of the capsule collider to get an approximate size value for the main character.
 		const float ScaledRadius{GetCapsuleComponent()->GetScaledCapsuleRadius()};
 		// Compare this to the averaged bounding box size of the object being eaten and factor in the growth coefficient.
-		const float SizeDiff{SizeInfo.Size / ScaledRadius * SizeInfo.GrowthCoefficient};
+		const float SizeDiff{ActualSize / ScaledRadius * SizeInfo.GrowthCoefficient};
 		// If SizeInfo.Size = 10 and ScaledRadius = 50 then we get a value of 10/50 = 0.2 or 20%.
 		// Increase actor scale by this value. 
 		DesiredScale = GetActorScale() * (1 + SizeDiff);
@@ -340,13 +370,34 @@ void AFrogGameCharacter::OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AAct
 	}
 }
 
-void AFrogGameCharacter::SaveGame() 
+void AFrogGameCharacter::SaveGame()
 {
 	UFrogGameInstance* GameInstance{Cast<UFrogGameInstance>(GetGameInstance())};
 	GameInstance->SaveCurrentToSlot();
 }
 
-void AFrogGameCharacter::LoadGame() 
+void AFrogGameCharacter::LoadGame()
 {
 	Cast<UFrogGameInstance>(GetGameInstance())->LoadCheckpoint();
+}
+
+void AFrogGameCharacter::GetClosestChunk(UDestructibleComponent* Component)
+{
+	FName ClosestBone;
+	float DistToBone{5000.f};
+	for (const auto Bone : Component->GetAllSocketNames())
+	{
+		if (Component->IsBoneHiddenByName(Bone) || Bone == TEXT("Root"))
+		{
+			continue;
+		}
+		const float Distance{FVector::Dist(Component->GetBoneLocation(Bone), GetActorLocation())};
+		if (Distance < DistToBone)
+		{
+			ClosestBone = Bone;
+			DistToBone = Distance;
+		}
+	}
+	BoneTarget = ClosestBone;
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *BoneTarget.ToString());
 }

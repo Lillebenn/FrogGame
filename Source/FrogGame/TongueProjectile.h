@@ -42,7 +42,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tongue)
 	float TongueRange{700.0f};
 	void VInterpTo(FVector InterpTo, float TongueSpeed, float DeltaTime);
+	
 	void AttachEdible(AActor* EdibleActor);
+	void AttachEdible(AActor* EdibleActor, FName BoneName) const;
 
 
 	UPROPERTY(BlueprintReadOnly)
@@ -51,6 +53,7 @@ public:
 	class AFrogGameCharacter* Froggy;
 
 	bool bShouldReturn{false};
+	FName BoneTarget;
 	FVector TargetLocation;
 
 	UFUNCTION()
