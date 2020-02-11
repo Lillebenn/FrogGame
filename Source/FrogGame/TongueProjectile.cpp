@@ -23,6 +23,8 @@ ATongueProjectile::ATongueProjectile()
 	// Set the SphereComponent as the root component.
 	RootComponent = CollisionSphere;
 
+	PhysicsHandle = CreateDefaultSubobject<UPhysicsHandleComponent>(TEXT("Physics Handle"));
+
 	//Create the static mesh component 
 	TongueMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("TongueMesh"));
 	TongueMesh->SetSimulatePhysics(false);
@@ -73,6 +75,10 @@ void ATongueProjectile::AttachEdible(AActor* EdibleActor, FName BoneName) const
 	UDestructibleComponent* Destructible{
 		Cast<UDestructibleComponent>(EdibleActor->GetComponentByClass(UDestructibleComponent::StaticClass()))
 	};
+	const FVector AttachLocation{
+		CollisionSphere->GetComponentLocation() + (GetActorForwardVector() * CollisionSphere->GetScaledSphereRadius())
+	};
+	PhysicsHandle->GrabComponentAtLocationWithRotation(Destructible, BoneName, AttachLocation, GetActorRotation());
 	IEdible::Execute_OnDisabled(EdibleActor);
 }
 

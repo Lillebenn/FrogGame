@@ -172,7 +172,7 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	}
 	if(!bTongueSpawned)
 	{
-		//AutoAim();
+		AutoAim();
 	}
 }
 
