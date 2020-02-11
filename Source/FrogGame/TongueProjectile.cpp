@@ -42,13 +42,10 @@ void ATongueProjectile::VInterpTo(const FVector InterpTo, const float TongueSpee
 	                                          DeltaTime, TongueSpeed), bSweep, &HitResult);
 	if (Target)
 	{
-		if (!BoneTarget.IsNone())
+		// Get it to return in case it doesn't find a collision
+		if (FVector::Dist(GetActorLocation(), InterpTo) <= 0.f)
 		{
-			// Get it to return in case it doesn't find a collision
-			if (FVector::Dist(GetActorLocation(), InterpTo) <= 0.f)
-			{
-				AttachToEdible(Target);
-			}
+			AttachToEdible(Target);
 		}
 		return;
 	}

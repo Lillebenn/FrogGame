@@ -33,10 +33,12 @@ public:
 	FEdibleInfo GetInfo_Implementation() const override;
 
 	void DisableActor_Implementation() override;
+	void OnDisabled_Implementation() override;
 
 	USceneComponent* GetTargetComponent_Implementation() override;
 
 	void ActorSaveDataSaved_Implementation() override;
+	void CalculateBoundingSize();
 	void ActorSaveDataLoaded_Implementation() override;
 
 	FTransform GetStartTransform() override;

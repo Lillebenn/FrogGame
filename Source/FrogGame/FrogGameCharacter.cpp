@@ -15,6 +15,7 @@
 #include "FrogGameInstance.h"
 #include "CableComponent.h"
 #include "Edible.h"
+#include "DestructibleActor.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AFrogGameCharacter
@@ -58,9 +59,9 @@ AFrogGameCharacter::AFrogGameCharacter()
 	BoxCollider->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Overlap);
 	BoxCollider->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnBoxTraceEnd);
 	// Create a spawn point for linetrace, only used to linetrace so does not need to ever be visible.
-	RayMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RayMesh"));
-	RayMesh->SetupAttachment(RootComponent);
-	RayMesh->SetVisibility(false);
+
+	TongueStart = GetArrowComponent();
+	TongueStart->bEditableWhenInherited = true;
 
 	CurrentScore = 0.f;
 	CurrentPowerPoints = 0.f;
@@ -102,9 +103,9 @@ void AFrogGameCharacter::BeginPlay()
 	BoxCollider->SetRelativeLocation(FVector(BoxCollider->GetUnscaledBoxExtent().X, 0, 0));
 }
 
-UStaticMeshComponent* AFrogGameCharacter::GetRayMesh()
+UArrowComponent* AFrogGameCharacter::GetRayMesh()
 {
-	return RayMesh;
+	return TongueStart;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -139,6 +140,7 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AFrogGameCharacter::LookUpAtRate);
 }
 
+
 void AFrogGameCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -163,14 +165,14 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 			const FVector CurrentScale{GetActorScale()};
 			SetActorScale3D(FMath::Lerp(GetActorScale(), DesiredScale, ScaleAlpha));
 			const float ScaleDelta{(GetActorScale() - CurrentScale).X};
-			UpdateCameraBoom(ScaleDelta);
+			UpdateCharacterScale(ScaleDelta);
 		}
 		else
 		{
 			bScalingUp = false;
 		}
 	}
-	if(!bTongueSpawned)
+	if (!bTongueSpawned)
 	{
 		AutoAim();
 	}
@@ -205,16 +207,19 @@ void AFrogGameCharacter::AutoAim()
 			{
 				const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(Actor)};
 				// Breaking something produces pieces two tiers smaller, so the actor must be exactly the size of the player
-				if (Actor->GetComponentByClass(UDestructibleComponent::StaticClass())
-					&& SizeInfo.SizeTier == SizeTier
-					&& BoneTarget.IsNone())
+				ADestructibleActor* DestructibleActor{Cast<ADestructibleActor>(Actor)};
+				if (DestructibleActor && BoneTarget.IsNone())
 				{
-					UDestructibleComponent* Destructible{
-						Cast<UDestructibleComponent>(
-							Actor->GetComponentByClass(UDestructibleComponent::StaticClass()))
-					};
-					GetClosestChunk(Destructible);
-					CurrentTarget = Actor;
+					if (SizeInfo.SizeTier == SizeTier)
+					{
+						GetClosestChunk(DestructibleActor->GetDestructibleComponent());
+						CurrentTarget = Actor;
+					}
+					else if (SizeInfo.SizeTier <= MaxSize)
+					{
+						CurrentTarget = Actor;
+						BoneTarget = FName();
+					}
 				}
 					// If the actor's size is less than or equal to the frog's size 
 				else if (SizeInfo.SizeTier <= MaxSize
@@ -311,12 +316,32 @@ void AFrogGameCharacter::MoveRight(float Value)
 	}
 }
 
+void AFrogGameCharacter::UpdateCharacterScale(float ScaleDelta)
+{
+	UpdateCharacterMovementSpeed(ScaleDelta);
+	UpdateCameraBoom(ScaleDelta);
+	UpdateAimRange();
+	if (GetActorScale().X > SizeTier)
+		// Frog starts at size 2, so once it hits a scale factor of 2.0+, it will increase to size 3 etc
+	{
+		SizeTier++;
+	}
+}
+
+void AFrogGameCharacter::UpdateCharacterMovementSpeed(const float ScaleDelta)
+{
+	GetCharacterMovement()->MaxWalkSpeed += BaseMaxWalkSpeed * ScaleDelta;
+}
+
 void AFrogGameCharacter::UpdateCameraBoom(const float ScaleDelta)
 {
 	// TODO: Comment this
-	const float BoomDelta{BaseBoomRange * ScaleDelta};
-	const float NewDistance{CameraBoom->TargetArmLength + BoomDelta};
-	CameraBoom->TargetArmLength = NewDistance;
+	CameraBoom->TargetArmLength += BaseBoomRange * ScaleDelta;
+	UpdateAimRange();
+}
+
+void AFrogGameCharacter::UpdateAimRange()
+{
 	FVector Extent{BoxCollider->GetUnscaledBoxExtent()};
 	Extent.X = (Tongue.GetDefaultObject()->TongueRange / 2.f) * GetActorScale().X;
 	const float XDiff{Extent.X - BoxCollider->GetUnscaledBoxExtent().X};
@@ -340,15 +365,15 @@ void AFrogGameCharacter::Lickitung()
 		Cable->EndLocation = FVector(5, 0, 0); // Zero vector seems to bug
 
 
-		const FVector Location{RayMesh->GetComponentTransform().GetLocation()};
-		const FRotator Rotation{RayMesh->GetComponentTransform().GetRotation()};
+		const FVector Location{TongueStart->GetComponentTransform().GetLocation()};
+		const FRotator Rotation{TongueStart->GetComponentTransform().GetRotation()};
 		Cable->SetRelativeLocation(Location);
 		Cable->SetRelativeRotation(Rotation);
 		const FAttachmentTransformRules InRule(EAttachmentRule::KeepWorld, false);
-		Cable->AttachToComponent(RayMesh, InRule);
+		Cable->AttachToComponent(TongueStart, InRule);
 
 		ATongueProjectile* TongueCPP{
-			GetWorld()->SpawnActor<ATongueProjectile>(Tongue, RayMesh->GetComponentTransform())
+			GetWorld()->SpawnActor<ATongueProjectile>(Tongue, TongueStart->GetComponentTransform())
 		};
 		LastBone = BoneTarget;
 		BoneTarget = FName();
@@ -454,7 +479,7 @@ void AFrogGameCharacter::GetClosestChunk(UDestructibleComponent* Component)
 			DistToBone = Distance;
 		}
 	}
-	if(ClosestBone == LastBone)
+	if (ClosestBone == LastBone)
 	{
 		return;
 	}

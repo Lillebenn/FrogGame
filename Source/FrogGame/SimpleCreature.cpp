@@ -17,9 +17,7 @@ ASimpleCreature::ASimpleCreature()
 	PrimaryActorTick.bCanEverTick = true;
 
 	NavCollider = CreateDefaultSubobject<UCapsuleComponent>(TEXT("NavCollider"));
-	const float CapsuleHeight{80.0f};
-	const float Radius{15.f};
-	NavCollider->InitCapsuleSize(Radius, CapsuleHeight);
+	NavCollider->InitCapsuleSize(15.f, 80.0f);
 	NavCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	RootComponent = NavCollider;
 
