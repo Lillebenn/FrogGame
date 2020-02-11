@@ -75,6 +75,9 @@ public:
 	UPROPERTY()
 	FName BoneTarget{TEXT("None")};
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool bPowerMode{ false };
+
 	void Consume(AActor* OtherActor, FName BoneName = FName());
 
 protected:
@@ -142,7 +145,6 @@ private:
 	bool bIsCharging{false};
 
 	// PowerMode Stuff
-	bool bPowerMode{false};
 	float DrainSpeed{ -0.075f };
 
 	UFUNCTION()
