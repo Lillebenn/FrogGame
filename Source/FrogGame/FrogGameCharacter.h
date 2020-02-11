@@ -23,8 +23,15 @@ class AFrogGameCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UArrowComponent* TongueStart;
 
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* BoxCollider;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+	class USphereComponent* RightHandCollision;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+	class USphereComponent* LeftHandCollision; 
 public:
 	AFrogGameCharacter();
 
@@ -74,7 +81,10 @@ public:
 
 	UPROPERTY()
 	AActor* CurrentTarget;
-	UPROPERTY()
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool bPowerMode{ false };
+
 	FName BoneTarget;
 	FName LastBone;
 	void Consume(AActor* OtherActor, FName BoneName = FName());
@@ -159,9 +169,7 @@ private:
 	float BaseMaxWalkSpeed{600.f};
 
 	// PowerMode Stuff
-	bool bPowerMode{false};
-	float DrainSpeed{-0.075f};
-
+	float DrainSpeed{ -0.075f };
 
 	// Hud stuff
 
