@@ -28,7 +28,6 @@ ATongueProjectile::ATongueProjectile()
 	TongueMesh->SetSimulatePhysics(false);
 	TongueMesh->SetCollisionProfileName("NoCollision");
 	TongueMesh->SetupAttachment(RootComponent);
-
 }
 
 void ATongueProjectile::VInterpTo(const FVector InterpTo, const float TongueSpeed, const float DeltaTime)
@@ -41,6 +40,14 @@ void ATongueProjectile::VInterpTo(const FVector InterpTo, const float TongueSpee
 	                                          DeltaTime, TongueSpeed), bSweep, &HitResult);
 	if (Target)
 	{
+		if (!BoneTarget.IsNone())
+		{
+			// Get it to return in case it doesn't find a collision
+			if (FVector::Dist(GetActorLocation(), InterpTo) <= 0.f)
+			{
+				AttachToEdible(Target);
+			}
+		}
 		return;
 	}
 
@@ -65,12 +72,17 @@ void ATongueProjectile::AttachEdible(AActor* EdibleActor, FName BoneName) const
 {
 	UDestructibleComponent* Destructible{
 		Cast<UDestructibleComponent>(EdibleActor->GetComponentByClass(UDestructibleComponent::StaticClass()))
-	};	
+	};
 	IEdible::Execute_OnDisabled(EdibleActor);
 }
 
 void ATongueProjectile::OnComponentHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
                                        FVector NormalImpulse, const FHitResult& Hit)
+{
+	AttachToEdible(OtherActor);
+}
+
+void ATongueProjectile::AttachToEdible(AActor* OtherActor)
 {
 	if (OtherActor->Implements<UEdible>())
 	{
@@ -149,6 +161,7 @@ void ATongueProjectile::BeginPlay()
 			{
 				BoneTarget = Froggy->BoneTarget;
 			}
+			UE_LOG(LogTemp, Warning, TEXT("Target is: %s, Bone: %s"), *Target->GetName(), *BoneTarget.ToString());
 		}
 	}
 }
