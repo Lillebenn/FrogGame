@@ -31,6 +31,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Edible)
 	FEdibleInfo EdibleInfo;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Movement)
+	int MoveForward{ 500 };
 
 	UPROPERTY()
 	FTransform StartTransform;
