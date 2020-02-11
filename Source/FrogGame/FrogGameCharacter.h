@@ -20,6 +20,7 @@ class AFrogGameCharacter : public ACharacter
 	class UCameraComponent* FollowCamera;
 
 	/** Static mesh that is used to spawn linetraces **/
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UStaticMeshComponent* RayMesh;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
@@ -73,7 +74,6 @@ public:
 
 	UPROPERTY()
 	AActor* CurrentTarget;
-	UPROPERTY()
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool bPowerMode{ false };
