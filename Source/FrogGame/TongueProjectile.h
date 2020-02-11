@@ -31,6 +31,10 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Tongue)
 	class UProjectileMovementComponent* TongueProjectile;
 
+	/** Physics Handle component for grabbing fractured chunks **/
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Tongue)
+	class UPhysicsHandleComponent* PhysicsHandle;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Cable)
 	class UMaterial* CableMaterial;
 	// Speed at which the tongue snaps out at a target
@@ -59,6 +63,7 @@ public:
 	UFUNCTION()
 	void OnComponentHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                    FVector NormalImpulse, const FHitResult& Hit);
+	void AttachToEdible(AActor* OtherActor);
 
 private:
 	void SeekTarget(float DeltaTime);

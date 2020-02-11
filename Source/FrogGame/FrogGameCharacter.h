@@ -14,7 +14,7 @@ class AFrogGameCharacter : public ACharacter
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
-
+	float BaseBoomRange{500.f};
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
@@ -31,7 +31,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Score")
 	float GetCurrentScore();
 
-    /** Updates the players score 
+	/** Updates the players score 
 	* @Param Score This is the amount to increase the players score by. This should only be positive!
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Score")
@@ -61,6 +61,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	uint8 SizeTier{2};
 
+	// How many size tiers larger the player needs to be compared to the target item in order to eat it.
 	UPROPERTY(EditDefaultsOnly)
 	uint8 EdibleThreshold{2};
 
@@ -73,11 +74,12 @@ public:
 	UPROPERTY()
 	AActor* CurrentTarget;
 	UPROPERTY()
-	FName BoneTarget{TEXT("None")};
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool bPowerMode{ false };
 
+	FName BoneTarget;
+	FName LastBone;
 	void Consume(AActor* OtherActor, FName BoneName = FName());
 
 protected:
@@ -115,12 +117,22 @@ private:
 	/** Uses the tongue to eat something, and then grows **/
 	void Lickitung();
 
-	/** Lets the frog jump higher by charging a jump **/
-	void StartJump();
-
 	/** Uses fist to punch something, can only be used in power mode **/
 	void Hitmonchan();
+	
+	UFUNCTION()
+	void OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	                   int32 OtherBodyIndex);
 
+	void SaveGame();
+
+
+	void LoadGame();
+
+	void GetClosestChunk(class UDestructibleComponent* Component);
+	
+	/** Lets the frog jump higher by charging a jump **/
+	void StartJump();
 	/** Modifier for jump **/
 	void ChargeJump(float DeltaTime);
 
@@ -130,6 +142,7 @@ private:
 	void PowerMode();
 
 	void PowerDrain(float DeltaTime);
+
 
 	float ScaleAlpha{0.0f};
 	bool bScalingUp{false};
@@ -147,24 +160,14 @@ private:
 	// PowerMode Stuff
 	float DrainSpeed{ -0.075f };
 
-	UFUNCTION()
-	void OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-	                   int32 OtherBodyIndex);
-
-	void SaveGame();
-
-
-	void LoadGame();
-
-	void GetClosestChunk(class UDestructibleComponent* Component);
 	// Hud stuff
 
 	/** The Players current score */
 	UPROPERTY(EditAnywhere, SaveGame, Category = "Score")
 	float CurrentScore;
 	float CurrentPowerPoints;
-	float MaxPowerPoints{ 1.f };
-	
+	float MaxPowerPoints{1.f};
+
 
 public:
 

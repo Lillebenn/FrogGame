@@ -43,7 +43,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 300.0f; // The camera follows at this distance behind the character	
+	CameraBoom->TargetArmLength = BaseBoomRange; // The camera follows at this distance behind the character	
 	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 
 	// Create a follow camera
@@ -170,7 +170,10 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 			bScalingUp = false;
 		}
 	}
-	AutoAim();
+	if(!bTongueSpawned)
+	{
+		AutoAim();
+	}
 }
 
 // TODO: Not sure if I like this running in tick. and iterating every single overlapping actor
@@ -186,7 +189,7 @@ void AFrogGameCharacter::AutoAim()
 	}
 	for (AActor* Actor : OverlappingActors)
 	{
-		if (Actor == CurrentTarget /*&& !Actor->GetComponentByClass(UDestructibleComponent::StaticClass())*/)
+		if (Actor == CurrentTarget && !Actor->GetComponentByClass(UDestructibleComponent::StaticClass()))
 			// Don't check against itself
 		{
 			continue;
@@ -198,11 +201,13 @@ void AFrogGameCharacter::AutoAim()
 			const float DistToCurrentTarget{
 				CurrentTarget ? FVector::Dist(BoxOrigin, CurrentTarget->GetActorLocation()) : 5000.f
 			};
-			if (DistToActor < DistToCurrentTarget)
+			if (DistToActor <= DistToCurrentTarget)
 			{
 				const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(Actor)};
 				// Breaking something produces pieces two tiers smaller, so the actor must be exactly the size of the player
-				if (Actor->GetComponentByClass(UDestructibleComponent::StaticClass()) && SizeInfo.SizeTier == SizeTier)
+				if (Actor->GetComponentByClass(UDestructibleComponent::StaticClass())
+					&& SizeInfo.SizeTier == SizeTier
+					&& BoneTarget.IsNone())
 				{
 					UDestructibleComponent* Destructible{
 						Cast<UDestructibleComponent>(
@@ -212,13 +217,10 @@ void AFrogGameCharacter::AutoAim()
 					CurrentTarget = Actor;
 				}
 					// If the actor's size is less than or equal to the frog's size 
-				else if (SizeInfo.SizeTier < SizeTier && SizeInfo.SizeTier <= MaxSize)
+				else if (SizeInfo.SizeTier <= MaxSize
+					&& !Actor->GetComponentByClass(UDestructibleComponent::StaticClass()))
 				{
 					CurrentTarget = Actor;
-					BoneTarget = FName();
-				}
-				else
-				{
 					BoneTarget = FName();
 				}
 			}
@@ -238,7 +240,7 @@ void AFrogGameCharacter::LookUpAtRate(float Rate)
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 
-void AFrogGameCharacter::Consume(AActor* OtherActor, FName BoneName)
+void AFrogGameCharacter::Consume(AActor* OtherActor, const FName BoneName)
 {
 	if (Cable)
 	{
@@ -312,7 +314,7 @@ void AFrogGameCharacter::MoveRight(float Value)
 void AFrogGameCharacter::UpdateCameraBoom(const float ScaleDelta)
 {
 	// TODO: Comment this
-	const float BoomDelta{(CameraBoom->TargetArmLength) * ScaleDelta};
+	const float BoomDelta{BaseBoomRange * ScaleDelta};
 	const float NewDistance{CameraBoom->TargetArmLength + BoomDelta};
 	CameraBoom->TargetArmLength = NewDistance;
 	FVector Extent{BoxCollider->GetUnscaledBoxExtent()};
@@ -348,10 +350,12 @@ void AFrogGameCharacter::Lickitung()
 		ATongueProjectile* TongueCPP{
 			GetWorld()->SpawnActor<ATongueProjectile>(Tongue, RayMesh->GetComponentTransform())
 		};
+		LastBone = BoneTarget;
+		BoneTarget = FName();
 		Cable->SetMaterial(0, TongueCPP->CableMaterial);
 
 
-		Cable->SetAttachEndTo(TongueCPP, TEXT("None"));
+		Cable->SetAttachEndTo(TongueCPP, FName());
 		Cable->RegisterComponent();
 
 		bTongueSpawned = true;
@@ -399,12 +403,12 @@ void AFrogGameCharacter::PowerMode()
 {
 	CurrentPowerPoints = MaxPowerPoints;
 	bPowerMode = true;
-	// Change from frog mesh and rig to powerfrog mesh & rig here.
+	// Change from frog mesh and rig to power-frog mesh & rig here.
 }
 
 void AFrogGameCharacter::PowerDrain(float DeltaTime)
 {
-	float DrainPoints = (DeltaTime * DrainSpeed);
+	const float DrainPoints = (DeltaTime * DrainSpeed);
 	UpdatePowerPoints(DrainPoints);
 }
 
@@ -449,6 +453,10 @@ void AFrogGameCharacter::GetClosestChunk(UDestructibleComponent* Component)
 			ClosestBone = Bone;
 			DistToBone = Distance;
 		}
+	}
+	if(ClosestBone == LastBone)
+	{
+		return;
 	}
 	BoneTarget = ClosestBone;
 	UE_LOG(LogTemp, Warning, TEXT("%s"), *BoneTarget.ToString());
