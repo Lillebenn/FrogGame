@@ -20,8 +20,9 @@ class AFrogGameCharacter : public ACharacter
 	class UCameraComponent* FollowCamera;
 
 	/** Static mesh that is used to spawn linetraces **/
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	class UStaticMeshComponent* RayMesh;
+	UPROPERTY(VisibleAnywhere, Category = Character, meta = (AllowPrivateAccess = "true"))
+	class UArrowComponent* TongueStart;
+
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* BoxCollider;
@@ -57,7 +58,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseTurnRate;
 
-	class UStaticMeshComponent* GetRayMesh();
+	UArrowComponent* GetRayMesh();
 	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
@@ -117,8 +118,10 @@ protected:
 
 private:
 
-	/** Updates the frogs length **/
+	void UpdateCharacterScale(float ScaleDelta);
+	void UpdateCharacterMovementSpeed(const float ScaleDelta);
 	void UpdateCameraBoom(float ScaleDelta);
+	void UpdateAimRange();
 
 	/** Uses the tongue to eat something, and then grows **/
 	void Lickitung();
@@ -162,6 +165,8 @@ private:
 	float ChargeSpeed{1.5f};
 	float JumpModifier{0};
 	bool bIsCharging{false};
+
+	float BaseMaxWalkSpeed{600.f};
 
 	// PowerMode Stuff
 	float DrainSpeed{ -0.075f };

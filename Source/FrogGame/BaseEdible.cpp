@@ -5,7 +5,6 @@
 #include "DestructibleComponent.h"
 #include "DestructibleFractureSettings.h"
 #include "Engine/StaticMesh.h"
-#include "Components/StaticMeshComponent.h"
 #include "DestructibleMesh.h"
 
 ABaseEdible::ABaseEdible()
@@ -14,8 +13,10 @@ ABaseEdible::ABaseEdible()
 	{
 		GetDestructibleComponent()->SetCollisionObjectType(ECC_GameTraceChannel1);
 	}
+}
 
-	
+void ABaseEdible::Tick(float DeltaTime)
+{
 }
 
 
@@ -51,13 +52,22 @@ void ABaseEdible::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (GetDestructibleComponent())
+	UDestructibleComponent* Destructible{GetDestructibleComponent()};
+	if (Destructible)
 	{
-		const FVector RoughSize = GetDestructibleComponent()->GetDestructibleMesh()->GetBounds().GetBox().GetSize();
+		if (StaticMeshes.Num() > 0)
+		{
+			UStaticMesh* Mesh{StaticMeshes[FMath::RandRange(0, StaticMeshes.Num() - 1)]};
+			UDestructibleMesh* DestructibleMesh{NewObject<UDestructibleMesh>(this, UDestructibleMesh::StaticClass())};
+			DestructibleMesh->BuildFromStaticMesh(*Mesh);
+			DestructibleMesh->CreateFractureSettings();
+			Destructible->SetDestructibleMesh(DestructibleMesh);
+		}
+		const FVector RoughSize = Destructible->GetDestructibleMesh()->GetBounds().GetBox().GetSize();
 		const FVector AbsoluteSize{RoughSize.GetAbs()};
 		// Get the average axis value of the bounding box
 		EdibleInfo.Size = (AbsoluteSize.X + AbsoluteSize.Y + AbsoluteSize.Z) / 3;
-		UDestructibleMesh* DestructibleMesh{GetDestructibleComponent()->GetDestructibleMesh()};
+		UDestructibleMesh* DestructibleMesh{Destructible->GetDestructibleMesh()};
 		if (DestructibleMesh)
 		{
 			FDestructibleSpecialHierarchyDepths Hierarchy;
@@ -72,4 +82,3 @@ void ABaseEdible::BeginPlay()
 		//Destroy();
 	}
 }
-

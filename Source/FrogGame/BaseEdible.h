@@ -19,9 +19,12 @@ class FROGGAME_API ABaseEdible : public ADestructibleActor, public IEdible, publ
 
 public:
 	ABaseEdible();
+	void Tick(float DeltaTime) override;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Edible)
 	FEdibleInfo EdibleInfo;
-
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Edible)
+	TArray<class UStaticMesh*> StaticMeshes;
 	// Interface stuff
 	FEdibleInfo GetInfo_Implementation() const override;
 	void DisableActor_Implementation() override;
@@ -31,9 +34,8 @@ public:
 
 	FTransform GetStartTransform() override;
 
-	
+
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
-
 };
