@@ -25,6 +25,12 @@ class AFrogGameCharacter : public ACharacter
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* BoxCollider;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+	class USphereComponent* RightHandCollision;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+	class USphereComponent* LeftHandCollision; 
 public:
 	AFrogGameCharacter();
 

@@ -7,6 +7,7 @@
 #include "Components/BoxComponent.h"
 #include "Components/InputComponent.h"
 #include "Engine.h"
+#include "Engine/EngineTypes.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -61,7 +62,16 @@ AFrogGameCharacter::AFrogGameCharacter()
 	RayMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RayMesh"));
 	RayMesh->SetupAttachment(RootComponent);
 	RayMesh->SetVisibility(false);
+	
+	// Creates a collision sphere and attaches it to the characters right hand.
+	RightHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("RightHandCollision"));
+	RightHandCollision->SetupAttachment(GetMesh(), FName("hand_r"));
 
+	// Creates a collision sphere and attaches it to the characters left hand.
+	LeftHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("LeftHandCollision"));
+	LeftHandCollision->SetupAttachment(GetMesh(), FName("hand_l"));
+
+	// Setting Hud trackers to 0 at the start.
 	CurrentScore = 0.f;
 	CurrentPowerPoints = 0.f;
 
