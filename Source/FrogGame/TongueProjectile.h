@@ -30,10 +30,11 @@ public:
 	/** Projectile component **/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Tongue)
 	class UProjectileMovementComponent* TongueProjectile;
-	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Cable)
 	class UMaterial* CableMaterial;
-	
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class UCameraShake> TongueShakeEffect;
 	// Speed at which the tongue snaps out at a target. Default value - Will be overridden by FrogCharacter.
 	float TongueOutSpeed{4500.0f};
 	// Speed at which the tongue returns. Default value - Will be overridden by FrogCharacter.
@@ -46,7 +47,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tongue)
 	float TongueRange{700.0f};
 	void VInterpTo(FVector InterpTo, float TongueSpeed, float DeltaTime);
-	
+
 	void AttachEdible(AActor* EdibleActor);
 	void AttachEdible(AActor* EdibleActor, FName BoneName);
 

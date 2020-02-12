@@ -96,6 +96,7 @@ void ATongueProjectile::AttachToEdible(AActor* OtherActor)
 	{
 		if (!BoneTarget.IsNone() && Target)
 		{
+			UE_LOG(LogTemp, Warning, TEXT("Attaching to bone!"))
 			AttachEdible(Target, BoneTarget);
 		}
 		else if (Target)
@@ -103,6 +104,8 @@ void ATongueProjectile::AttachToEdible(AActor* OtherActor)
 			AttachEdible(Target);
 		}
 	}
+	GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayCameraShake(TongueShakeEffect);
+
 	bShouldReturn = true;
 }
 
