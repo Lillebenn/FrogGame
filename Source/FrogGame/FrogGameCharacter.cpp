@@ -77,6 +77,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 
 	TongueInSpeed = BaseTongueInSpeed;
 	TongueOutSpeed = BaseTongueOutSpeed;
+	CurrentJump = BaseJump;
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
@@ -190,7 +191,7 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	}
 }
 
-// TODO: Not sure if I like this running in tick. and iterating every single overlapping actor
+// TODO: Choose target close to box origin AND player
 void AFrogGameCharacter::AutoAim()
 {
 	TArray<AActor*> OverlappingActors;
@@ -255,6 +256,11 @@ void AFrogGameCharacter::LookUpAtRate(float Rate)
 {
 	// calculate delta for this frame from the rate information
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
+}
+
+void AFrogGameCharacter::Landed(const FHitResult& Hit)
+{
+	GetCharacterMovement()->JumpZVelocity = CurrentJump;
 }
 
 void AFrogGameCharacter::Consume(AActor* OtherActor, const FName BoneName)
@@ -344,7 +350,8 @@ void AFrogGameCharacter::UpdateCharacterMovement(const float ScaleDelta)
 {
 	UCharacterMovementComponent* Movement{GetCharacterMovement()};
 	Movement->MaxWalkSpeed += BaseMaxWalkSpeed * ScaleDelta;
-	Movement->JumpZVelocity += BaseJump * ScaleDelta;
+	CurrentJump += BaseJump * ScaleDelta;
+	Movement->JumpZVelocity = CurrentJump;
 	TongueInSpeed += BaseTongueInSpeed * ScaleDelta;
 	TongueOutSpeed += BaseTongueOutSpeed * ScaleDelta;
 }
@@ -389,10 +396,14 @@ void AFrogGameCharacter::Lickitung()
 		Cable->AttachToComponent(TongueStart, InRule);
 
 		ATongueProjectile* TongueCPP{
-			GetWorld()->SpawnActor<ATongueProjectile>(Tongue, TongueStart->GetComponentTransform())
+			NewObject<ATongueProjectile>(this, Tongue)
 		};
+
 		TongueCPP->TongueInSpeed = TongueInSpeed;
 		TongueCPP->TongueOutSpeed = TongueOutSpeed;
+		TongueCPP = GetWorld()->SpawnActor<ATongueProjectile>(TongueCPP->GetClass(),
+		                                                      TongueStart->GetComponentTransform());
+
 		LastBone = BoneTarget;
 		BoneTarget = FName();
 		Cable->SetMaterial(0, TongueCPP->CableMaterial);
@@ -438,7 +449,6 @@ void AFrogGameCharacter::ExecuteJump()
 	Jump();
 
 	// Remember to reset it.
-	//GetCharacterMovement()->JumpZVelocity = BaseJump;
 	JumpModifier = 0.f;
 }
 

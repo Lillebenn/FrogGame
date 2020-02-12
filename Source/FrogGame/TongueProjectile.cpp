@@ -136,6 +136,7 @@ void ATongueProjectile::Return(const float DeltaTime)
 	{
 		const FVector ReturnPos{Froggy->GetRayMesh()->GetComponentLocation()};
 		VInterpTo(ReturnPos, TongueInSpeed, DeltaTime);
+		UE_LOG(LogTemp, Warning, TEXT("%f"), TongueInSpeed)
 		if (!BoneTarget.IsNone())
 		{
 			UDestructibleComponent* Destructible{

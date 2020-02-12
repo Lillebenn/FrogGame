@@ -77,7 +77,7 @@ void ABaseEdible::BeginPlay()
 			DestructibleMesh->FractureSettings->CellSiteCount = EdibleInfo.NumChunks;
 		}
 		// Temp for testing
-		// GetDestructibleComponent()->ApplyDamage(1000, GetActorLocation(), GetActorLocation(), 100);
+		GetDestructibleComponent()->ApplyDamage(1000, GetActorLocation(), GetActorLocation(), 100);
 
 		//Destroy();
 	}

@@ -88,7 +88,13 @@ public:
 	FName BoneTarget;
 	FName LastBone;
 	void Consume(AActor* OtherActor, FName BoneName = FName());
-
+	// Tongue Settings
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tongue)
+	float BaseTongueInSpeed{2500.f};
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tongue)
+	float BaseTongueOutSpeed{4500.f};
+	float TongueInSpeed;
+	float TongueOutSpeed;
 protected:
 
 	void BeginPlay() override;
@@ -110,7 +116,7 @@ protected:
 	 */
 	void LookUpAtRate(float Rate);
 
-
+	void Landed(const FHitResult& Hit) override;
 protected:
 	// APawn interface
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -157,11 +163,7 @@ private:
 	bool bScalingUp{false};
 	FVector DesiredScale{0};
 
-	// Tongue Settings
-	float BaseTongueInSpeed{2500.f};
-	float BaseTongueOutSpeed{4500.f};
-	float TongueInSpeed;
-	float TongueOutSpeed;
+
 	// Jump stuff
 	float BaseJump{450};
 	float CurrentJump;
