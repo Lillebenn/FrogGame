@@ -124,13 +124,14 @@ void AFrogGameCharacter::BeginPlay()
 	const FVector Viewport{GetWorld()->GetGameViewport()->Viewport->GetSizeXY()};
 	BoxCollider->SetBoxExtent(FVector(Tongue.GetDefaultObject()->TongueRange / 2.f, Viewport.X / 2.f,
 	                                  Viewport.Y));
-	BoxCollider->SetRelativeLocation(FVector(CameraBoom->TargetArmLength + BoxCollider->GetUnscaledBoxExtent().X, 0, 0));
+	BoxCollider->SetRelativeLocation(FVector(CameraBoom->TargetArmLength + BoxCollider->GetUnscaledBoxExtent().X, 0,
+	                                         0));
 }
 
 UArrowComponent* AFrogGameCharacter::GetRayMesh()
 {
-	 return TongueStart;
-} 
+	return TongueStart;
+}
 
 //////////////////////////////////////////////////////////////////////////
 // Input
@@ -183,18 +184,7 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	}
 	if (bScalingUp)
 	{
-		if (ScaleAlpha <= 1.0f)
-		{
-			ScaleAlpha += DeltaTime;
-			const FVector CurrentScale{GetActorScale()};
-			SetActorScale3D(FMath::Lerp(GetActorScale(), DesiredScale, ScaleAlpha));
-			const float ScaleDelta{(GetActorScale() - CurrentScale).X};
-			UpdateCharacterScale(ScaleDelta);
-		}
-		else
-		{
-			bScalingUp = false;
-		}
+		UpdateCharacterScale(DeltaTime);
 	}
 	if (!bTongueSpawned)
 	{
@@ -302,7 +292,6 @@ void AFrogGameCharacter::Consume(AActor* OtherActor, const FName BoneName)
 			OtherActor->Destroy();
 		}
 		// just reset the lerp values
-		ScaleAlpha = 0.0f;
 		bScalingUp = true;
 		// We use the scaled radius value of the capsule collider to get an approximate size value for the main character.
 		const float ScaledRadius{GetCapsuleComponent()->GetScaledCapsuleRadius()};
@@ -310,7 +299,8 @@ void AFrogGameCharacter::Consume(AActor* OtherActor, const FName BoneName)
 		const float SizeDiff{ActualSize / ScaledRadius * SizeInfo.GrowthCoefficient};
 		// If SizeInfo.Size = 10 and ScaledRadius = 50 then we get a value of 10/50 = 0.2 or 20%.
 		// Increase actor scale by this value. 
-		DesiredScale = GetActorScale() * (1 + SizeDiff);
+		const FVector ScaleVector = GetActorScale() * (1 + SizeDiff);
+		ExtraScaleTotal += (ScaleVector - GetActorScale());
 		UpdateCurrentScore(SizeInfo.ScorePoints);
 		UpdatePowerPoints(SizeInfo.PowerPoints);
 	}
@@ -345,15 +335,31 @@ void AFrogGameCharacter::MoveRight(float Value)
 	}
 }
 
-void AFrogGameCharacter::UpdateCharacterScale(float ScaleDelta)
+void AFrogGameCharacter::UpdateCharacterScale(const float DeltaTime)
 {
-	UpdateCharacterMovement(ScaleDelta);
-	UpdateCameraBoom(ScaleDelta);
-	UpdateAimRange();
-	if (GetActorScale().X > SizeTier)
-		// Frog starts at size 2, so once it hits a scale factor of 2.0+, it will increase to size 3 etc
+	if (ScaleAlpha <= 1.0f)
 	{
-		SizeTier++;
+		ScaleAlpha += DeltaTime;
+		const FVector PrevScale{GetActorScale()};
+		const FVector DesiredScale{GetActorScale() + ExtraScaleTotal};
+		SetActorScale3D(FMath::Lerp(GetActorScale(), DesiredScale, ScaleAlpha));
+		const float ScaleDelta{(GetActorScale() - PrevScale).X};
+		ExtraScaleTotal -= FVector(ScaleDelta);
+		UpdateCharacterMovement(ScaleDelta);
+		UpdateCameraBoom(ScaleDelta);
+		UpdateAimRange();
+		CurrentCableWidth += BaseCableWidth * ScaleDelta;
+
+		if (GetActorScale().X > SizeTier)
+			// Frog starts at size 2, so once it hits a scale factor of 2.0+, it will increase to size 3 etc
+		{
+			SizeTier++;
+		}
+	}
+	else
+	{
+		ScaleAlpha = 0.f;
+		bScalingUp = false;
 	}
 }
 
@@ -367,14 +373,14 @@ void AFrogGameCharacter::UpdateCharacterMovement(const float ScaleDelta)
 	TongueOutSpeed += BaseTongueOutSpeed * ScaleDelta;
 }
 
-void AFrogGameCharacter::UpdateCameraBoom(const float ScaleDelta)
+void AFrogGameCharacter::UpdateCameraBoom(const float ScaleDelta) const
 {
 	// TODO: Comment this
 	CameraBoom->TargetArmLength += BaseBoomRange * ScaleDelta;
 	UpdateAimRange();
 }
 
-void AFrogGameCharacter::UpdateAimRange()
+void AFrogGameCharacter::UpdateAimRange() const
 {
 	FVector Extent{BoxCollider->GetUnscaledBoxExtent()};
 	Extent.X = (Tongue.GetDefaultObject()->TongueRange / 2.f) * GetActorScale().X;
@@ -385,6 +391,7 @@ void AFrogGameCharacter::UpdateAimRange()
 	BoxCollider->SetRelativeLocation(NewPosition);
 }
 
+
 void AFrogGameCharacter::Lickitung()
 {
 	// TODO: When activating this, set the target's collision channel to a custom one that only that object has. 
@@ -393,9 +400,11 @@ void AFrogGameCharacter::Lickitung()
 		Cable = NewObject<UCableComponent>(this, UCableComponent::StaticClass());
 
 		Cable->CableLength = 0.f;
-		Cable->NumSegments = 1;
+		Cable->NumSegments = 10;
 		Cable->CableGravityScale = 0.f;
 		Cable->SolverIterations = 3;
+		Cable->bEnableStiffness = false;
+		Cable->CableWidth = CurrentCableWidth;
 		Cable->EndLocation = FVector(5, 0, 0); // Zero vector seems to bug
 
 
@@ -405,16 +414,13 @@ void AFrogGameCharacter::Lickitung()
 		Cable->SetRelativeRotation(Rotation);
 		const FAttachmentTransformRules InRule(EAttachmentRule::KeepWorld, false);
 		Cable->AttachToComponent(TongueStart, InRule);
-
+		FRotator FacingDirection{FollowCamera->GetForwardVector().ToOrientationRotator()};
+		FacingDirection.Pitch = GetActorRotation().Pitch;
+		SetActorRotation(FacingDirection);
 		ATongueProjectile* TongueCPP{
-			NewObject<ATongueProjectile>(this, Tongue)
+			GetWorld()->SpawnActor<ATongueProjectile>(Tongue,
+			                                          TongueStart->GetComponentTransform())
 		};
-
-		TongueCPP->TongueInSpeed = TongueInSpeed;
-		TongueCPP->TongueOutSpeed = TongueOutSpeed;
-		TongueCPP = GetWorld()->SpawnActor<ATongueProjectile>(TongueCPP->GetClass(),
-		                                                     TongueStart->GetComponentTransform());
-
 		LastBone = BoneTarget;
 		BoneTarget = FName();
 		Cable->SetMaterial(0, TongueCPP->CableMaterial);

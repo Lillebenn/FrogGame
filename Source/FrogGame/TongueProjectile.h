@@ -33,12 +33,16 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Cable)
 	class UMaterial* CableMaterial;
-	// Speed at which the tongue snaps out at a target
+	
+	// Speed at which the tongue snaps out at a target. Default value - Will be overridden by FrogCharacter.
+	float TongueOutSpeed{4500.0f};
+	// Speed at which the tongue returns. Default value - Will be overridden by FrogCharacter.
+	float TongueInSpeed{10000.0f};
+	// Duration at which the tongue will "pause" at the target before snapping back in.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Tongue)
-	float TongueOutSpeed{2500.0f};
-	// Speed at which the tongue returns.
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Tongue)
-	float TongueInSpeed{4500.0f};
+	float PauseDuration{0.1f};
+	float CurrentPause;
+	bool bIsPaused;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tongue)
 	float TongueRange{700.0f};
 	void VInterpTo(FVector InterpTo, float TongueSpeed, float DeltaTime);

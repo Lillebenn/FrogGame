@@ -3,24 +3,18 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "DestructibleActor.h"
-#include "EdibleInfo.h"
-#include "Edible.h"
-#include "Saveable.h"
-#include "BaseEdible.generated.h"
+#include "BaseEdible.h"
+#include "BaseDestructible.generated.h"
 
 /**
  * 
  */
-UCLASS(Abstract)
-class FROGGAME_API ABaseEdible : public AActor, public IEdible, public ISaveable
+UCLASS()
+class FROGGAME_API ABaseDestructible : public ADestructibleActor, public IEdible, public ISaveable
 {
 	GENERATED_BODY()
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class UStaticMeshComponent* StaticMesh;
 public:
-	ABaseEdible();
+	ABaseDestructible();
 	void Tick(float DeltaTime) override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Edible)
