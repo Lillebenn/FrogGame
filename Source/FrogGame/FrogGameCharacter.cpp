@@ -89,6 +89,16 @@ float AFrogGameCharacter::GetCurrentScore()
 	return CurrentScore;
 }
 
+uint8 AFrogGameCharacter::GetCurrentSizeTier()
+{
+	return SizeTier;
+}
+
+uint8 AFrogGameCharacter::GetNextSizeTier()
+{
+	return SizeTier + 1;
+}
+
 void AFrogGameCharacter::UpdateCurrentScore(float Score)
 {
 	CurrentScore = CurrentScore + Score;

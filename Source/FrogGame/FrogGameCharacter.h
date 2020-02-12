@@ -39,6 +39,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Score")
 	float GetCurrentScore();
 
+	/** Accessor Function for current size tier **/
+	UFUNCTION(BlueprintCallable, Category = "Size")
+	uint8 GetCurrentSizeTier();
+
+	/** Accessor function for next size tier **/
+	UFUNCTION(BlueprintCallable, Category = "Size")
+	uint8 GetNextSizeTier();
+
 	/** Updates the players score 
 	* @Param Score This is the amount to increase the players score by. This should only be positive!
 	*/
