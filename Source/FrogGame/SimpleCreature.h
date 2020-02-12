@@ -32,7 +32,7 @@ public:
 	FEdibleInfo EdibleInfo;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Movement)
-	int MoveForward{ 500 };
+	int MoveDistance{ 500 };
 
 	UPROPERTY()
 	FTransform StartTransform;
