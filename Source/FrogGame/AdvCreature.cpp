@@ -68,7 +68,7 @@ void AAdvCreature::OnDisabled_Implementation()
 
 USceneComponent* AAdvCreature::GetTargetComponent_Implementation()
 {
-	return GetCapsuleComponent();
+	return GetMesh();
 }
 
 // Custom behaviour when saving or loading
