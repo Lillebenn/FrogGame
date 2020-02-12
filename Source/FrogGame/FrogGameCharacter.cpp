@@ -55,7 +55,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
 	BoxCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxTrace"));
-	BoxCollider->SetupAttachment(RootComponent);
+	BoxCollider->SetupAttachment(FollowCamera);
 	BoxCollider->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	BoxCollider->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Overlap);
 	BoxCollider->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnBoxTraceEnd);
@@ -113,8 +113,8 @@ void AFrogGameCharacter::BeginPlay()
 	Super::BeginPlay();
 	const FVector Viewport{GetWorld()->GetGameViewport()->Viewport->GetSizeXY()};
 	BoxCollider->SetBoxExtent(FVector(Tongue.GetDefaultObject()->TongueRange / 2.f, Viewport.X / 2.f,
-	                                  Viewport.Y / 2.f));
-	BoxCollider->SetRelativeLocation(FVector(BoxCollider->GetUnscaledBoxExtent().X, 0, 0));
+	                                  Viewport.Y));
+	BoxCollider->SetRelativeLocation(FVector(CameraBoom->TargetArmLength + BoxCollider->GetUnscaledBoxExtent().X, 0, 0));
 }
 
 UArrowComponent* AFrogGameCharacter::GetRayMesh()
