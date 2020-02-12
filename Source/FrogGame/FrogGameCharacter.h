@@ -26,12 +26,12 @@ class AFrogGameCharacter : public ACharacter
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* BoxCollider;
-	
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class USphereComponent* RightHandCollision;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	class USphereComponent* LeftHandCollision; 
+	class USphereComponent* LeftHandCollision;
 public:
 	AFrogGameCharacter();
 
@@ -83,7 +83,7 @@ public:
 	AActor* CurrentTarget;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	bool bPowerMode{ false };
+	bool bPowerMode{false};
 
 	FName BoneTarget;
 	FName LastBone;
@@ -119,7 +119,7 @@ protected:
 private:
 
 	void UpdateCharacterScale(float ScaleDelta);
-	void UpdateCharacterMovementSpeed(const float ScaleDelta);
+	void UpdateCharacterMovement(float ScaleDelta);
 	void UpdateCameraBoom(float ScaleDelta);
 	void UpdateAimRange();
 
@@ -128,7 +128,7 @@ private:
 
 	/** Uses fist to punch something, can only be used in power mode **/
 	void Hitmonchan();
-	
+
 	UFUNCTION()
 	void OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                   int32 OtherBodyIndex);
@@ -139,7 +139,7 @@ private:
 	void LoadGame();
 
 	void GetClosestChunk(class UDestructibleComponent* Component);
-	
+
 	/** Lets the frog jump higher by charging a jump **/
 	void StartJump();
 	/** Modifier for jump **/
@@ -157,8 +157,14 @@ private:
 	bool bScalingUp{false};
 	FVector DesiredScale{0};
 
+	// Tongue Settings
+	float BaseTongueInSpeed{2500.f};
+	float BaseTongueOutSpeed{4500.f};
+	float TongueInSpeed;
+	float TongueOutSpeed;
 	// Jump stuff
 	float BaseJump{450};
+	float CurrentJump;
 	float JumpBonus{450};
 	// The speed at which the jump charges to max velocity when holding down spacebar.
 	UPROPERTY(EditAnywhere, Category = Character)
@@ -169,7 +175,7 @@ private:
 	float BaseMaxWalkSpeed{600.f};
 
 	// PowerMode Stuff
-	float DrainSpeed{ -0.075f };
+	float DrainSpeed{-0.075f};
 
 	// Hud stuff
 

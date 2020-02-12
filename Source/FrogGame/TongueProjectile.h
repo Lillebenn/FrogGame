@@ -30,10 +30,6 @@ public:
 	/** Projectile component **/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Tongue)
 	class UProjectileMovementComponent* TongueProjectile;
-
-	/** Physics Handle component for grabbing fractured chunks **/
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Tongue)
-	class UPhysicsHandleComponent* PhysicsHandle;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Cable)
 	class UMaterial* CableMaterial;
@@ -48,7 +44,7 @@ public:
 	void VInterpTo(FVector InterpTo, float TongueSpeed, float DeltaTime);
 	
 	void AttachEdible(AActor* EdibleActor);
-	void AttachEdible(AActor* EdibleActor, FName BoneName) const;
+	void AttachEdible(AActor* EdibleActor, FName BoneName);
 
 
 	UPROPERTY(BlueprintReadOnly)
@@ -58,6 +54,7 @@ public:
 
 	bool bShouldReturn{false};
 	FName BoneTarget;
+	int32 ChunkIdx;
 	FVector TargetLocation;
 
 	UFUNCTION()

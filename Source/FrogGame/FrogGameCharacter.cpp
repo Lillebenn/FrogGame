@@ -62,7 +62,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	// Create a spawn point for linetrace, only used to linetrace so does not need to ever be visible.
 	TongueStart = GetArrowComponent();
 	TongueStart->bEditableWhenInherited = true;
-	
+
 	// Creates a collision sphere and attaches it to the characters right hand.
 	RightHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("RightHandCollision"));
 	RightHandCollision->SetupAttachment(GetMesh(), FName("hand_r"));
@@ -74,6 +74,9 @@ AFrogGameCharacter::AFrogGameCharacter()
 	// Setting Hud trackers to 0 at the start.
 	CurrentScore = 0.f;
 	CurrentPowerPoints = 0.f;
+
+	TongueInSpeed = BaseTongueInSpeed;
+	TongueOutSpeed = BaseTongueOutSpeed;
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
@@ -327,7 +330,7 @@ void AFrogGameCharacter::MoveRight(float Value)
 
 void AFrogGameCharacter::UpdateCharacterScale(float ScaleDelta)
 {
-	UpdateCharacterMovementSpeed(ScaleDelta);
+	UpdateCharacterMovement(ScaleDelta);
 	UpdateCameraBoom(ScaleDelta);
 	UpdateAimRange();
 	if (GetActorScale().X > SizeTier)
@@ -337,9 +340,13 @@ void AFrogGameCharacter::UpdateCharacterScale(float ScaleDelta)
 	}
 }
 
-void AFrogGameCharacter::UpdateCharacterMovementSpeed(const float ScaleDelta)
+void AFrogGameCharacter::UpdateCharacterMovement(const float ScaleDelta)
 {
-	GetCharacterMovement()->MaxWalkSpeed += BaseMaxWalkSpeed * ScaleDelta;
+	UCharacterMovementComponent* Movement{GetCharacterMovement()};
+	Movement->MaxWalkSpeed += BaseMaxWalkSpeed * ScaleDelta;
+	Movement->JumpZVelocity += BaseJump * ScaleDelta;
+	TongueInSpeed += BaseTongueInSpeed * ScaleDelta;
+	TongueOutSpeed += BaseTongueOutSpeed * ScaleDelta;
 }
 
 void AFrogGameCharacter::UpdateCameraBoom(const float ScaleDelta)
@@ -384,6 +391,8 @@ void AFrogGameCharacter::Lickitung()
 		ATongueProjectile* TongueCPP{
 			GetWorld()->SpawnActor<ATongueProjectile>(Tongue, TongueStart->GetComponentTransform())
 		};
+		TongueCPP->TongueInSpeed = TongueInSpeed;
+		TongueCPP->TongueOutSpeed = TongueOutSpeed;
 		LastBone = BoneTarget;
 		BoneTarget = FName();
 		Cable->SetMaterial(0, TongueCPP->CableMaterial);
@@ -424,7 +433,7 @@ void AFrogGameCharacter::ExecuteJump()
 {
 	bIsCharging = false;
 	JumpModifier = FMath::Clamp(JumpModifier, 0.f, 1.f);
-	GetCharacterMovement()->JumpZVelocity = BaseJump + (JumpBonus * JumpModifier);
+	GetCharacterMovement()->JumpZVelocity += (JumpBonus * JumpModifier);
 	//UE_LOG(LogTemp, Warning, TEXT("%f"), GetCharacterMovement()->JumpZVelocity);
 	Jump();
 

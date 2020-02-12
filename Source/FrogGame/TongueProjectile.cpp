@@ -6,6 +6,7 @@
 #include "Engine.h"
 #include "DestructibleComponent.h"
 #include "Edible.h"
+#include "DestructibleMesh.h"
 
 // Sets default values
 ATongueProjectile::ATongueProjectile()
@@ -23,7 +24,6 @@ ATongueProjectile::ATongueProjectile()
 	// Set the SphereComponent as the root component.
 	RootComponent = CollisionSphere;
 
-	PhysicsHandle = CreateDefaultSubobject<UPhysicsHandleComponent>(TEXT("Physics Handle"));
 
 	//Create the static mesh component 
 	TongueMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("TongueMesh"));
@@ -47,6 +47,7 @@ void ATongueProjectile::VInterpTo(const FVector InterpTo, const float TongueSpee
 		{
 			AttachToEdible(Target);
 		}
+
 		return;
 	}
 
@@ -67,7 +68,7 @@ void ATongueProjectile::AttachEdible(AActor* EdibleActor)
 	IEdible::Execute_OnDisabled(EdibleActor);
 }
 
-void ATongueProjectile::AttachEdible(AActor* EdibleActor, FName BoneName) const
+void ATongueProjectile::AttachEdible(AActor* EdibleActor, FName BoneName)
 {
 	UDestructibleComponent* Destructible{
 		Cast<UDestructibleComponent>(EdibleActor->GetComponentByClass(UDestructibleComponent::StaticClass()))
@@ -75,7 +76,10 @@ void ATongueProjectile::AttachEdible(AActor* EdibleActor, FName BoneName) const
 	const FVector AttachLocation{
 		CollisionSphere->GetComponentLocation() + (GetActorForwardVector() * CollisionSphere->GetScaledSphereRadius())
 	};
-	PhysicsHandle->GrabComponentAtLocationWithRotation(Destructible, BoneName, AttachLocation, GetActorRotation());
+	const int32 BoneIdx{Destructible->GetBoneIndex(BoneName)};
+
+	ChunkIdx = Destructible->BoneIdxToChunkIdx(BoneIdx);
+
 	IEdible::Execute_OnDisabled(EdibleActor);
 }
 
@@ -132,7 +136,18 @@ void ATongueProjectile::Return(const float DeltaTime)
 	{
 		const FVector ReturnPos{Froggy->GetRayMesh()->GetComponentLocation()};
 		VInterpTo(ReturnPos, TongueInSpeed, DeltaTime);
-
+		if (!BoneTarget.IsNone())
+		{
+			UDestructibleComponent* Destructible{
+				Cast<UDestructibleComponent>(Target->GetComponentByClass(UDestructibleComponent::StaticClass()))
+			};
+			const FQuat Rotation{Destructible->GetBoneQuaternion(BoneTarget)};
+			const FVector AttachLocation{
+				CollisionSphere->GetComponentLocation() + (GetActorForwardVector() * CollisionSphere->
+					GetScaledSphereRadius())
+			};
+			Destructible->SetChunkWorldRT(ChunkIdx, Rotation, AttachLocation);
+		}
 		if (FVector::Dist(GetActorLocation(), ReturnPos) <= CollisionSphere->GetScaledSphereRadius())
 		{
 			Froggy->bTongueSpawned = false;
