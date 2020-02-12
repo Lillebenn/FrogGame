@@ -158,8 +158,10 @@ private:
 
 	float ScaleAlpha{0.0f};
 	bool bScalingUp{false};
-	FVector DesiredScale{0};
+	FVector ExtraScaleTotal{0};
 
+	float BaseCableWidth{10.f};
+	float CurrentCableWidth{10.f};
 
 	// Jump stuff
 	float BaseJump{450};

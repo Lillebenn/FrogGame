@@ -136,7 +136,6 @@ void ATongueProjectile::Return(const float DeltaTime)
 	if (CurrentPause <= 0.f)
 	{
 		bIsPaused = false;
-		UE_LOG(LogTemp, Warning, TEXT("%f"), CurrentPause)
 	}
 	else
 	{
@@ -146,7 +145,6 @@ void ATongueProjectile::Return(const float DeltaTime)
 	{
 		const FVector ReturnPos{Froggy->GetRayMesh()->GetComponentLocation()};
 		VInterpTo(ReturnPos, TongueInSpeed, DeltaTime);
-		UE_LOG(LogTemp, Warning, TEXT("%f"), TongueInSpeed)
 		if (!BoneTarget.IsNone())
 		{
 			UDestructibleComponent* Destructible{
@@ -169,7 +167,6 @@ void ATongueProjectile::Return(const float DeltaTime)
 		}
 		CurrentPause = PauseDuration;
 	}
-	UE_LOG(LogTemp, Warning, TEXT("%hhd"), bIsPaused)
 }
 
 

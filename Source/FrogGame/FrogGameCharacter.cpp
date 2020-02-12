@@ -120,8 +120,8 @@ void AFrogGameCharacter::BeginPlay()
 
 UArrowComponent* AFrogGameCharacter::GetRayMesh()
 {
-	 return TongueStart;
-} 
+	return TongueStart;
+}
 
 //////////////////////////////////////////////////////////////////////////
 // Input
@@ -289,7 +289,8 @@ void AFrogGameCharacter::Consume(AActor* OtherActor, const FName BoneName)
 		const float SizeDiff{ActualSize / ScaledRadius * SizeInfo.GrowthCoefficient};
 		// If SizeInfo.Size = 10 and ScaledRadius = 50 then we get a value of 10/50 = 0.2 or 20%.
 		// Increase actor scale by this value. 
-		DesiredScale = GetActorScale() * (1 + SizeDiff);
+		const FVector ScaleVector = GetActorScale() * (1 + SizeDiff);
+		ExtraScaleTotal += (ScaleVector - GetActorScale());
 		UpdateCurrentScore(SizeInfo.ScorePoints);
 		UpdatePowerPoints(SizeInfo.PowerPoints);
 	}
@@ -329,12 +330,16 @@ void AFrogGameCharacter::UpdateCharacterScale(const float DeltaTime)
 	if (ScaleAlpha <= 1.0f)
 	{
 		ScaleAlpha += DeltaTime;
-		const FVector CurrentScale{GetActorScale()};
+		const FVector PrevScale{GetActorScale()};
+		const FVector DesiredScale{GetActorScale() + ExtraScaleTotal};
 		SetActorScale3D(FMath::Lerp(GetActorScale(), DesiredScale, ScaleAlpha));
-		const float ScaleDelta{(GetActorScale() - CurrentScale).X};
+		const float ScaleDelta{(GetActorScale() - PrevScale).X};
+		ExtraScaleTotal -= FVector(ScaleDelta);
 		UpdateCharacterMovement(ScaleDelta);
 		UpdateCameraBoom(ScaleDelta);
 		UpdateAimRange();
+		CurrentCableWidth += BaseCableWidth * ScaleDelta;
+
 		if (GetActorScale().X > SizeTier)
 			// Frog starts at size 2, so once it hits a scale factor of 2.0+, it will increase to size 3 etc
 		{
@@ -385,9 +390,11 @@ void AFrogGameCharacter::Lickitung()
 		Cable = NewObject<UCableComponent>(this, UCableComponent::StaticClass());
 
 		Cable->CableLength = 0.f;
-		Cable->NumSegments = 1;
+		Cable->NumSegments = 10;
 		Cable->CableGravityScale = 0.f;
 		Cable->SolverIterations = 3;
+		Cable->bEnableStiffness = false;
+		Cable->CableWidth = CurrentCableWidth;
 		Cable->EndLocation = FVector(5, 0, 0); // Zero vector seems to bug
 
 
