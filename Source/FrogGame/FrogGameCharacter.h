@@ -19,9 +19,9 @@ class AFrogGameCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
 
-	/** Static mesh that is used to spawn linetraces **/
+	// Arrow component that is used to spawn the tongue projectile. 
 	UPROPERTY(VisibleAnywhere, Category = Character, meta = (AllowPrivateAccess = "true"))
-	class UArrowComponent* TongueStart;
+	class UArrowComponent* TongueStart; 
 
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
