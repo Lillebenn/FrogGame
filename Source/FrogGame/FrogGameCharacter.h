@@ -90,7 +90,7 @@ public:
 	void Consume(AActor* OtherActor, FName BoneName = FName());
 	// Tongue Settings
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tongue)
-	float BaseTongueInSpeed{2500.f};
+	float BaseTongueInSpeed{10000.f};
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tongue)
 	float BaseTongueOutSpeed{4500.f};
 	float TongueInSpeed;
@@ -117,18 +117,15 @@ protected:
 	void LookUpAtRate(float Rate);
 
 	void Landed(const FHitResult& Hit) override;
-protected:
 	// APawn interface
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
 
 private:
-
 	void UpdateCharacterScale(float ScaleDelta);
 	void UpdateCharacterMovement(float ScaleDelta);
-	void UpdateCameraBoom(float ScaleDelta);
-	void UpdateAimRange();
-
+	void UpdateCameraBoom(float ScaleDelta) const;
+	void UpdateAimRange() const;
 	/** Uses the tongue to eat something, and then grows **/
 	void Lickitung();
 

@@ -30,6 +30,7 @@ ATongueProjectile::ATongueProjectile()
 	TongueMesh->SetSimulatePhysics(false);
 	TongueMesh->SetCollisionProfileName("NoCollision");
 	TongueMesh->SetupAttachment(RootComponent);
+	CurrentPause = PauseDuration;
 }
 
 void ATongueProjectile::VInterpTo(const FVector InterpTo, const float TongueSpeed, const float DeltaTime)
@@ -132,7 +133,16 @@ void ATongueProjectile::SeekTarget(const float DeltaTime)
 
 void ATongueProjectile::Return(const float DeltaTime)
 {
-	if (Froggy)
+	if (CurrentPause <= 0.f)
+	{
+		bIsPaused = false;
+		UE_LOG(LogTemp, Warning, TEXT("%f"), CurrentPause)
+	}
+	else
+	{
+		CurrentPause -= DeltaTime;
+	}
+	if (!bIsPaused)
 	{
 		const FVector ReturnPos{Froggy->GetRayMesh()->GetComponentLocation()};
 		VInterpTo(ReturnPos, TongueInSpeed, DeltaTime);
@@ -157,7 +167,9 @@ void ATongueProjectile::Return(const float DeltaTime)
 
 			Destroy();
 		}
+		CurrentPause = PauseDuration;
 	}
+	UE_LOG(LogTemp, Warning, TEXT("%hhd"), bIsPaused)
 }
 
 
@@ -172,7 +184,8 @@ void ATongueProjectile::BeginPlay()
 		// Just taking the X scale since the scale should be uniform
 		const float ActualRange{TongueRange * Froggy->GetActorScale().X};
 		TargetLocation = Froggy->GetRayMesh()->GetComponentLocation() + (Froggy->GetActorForwardVector() * ActualRange);
-
+		TongueInSpeed = Froggy->TongueInSpeed;
+		TongueOutSpeed = Froggy->TongueOutSpeed;
 		if (Froggy->CurrentTarget)
 		{
 			Target = Froggy->CurrentTarget;
@@ -180,8 +193,14 @@ void ATongueProjectile::BeginPlay()
 			{
 				BoneTarget = Froggy->BoneTarget;
 			}
+			bIsPaused = true;
 			UE_LOG(LogTemp, Warning, TEXT("Target is: %s, Bone: %s"), *Target->GetName(), *BoneTarget.ToString());
 		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to find FrogCharacter reference!"));
+		Destroy();
 	}
 }
 

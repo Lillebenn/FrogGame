@@ -113,7 +113,8 @@ void AFrogGameCharacter::BeginPlay()
 	const FVector Viewport{GetWorld()->GetGameViewport()->Viewport->GetSizeXY()};
 	BoxCollider->SetBoxExtent(FVector(Tongue.GetDefaultObject()->TongueRange / 2.f, Viewport.X / 2.f,
 	                                  Viewport.Y));
-	BoxCollider->SetRelativeLocation(FVector(CameraBoom->TargetArmLength + BoxCollider->GetUnscaledBoxExtent().X, 0, 0));
+	BoxCollider->SetRelativeLocation(FVector(CameraBoom->TargetArmLength + BoxCollider->GetUnscaledBoxExtent().X, 0,
+	                                         0));
 }
 
 UArrowComponent* AFrogGameCharacter::GetRayMesh()
@@ -172,18 +173,7 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	}
 	if (bScalingUp)
 	{
-		if (ScaleAlpha <= 1.0f)
-		{
-			ScaleAlpha += DeltaTime;
-			const FVector CurrentScale{GetActorScale()};
-			SetActorScale3D(FMath::Lerp(GetActorScale(), DesiredScale, ScaleAlpha));
-			const float ScaleDelta{(GetActorScale() - CurrentScale).X};
-			UpdateCharacterScale(ScaleDelta);
-		}
-		else
-		{
-			bScalingUp = false;
-		}
+		UpdateCharacterScale(DeltaTime);
 	}
 	if (!bTongueSpawned)
 	{
@@ -291,7 +281,6 @@ void AFrogGameCharacter::Consume(AActor* OtherActor, const FName BoneName)
 			OtherActor->Destroy();
 		}
 		// just reset the lerp values
-		ScaleAlpha = 0.0f;
 		bScalingUp = true;
 		// We use the scaled radius value of the capsule collider to get an approximate size value for the main character.
 		const float ScaledRadius{GetCapsuleComponent()->GetScaledCapsuleRadius()};
@@ -334,15 +323,27 @@ void AFrogGameCharacter::MoveRight(float Value)
 	}
 }
 
-void AFrogGameCharacter::UpdateCharacterScale(float ScaleDelta)
+void AFrogGameCharacter::UpdateCharacterScale(const float DeltaTime)
 {
-	UpdateCharacterMovement(ScaleDelta);
-	UpdateCameraBoom(ScaleDelta);
-	UpdateAimRange();
-	if (GetActorScale().X > SizeTier)
-		// Frog starts at size 2, so once it hits a scale factor of 2.0+, it will increase to size 3 etc
+	if (ScaleAlpha <= 1.0f)
 	{
-		SizeTier++;
+		ScaleAlpha += DeltaTime;
+		const FVector CurrentScale{GetActorScale()};
+		SetActorScale3D(FMath::Lerp(GetActorScale(), DesiredScale, ScaleAlpha));
+		const float ScaleDelta{(GetActorScale() - CurrentScale).X};
+		UpdateCharacterMovement(ScaleDelta);
+		UpdateCameraBoom(ScaleDelta);
+		UpdateAimRange();
+		if (GetActorScale().X > SizeTier)
+			// Frog starts at size 2, so once it hits a scale factor of 2.0+, it will increase to size 3 etc
+		{
+			SizeTier++;
+		}
+	}
+	else
+	{
+		ScaleAlpha = 0.f;
+		bScalingUp = false;
 	}
 }
 
@@ -356,14 +357,14 @@ void AFrogGameCharacter::UpdateCharacterMovement(const float ScaleDelta)
 	TongueOutSpeed += BaseTongueOutSpeed * ScaleDelta;
 }
 
-void AFrogGameCharacter::UpdateCameraBoom(const float ScaleDelta)
+void AFrogGameCharacter::UpdateCameraBoom(const float ScaleDelta) const
 {
 	// TODO: Comment this
 	CameraBoom->TargetArmLength += BaseBoomRange * ScaleDelta;
 	UpdateAimRange();
 }
 
-void AFrogGameCharacter::UpdateAimRange()
+void AFrogGameCharacter::UpdateAimRange() const
 {
 	FVector Extent{BoxCollider->GetUnscaledBoxExtent()};
 	Extent.X = (Tongue.GetDefaultObject()->TongueRange / 2.f) * GetActorScale().X;
@@ -373,6 +374,7 @@ void AFrogGameCharacter::UpdateAimRange()
 	NewPosition.X += XDiff;
 	BoxCollider->SetRelativeLocation(NewPosition);
 }
+
 
 void AFrogGameCharacter::Lickitung()
 {
@@ -394,15 +396,13 @@ void AFrogGameCharacter::Lickitung()
 		Cable->SetRelativeRotation(Rotation);
 		const FAttachmentTransformRules InRule(EAttachmentRule::KeepWorld, false);
 		Cable->AttachToComponent(TongueStart, InRule);
-
+		FRotator FacingDirection{FollowCamera->GetForwardVector().ToOrientationRotator()};
+		FacingDirection.Pitch = GetActorRotation().Pitch;
+		SetActorRotation(FacingDirection);
 		ATongueProjectile* TongueCPP{
-			NewObject<ATongueProjectile>(this, Tongue)
+			GetWorld()->SpawnActor<ATongueProjectile>(Tongue,
+			                                          TongueStart->GetComponentTransform())
 		};
-
-		TongueCPP->TongueInSpeed = TongueInSpeed;
-		TongueCPP->TongueOutSpeed = TongueOutSpeed;
-		TongueCPP = GetWorld()->SpawnActor<ATongueProjectile>(TongueCPP->GetClass(),
-		                                                      TongueStart->GetComponentTransform());
 
 		LastBone = BoneTarget;
 		BoneTarget = FName();
