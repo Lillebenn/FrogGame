@@ -62,6 +62,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	// Create a spawn point for linetrace, only used to linetrace so does not need to ever be visible.
 	TongueStart = GetArrowComponent();
 	TongueStart->bEditableWhenInherited = true;
+	TongueStart->SetupAttachment(GetMesh(), FName("head"));
 
 	// Creates a collision sphere and attaches it to the characters right hand.
 	RightHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("RightHandCollision"));
@@ -118,8 +119,8 @@ void AFrogGameCharacter::BeginPlay()
 
 UArrowComponent* AFrogGameCharacter::GetRayMesh()
 {
-	return TongueStart;
-}
+	 return TongueStart;
+} 
 
 //////////////////////////////////////////////////////////////////////////
 // Input
@@ -402,7 +403,7 @@ void AFrogGameCharacter::Lickitung()
 		TongueCPP->TongueInSpeed = TongueInSpeed;
 		TongueCPP->TongueOutSpeed = TongueOutSpeed;
 		TongueCPP = GetWorld()->SpawnActor<ATongueProjectile>(TongueCPP->GetClass(),
-		                                                      TongueStart->GetComponentTransform());
+		                                                     TongueStart->GetComponentTransform());
 
 		LastBone = BoneTarget;
 		BoneTarget = FName();
