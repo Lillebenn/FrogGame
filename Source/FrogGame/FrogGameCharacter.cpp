@@ -11,13 +11,10 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "DestructibleComponent.h"
 #include "TongueProjectile.h"
 #include "FrogGameInstance.h"
 #include "CableComponent.h"
 #include "Edible.h"
-#include "DestructibleActor.h"
-#include "BaseDestructible.h"
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -47,6 +44,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
+	CameraBoom->TargetArmLength = 500.f;
 	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 
 	// Create a follow camera
@@ -216,7 +214,7 @@ void AFrogGameCharacter::AutoAim()
 	}
 	for (AActor* Actor : OverlappingActors)
 	{
-		if (Actor == CurrentTarget && !Actor->GetComponentByClass(UDestructibleComponent::StaticClass()))
+		if (Actor == CurrentTarget)
 			// Don't check against itself
 		{
 			continue;
@@ -232,12 +230,11 @@ void AFrogGameCharacter::AutoAim()
 			{
 				const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(Actor)};
 				// Breaking something produces pieces two tiers smaller, so the actor must be exactly the size of the player
-				ADestructibleActor* DestructibleActor{Cast<ADestructibleActor>(Actor)};
-				if (DestructibleActor && BoneTarget.IsNone())
+				if (BoneTarget.IsNone())
 				{
 					if (SizeInfo.SizeTier == SizeTier)
 					{
-						GetClosestChunk(DestructibleActor->GetDestructibleComponent());
+						//GetClosestChunk(DestructibleActor->GetDestructibleComponent());
 						CurrentTarget = Actor;
 					}
 					else if (SizeInfo.SizeTier <= MaxSize)
@@ -247,8 +244,7 @@ void AFrogGameCharacter::AutoAim()
 					}
 				}
 					// If the actor's size is less than or equal to the frog's size 
-				else if (SizeInfo.SizeTier <= MaxSize
-					&& !Actor->GetComponentByClass(UDestructibleComponent::StaticClass()))
+				else if (SizeInfo.SizeTier <= MaxSize)
 				{
 					CurrentTarget = Actor;
 					BoneTarget = FName();
@@ -292,10 +288,6 @@ void AFrogGameCharacter::Consume(AActor* OtherActor, const FName BoneName)
 		float ActualSize{SizeInfo.Size};
 		if (!BoneName.IsNone())
 		{
-			UDestructibleComponent* Destructible{
-				Cast<UDestructibleComponent>(OtherActor->GetComponentByClass(UDestructibleComponent::StaticClass()))
-			};
-			Destructible->HideBoneByName(BoneName, PBO_Term);
 			ActualSize /= SizeInfo.NumChunks; // Assuming that the actor splits into roughly same size chunks.
 		}
 		else
@@ -486,13 +478,13 @@ void AFrogGameCharacter::OnAttackHit(UPrimitiveComponent* HitComp, AActor* Other
 	{
 			UE_LOG(LogTemp, Warning, TEXT("Hit Event!"))
 
-		ABaseDestructible* Destructible{Cast<ABaseDestructible>(OtherActor)};
-		if (Destructible)
-		{
+
+		//if (Destructible)
+		//{
 			TSubclassOf<UDamageType> const ValidDamageTypeClass = TSubclassOf<UDamageType>(UDamageType::StaticClass());
 			FDamageEvent DamageEvent(ValidDamageTypeClass);
-			Destructible->TakeDamage(PunchDamage, DamageEvent, GetController(), this);
-		}
+			//Destructible->TakeDamage(PunchDamage, DamageEvent, GetController(), this);
+			//}
 	}
 }
 
@@ -553,27 +545,27 @@ void AFrogGameCharacter::LoadGame()
 	Cast<UFrogGameInstance>(GetGameInstance())->LoadCheckpoint();
 }
 
-void AFrogGameCharacter::GetClosestChunk(UDestructibleComponent* Component)
-{
-	FName ClosestBone;
-	float DistToBone{5000.f};
-	for (const auto Bone : Component->GetAllSocketNames())
-	{
-		if (Component->IsBoneHiddenByName(Bone) || Bone == TEXT("Root"))
-		{
-			continue;
-		}
-		const float Distance{FVector::Dist(Component->GetBoneLocation(Bone), GetActorLocation())};
-		if (Distance < DistToBone)
-		{
-			ClosestBone = Bone;
-			DistToBone = Distance;
-		}
-	}
-	if (ClosestBone == LastBone)
-	{
-		return;
-	}
-	BoneTarget = ClosestBone;
-	UE_LOG(LogTemp, Warning, TEXT("%s"), *BoneTarget.ToString());
-}
+//void AFrogGameCharacter::GetClosestChunk(UDestructibleComponent* Component)
+//{
+//	FName ClosestBone;
+//	float DistToBone{5000.f};
+//	for (const auto Bone : Component->GetAllSocketNames())
+//	{
+//		if (Component->IsBoneHiddenByName(Bone) || Bone == TEXT("Root"))
+//		{
+//			continue;
+//		}
+//		const float Distance{FVector::Dist(Component->GetBoneLocation(Bone), GetActorLocation())};
+//		if (Distance < DistToBone)
+//		{
+//			ClosestBone = Bone;
+//			DistToBone = Distance;
+//		}
+//	}
+//	if (ClosestBone == LastBone)
+//	{
+//		return;
+//	}
+//	BoneTarget = ClosestBone;
+//	UE_LOG(LogTemp, Warning, TEXT("%s"), *BoneTarget.ToString());
+//}

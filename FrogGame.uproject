@@ -16,11 +16,5 @@
 				"UMG"
 			]
 		}
-	],
-	"Plugins": [
-		{
-			"Name": "ApexDestruction",
-			"Enabled": true
-		}
 	]
 }

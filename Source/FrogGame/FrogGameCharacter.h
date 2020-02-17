@@ -172,7 +172,7 @@ private:
 
 	void LoadGame();
 
-	void GetClosestChunk(class UDestructibleComponent* Component);
+	//void GetClosestChunk(class UDestructibleComponent* Component);
 
 	/** Lets the frog jump higher by charging a jump **/
 	void StartJump();
@@ -205,7 +205,6 @@ private:
 	UPROPERTY(EditAnywhere, Category = Jump)
 	float ChargeSpeed{1.5f};
 	float JumpModifier{0};
-	float CurrentJump;
 	bool bIsCharging{false};
 
 	float BaseMaxWalkSpeed{600.f};
