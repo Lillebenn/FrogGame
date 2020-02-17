@@ -15,11 +15,8 @@
 #include "FrogGameInstance.h"
 #include "CableComponent.h"
 #include "Edible.h"
-<<<<<<< Updated upstream
-=======
 #include "DestructibleActor.h"
 #include "BaseDestructible.h"
->>>>>>> Stashed changes
 
 //////////////////////////////////////////////////////////////////////////
 // AFrogGameCharacter
@@ -66,8 +63,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	RayMesh->SetupAttachment(RootComponent);
 	RayMesh->SetVisibility(false);
 
-<<<<<<< Updated upstream
-=======
+
 	// Creates a collision sphere and attaches it to the characters right hand.
 	RightHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("RightHandCollision"));
 	RightHandCollision->SetupAttachment(GetMesh(), FName("hand_r"));
@@ -83,7 +79,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	LeftHandCollision->SetCollisionObjectType(ECC_WorldDynamic);
 
 	// Setting Hud trackers to 0 at the start.
->>>>>>> Stashed changes
+
 	CurrentScore = 0.f;
 	CurrentPowerPoints = 0.f;
 
@@ -120,17 +116,13 @@ void AFrogGameCharacter::BeginPlay()
 	Super::BeginPlay();
 	const FVector Viewport{GetWorld()->GetGameViewport()->Viewport->GetSizeXY()};
 	BoxCollider->SetBoxExtent(FVector(Tongue.GetDefaultObject()->TongueRange / 2.f, Viewport.X / 2.f,
-<<<<<<< Updated upstream
-	                                  Viewport.Y / 2.f));
-	BoxCollider->SetRelativeLocation(FVector(BoxCollider->GetUnscaledBoxExtent().X, 0, 0));
-=======
 	                                  Viewport.Y));
 	BoxCollider->SetRelativeLocation(FVector(CameraBoom->TargetArmLength + BoxCollider->GetUnscaledBoxExtent().X, 0,
 	                                         0));
 	BaseBoomRange = CameraBoom->TargetArmLength;
 	LeftHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
 	RightHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
->>>>>>> Stashed changes
+
 }
 
 UStaticMeshComponent* AFrogGameCharacter::GetRayMesh()

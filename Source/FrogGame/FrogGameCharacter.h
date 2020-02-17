@@ -19,15 +19,9 @@ class AFrogGameCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
 
-<<<<<<< Updated upstream
-	/** Static mesh that is used to spawn linetraces **/
-	class UStaticMeshComponent* RayMesh;
-=======
 	// Arrow component that is used to spawn the tongue projectile. 
 	UPROPERTY(VisibleAnywhere, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UArrowComponent* TongueStart;
-
->>>>>>> Stashed changes
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* BoxCollider;
@@ -80,13 +74,7 @@ public:
 
 	UPROPERTY()
 	AActor* CurrentTarget;
-<<<<<<< Updated upstream
-	UPROPERTY()
-	FName BoneTarget;
-	FName LastBone;
-	void Consume(AActor* OtherActor, FName BoneName = FName());
 
-=======
 
 
 	FName BoneTarget;
@@ -116,7 +104,7 @@ public:
 	/** The Players current score */
 	UPROPERTY(EditAnywhere, SaveGame, Category = "Score")
 	float CurrentScore;
->>>>>>> Stashed changes
+
 protected:
 
 	void BeginPlay() override;
@@ -154,13 +142,11 @@ private:
 
 	/** Uses fist to punch something, can only be used in power mode **/
 	void Hitmonchan();
-<<<<<<< Updated upstream
-	
-=======
+
 	UFUNCTION()
 	void OnAttackHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                 FVector NormalImpulse, const FHitResult& Hit);
->>>>>>> Stashed changes
+
 	UFUNCTION()
 	void OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                   int32 OtherBodyIndex);
@@ -174,7 +160,7 @@ private:
 	
 	/** Lets the frog jump higher by charging a jump **/
 	void StartJump();
-	void SetHandCollision(USphereComponent* Collider, FName CollisionProfile);
+	void SetHandCollision(class USphereComponent* Collider, FName CollisionProfile);
 	/** Modifier for jump **/
 	void ChargeJump(float DeltaTime);
 
@@ -192,10 +178,8 @@ private:
 
 	// Jump stuff
 	float BaseJump{450};
-<<<<<<< Updated upstream
-=======
+
 	UPROPERTY(EditAnywhere, Category = Jump)
->>>>>>> Stashed changes
 	float JumpBonus{450};
 	// The speed at which the jump charges to max velocity when holding down spacebar.
 	UPROPERTY(EditAnywhere, Category = Jump)
@@ -204,24 +188,8 @@ private:
 	float CurrentJump;
 	bool bIsCharging{false};
 
-<<<<<<< Updated upstream
-	// PowerMode Stuff
-	bool bPowerMode{false};
-	float DrainSpeed{-0.075f};
 
-
-	// Hud stuff
-
-	/** The Players current score */
-	UPROPERTY(EditAnywhere, SaveGame, Category = "Score")
-	float CurrentScore;
-	float CurrentPowerPoints;
-	float MaxPowerPoints{1.f};
-
-
-=======
 	float BaseMaxWalkSpeed{600.f};
->>>>>>> Stashed changes
 public:
 
 	void Tick(float DeltaTime) override;
