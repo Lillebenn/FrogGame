@@ -15,6 +15,11 @@
 #include "FrogGameInstance.h"
 #include "CableComponent.h"
 #include "Edible.h"
+<<<<<<< Updated upstream
+=======
+#include "DestructibleActor.h"
+#include "BaseDestructible.h"
+>>>>>>> Stashed changes
 
 //////////////////////////////////////////////////////////////////////////
 // AFrogGameCharacter
@@ -43,7 +48,6 @@ AFrogGameCharacter::AFrogGameCharacter()
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = BaseBoomRange; // The camera follows at this distance behind the character	
 	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 
 	// Create a follow camera
@@ -62,6 +66,24 @@ AFrogGameCharacter::AFrogGameCharacter()
 	RayMesh->SetupAttachment(RootComponent);
 	RayMesh->SetVisibility(false);
 
+<<<<<<< Updated upstream
+=======
+	// Creates a collision sphere and attaches it to the characters right hand.
+	RightHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("RightHandCollision"));
+	RightHandCollision->SetupAttachment(GetMesh(), FName("hand_r"));
+	RightHandCollision->SetNotifyRigidBodyCollision(true);
+
+	// Creates a collision sphere and attaches it to the characters left hand.
+	LeftHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("LeftHandCollision"));
+	LeftHandCollision->SetupAttachment(GetMesh(), FName("hand_l"));
+	LeftHandCollision->SetNotifyRigidBodyCollision(true);
+	SetHandCollision(RightHandCollision, TEXT("NoCollision"));
+	SetHandCollision(LeftHandCollision, TEXT("NoCollision"));
+	RightHandCollision->SetCollisionObjectType(ECC_WorldDynamic);
+	LeftHandCollision->SetCollisionObjectType(ECC_WorldDynamic);
+
+	// Setting Hud trackers to 0 at the start.
+>>>>>>> Stashed changes
 	CurrentScore = 0.f;
 	CurrentPowerPoints = 0.f;
 
@@ -98,8 +120,17 @@ void AFrogGameCharacter::BeginPlay()
 	Super::BeginPlay();
 	const FVector Viewport{GetWorld()->GetGameViewport()->Viewport->GetSizeXY()};
 	BoxCollider->SetBoxExtent(FVector(Tongue.GetDefaultObject()->TongueRange / 2.f, Viewport.X / 2.f,
+<<<<<<< Updated upstream
 	                                  Viewport.Y / 2.f));
 	BoxCollider->SetRelativeLocation(FVector(BoxCollider->GetUnscaledBoxExtent().X, 0, 0));
+=======
+	                                  Viewport.Y));
+	BoxCollider->SetRelativeLocation(FVector(CameraBoom->TargetArmLength + BoxCollider->GetUnscaledBoxExtent().X, 0,
+	                                         0));
+	BaseBoomRange = CameraBoom->TargetArmLength;
+	LeftHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
+	RightHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
+>>>>>>> Stashed changes
 }
 
 UStaticMeshComponent* AFrogGameCharacter::GetRayMesh()
@@ -148,6 +179,8 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 		if (CurrentPowerPoints <= 0)
 		{
 			bPowerMode = false;
+			SetHandCollision(RightHandCollision, TEXT("NoCollision"));
+			SetHandCollision(LeftHandCollision, TEXT("NoCollision"));
 			// Put in set back to frog mesh & rig here
 		}
 	}
@@ -369,6 +402,20 @@ void AFrogGameCharacter::StartJump()
 	bIsCharging = true;
 }
 
+void AFrogGameCharacter::SetHandCollision(USphereComponent* Collider, FName CollisionProfile)
+{
+	Collider->SetCollisionProfileName(CollisionProfile);
+	Collider->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	if (CollisionProfile == TEXT("Pawn"))
+	{
+		Collider->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+		Collider->SetSimulatePhysics(true);
+	}else
+	{
+		Collider->SetSimulatePhysics(false);
+	}
+}
+
 void AFrogGameCharacter::Hitmonchan()
 {
 	if (bPowerMode)
@@ -378,6 +425,24 @@ void AFrogGameCharacter::Hitmonchan()
 	else
 	{
 		// Does nothing if player is not in power mode.
+	}
+}
+
+void AFrogGameCharacter::OnAttackHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+                                     FVector NormalImpulse, const FHitResult& Hit)
+{
+
+	if (OtherActor != this && OtherComp != nullptr)
+	{
+			UE_LOG(LogTemp, Warning, TEXT("Hit Event!"))
+
+		ABaseDestructible* Destructible{Cast<ABaseDestructible>(OtherActor)};
+		if (Destructible)
+		{
+			TSubclassOf<UDamageType> const ValidDamageTypeClass = TSubclassOf<UDamageType>(UDamageType::StaticClass());
+			FDamageEvent DamageEvent(ValidDamageTypeClass);
+			Destructible->TakeDamage(PunchDamage, DamageEvent, GetController(), this);
+		}
 	}
 }
 
@@ -403,6 +468,8 @@ void AFrogGameCharacter::PowerMode()
 {
 	CurrentPowerPoints = MaxPowerPoints;
 	bPowerMode = true;
+	SetHandCollision(RightHandCollision, TEXT("Pawn"));
+	SetHandCollision(LeftHandCollision, TEXT("Pawn"));
 	// Change from frog mesh and rig to power-frog mesh & rig here.
 }
 
