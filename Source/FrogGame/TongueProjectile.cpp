@@ -133,7 +133,7 @@ void ATongueProjectile::Return(const float DeltaTime)
 {
 	if (Froggy)
 	{
-		const FVector ReturnPos{Froggy->GetRayMesh()->GetComponentLocation()};
+		const FVector ReturnPos{Froggy->GetTongueStart()->GetComponentLocation()};
 		VInterpTo(ReturnPos, TongueInSpeed, DeltaTime);
 
 		if (FVector::Dist(GetActorLocation(), ReturnPos) <= CollisionSphere->GetScaledSphereRadius())
@@ -158,7 +158,7 @@ void ATongueProjectile::BeginPlay()
 	{
 		// Just taking the X scale since the scale should be uniform
 		const float ActualRange{TongueRange * Froggy->GetActorScale().X};
-		TargetLocation = Froggy->GetRayMesh()->GetComponentLocation() + (Froggy->GetActorForwardVector() * ActualRange);
+		TargetLocation = Froggy->GetTongueStart()->GetComponentLocation() + (Froggy->GetActorForwardVector() * ActualRange);
 
 		if (Froggy->CurrentTarget)
 		{

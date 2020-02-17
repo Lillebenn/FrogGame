@@ -23,6 +23,7 @@ class AFrogGameCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UArrowComponent* TongueStart;
 
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* BoxCollider;
 public:
@@ -51,7 +52,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseTurnRate;
 
-	class UStaticMeshComponent* GetRayMesh();
+	UArrowComponent* GetTongueStart();
 	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
@@ -74,7 +75,6 @@ public:
 
 	UPROPERTY()
 	AActor* CurrentTarget;
-
 
 
 	FName BoneTarget;
@@ -142,7 +142,9 @@ private:
 
 	/** Uses fist to punch something, can only be used in power mode **/
 	void Hitmonchan();
-
+	UFUNCTION()
+	void OnAttackHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	                 FVector NormalImpulse, const FHitResult& Hit);
 	UFUNCTION()
 	void OnAttackHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                 FVector NormalImpulse, const FHitResult& Hit);
@@ -161,6 +163,7 @@ private:
 	/** Lets the frog jump higher by charging a jump **/
 	void StartJump();
 	void SetHandCollision(class USphereComponent* Collider, FName CollisionProfile);
+
 	/** Modifier for jump **/
 	void ChargeJump(float DeltaTime);
 
@@ -187,7 +190,6 @@ private:
 	float JumpModifier{0};
 	float CurrentJump;
 	bool bIsCharging{false};
-
 
 	float BaseMaxWalkSpeed{600.f};
 public:

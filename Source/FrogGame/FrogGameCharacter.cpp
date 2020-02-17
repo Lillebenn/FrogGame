@@ -59,9 +59,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	BoxCollider->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Overlap);
 	BoxCollider->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnBoxTraceEnd);
 	// Create a spawn point for linetrace, only used to linetrace so does not need to ever be visible.
-	RayMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RayMesh"));
-	RayMesh->SetupAttachment(RootComponent);
-	RayMesh->SetVisibility(false);
+	TongueStart = GetArrowComponent();
 
 
 	// Creates a collision sphere and attaches it to the characters right hand.
@@ -122,12 +120,11 @@ void AFrogGameCharacter::BeginPlay()
 	BaseBoomRange = CameraBoom->TargetArmLength;
 	LeftHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
 	RightHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
-
 }
 
-UStaticMeshComponent* AFrogGameCharacter::GetRayMesh()
+UArrowComponent* AFrogGameCharacter::GetTongueStart()
 {
-	return RayMesh;
+	return TongueStart;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -365,15 +362,15 @@ void AFrogGameCharacter::Lickitung()
 		Cable->EndLocation = FVector(5, 0, 0); // Zero vector seems to bug
 
 
-		const FVector Location{RayMesh->GetComponentTransform().GetLocation()};
-		const FRotator Rotation{RayMesh->GetComponentTransform().GetRotation()};
+		const FVector Location{TongueStart->GetComponentTransform().GetLocation()};
+		const FRotator Rotation{TongueStart->GetComponentTransform().GetRotation()};
 		Cable->SetRelativeLocation(Location);
 		Cable->SetRelativeRotation(Rotation);
 		const FAttachmentTransformRules InRule(EAttachmentRule::KeepWorld, false);
-		Cable->AttachToComponent(RayMesh, InRule);
+		Cable->AttachToComponent(TongueStart, InRule);
 
 		ATongueProjectile* TongueCPP{
-			GetWorld()->SpawnActor<ATongueProjectile>(Tongue, RayMesh->GetComponentTransform())
+			GetWorld()->SpawnActor<ATongueProjectile>(Tongue, TongueStart->GetComponentTransform())
 		};
 		LastBone = BoneTarget;
 		BoneTarget = FName();
