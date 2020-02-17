@@ -52,6 +52,7 @@ void ABaseDestructible::BeginPlay()
 		{
 			FDestructibleSpecialHierarchyDepths Hierarchy;
 			Hierarchy.bEnableDebris = true;
+
 			Hierarchy.SupportDepth = 1;
 			DestructibleMesh->DefaultDestructibleParameters.SpecialHierarchyDepths = Hierarchy;
 			DestructibleMesh->FractureSettings->CellSiteCount = EdibleInfo.NumChunks;
@@ -61,14 +62,13 @@ void ABaseDestructible::BeginPlay()
 	}
 }
 
-
-void ABaseDestructible::DisableActor_Implementation()
-{
-}
-
 FEdibleInfo ABaseDestructible::GetInfo_Implementation() const
 {
 	return EdibleInfo;
+}
+
+void ABaseDestructible::DisableActor_Implementation()
+{
 }
 
 USceneComponent* ABaseDestructible::GetTargetComponent_Implementation()
@@ -80,6 +80,7 @@ FTransform ABaseDestructible::GetStartTransform()
 {
 	return GetTransform();
 }
+
 
 float ABaseDestructible::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
                                     AActor* DamageCauser)

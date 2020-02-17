@@ -20,10 +20,6 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Mesh)
 	UStaticMeshComponent* CreatureMesh;
-	// Collider to maintain proper height for navmesh.
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Collision)
-	class UCapsuleComponent* NavCollider;
-
 
 	UPROPERTY(BlueprintReadOnly)
 	class UFloatingPawnMovement* MovementComponent;
@@ -32,14 +28,11 @@ public:
 	FEdibleInfo EdibleInfo;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Movement)
-	int MoveForward{ 500 };
+	int MoveDistance{ 500 };
 
 	UPROPERTY()
 	FTransform StartTransform;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Mesh)
-	bool bIsFlying{false};
-	
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
@@ -51,7 +44,7 @@ public:
 	// Called to bind functionality to input
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-
+	UStaticMeshComponent* GetMesh();
 	FEdibleInfo GetInfo_Implementation() const override;
 
 	void DisableActor_Implementation() override;
@@ -69,3 +62,4 @@ public:
 private:
 	void CalculateBoundingSize();
 };
+

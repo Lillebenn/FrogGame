@@ -5,7 +5,6 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "GameFramework/FloatingPawnMovement.h"
-#include "Components/CapsuleComponent.h"
 #include "GameFramework/Controller.h"
 #include "FrogGameInstance.h"
 
@@ -16,15 +15,7 @@ ASimpleCreature::ASimpleCreature()
 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	NavCollider = CreateDefaultSubobject<UCapsuleComponent>(TEXT("NavCollider"));
-	const float CapsuleHeight{80.0f};
-	const float Radius{15.f};
-	NavCollider->InitCapsuleSize(Radius, CapsuleHeight);
-	NavCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	RootComponent = NavCollider;
-
 	CreatureMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Creature Mesh"));
-	CreatureMesh->SetupAttachment(NavCollider);
 
 	MovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComponent"));
 
@@ -37,10 +28,6 @@ void ASimpleCreature::BeginPlay()
 	Super::BeginPlay();
 	CalculateBoundingSize();
 	StartTransform = GetTransform();
-	if(bIsFlying)
-	{
-		CreatureMesh->SetRelativeLocation(FVector(0, 0, 50.f));
-	}
 }
 
 // Called every frame
@@ -71,6 +58,11 @@ void ASimpleCreature::DisableActor_Implementation()
 		AI->UnPossess();
 		AI->Destroy();
 	}
+}
+
+UStaticMeshComponent* ASimpleCreature::GetMesh()
+{
+	return CreatureMesh;
 }
 
 USceneComponent* ASimpleCreature::GetTargetComponent_Implementation()

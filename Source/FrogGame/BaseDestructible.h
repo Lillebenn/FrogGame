@@ -22,21 +22,25 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Edible)
 	TArray<class UStaticMesh*> StaticMeshes;
 	// Interface stuff
+
+	FEdibleInfo GetInfo_Implementation() const override;
 	void DisableActor_Implementation() override;
-	FEdibleInfo GetInfo_Implementation() const;
 	USceneComponent* GetTargetComponent_Implementation() override;
 	void ActorSaveDataSaved_Implementation() override;
 	void ActorSaveDataLoaded_Implementation() override;
 
 	FTransform GetStartTransform() override;
 
+
 	float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
 
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
 
 	float Health;
+
 
 
 };

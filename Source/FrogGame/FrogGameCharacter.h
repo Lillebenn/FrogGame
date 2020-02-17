@@ -24,6 +24,7 @@ class AFrogGameCharacter : public ACharacter
 	class UArrowComponent* TongueStart;
 
 
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* BoxCollider;
 
@@ -38,6 +39,14 @@ public:
 	/** Accessor Function for Current Score */
 	UFUNCTION(BlueprintCallable, Category = "Score")
 	float GetCurrentScore();
+
+	/** Accessor Function for current size tier **/
+	UFUNCTION(BlueprintCallable, Category = "Size")
+	uint8 GetCurrentSizeTier();
+
+	/** Accessor function for next size tier **/
+	UFUNCTION(BlueprintCallable, Category = "Size")
+	uint8 GetNextSizeTier();
 
 	/** Updates the players score 
 	* @Param Score This is the amount to increase the players score by. This should only be positive!
@@ -59,6 +68,7 @@ public:
 	float BaseTurnRate;
 
 	UArrowComponent* GetTongueStart();
+
 	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
@@ -92,6 +102,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tongue)
 	float BaseTongueOutSpeed{4500.f};
 
+
 	float TongueInSpeed;
 	float TongueOutSpeed;
 	
@@ -110,6 +121,7 @@ public:
 	/** The Players current score */
 	UPROPERTY(EditAnywhere, SaveGame, Category = "Score")
 	float CurrentScore;
+
 
 protected:
 
@@ -132,25 +144,21 @@ protected:
 	 */
 	void LookUpAtRate(float Rate);
 
-
-protected:
+	void Landed(const FHitResult& Hit) override;
 	// APawn interface
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
 
 private:
-
-	/** Updates the frogs length **/
-	void UpdateCameraBoom(float ScaleDelta);
-
+	void UpdateCharacterScale(float ScaleDelta);
+	void UpdateCharacterMovement(float ScaleDelta);
+	void UpdateCameraBoom(float ScaleDelta) const;
+	void UpdateAimRange() const;
 	/** Uses the tongue to eat something, and then grows **/
 	void Lickitung();
 
 	/** Uses fist to punch something, can only be used in power mode **/
 	void Hitmonchan();
-	UFUNCTION()
-	void OnAttackHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-	                 FVector NormalImpulse, const FHitResult& Hit);
 	UFUNCTION()
 	void OnAttackHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                 FVector NormalImpulse, const FHitResult& Hit);
@@ -165,7 +173,7 @@ private:
 	void LoadGame();
 
 	void GetClosestChunk(class UDestructibleComponent* Component);
-	
+
 	/** Lets the frog jump higher by charging a jump **/
 	void StartJump();
 	void SetHandCollision(class USphereComponent* Collider, FName CollisionProfile);
@@ -183,12 +191,15 @@ private:
 
 	float ScaleAlpha{0.0f};
 	bool bScalingUp{false};
-	FVector DesiredScale{0};
+	FVector ExtraScaleTotal{0};
+
+	float BaseCableWidth{10.f};
+	float CurrentCableWidth{10.f};
 
 	// Jump stuff
 	float BaseJump{450};
 
-	UPROPERTY(EditAnywhere, Category = Jump)
+	float CurrentJump;
 	float JumpBonus{450};
 	// The speed at which the jump charges to max velocity when holding down spacebar.
 	UPROPERTY(EditAnywhere, Category = Jump)
@@ -198,6 +209,7 @@ private:
 	bool bIsCharging{false};
 
 	float BaseMaxWalkSpeed{600.f};
+
 public:
 
 	void Tick(float DeltaTime) override;

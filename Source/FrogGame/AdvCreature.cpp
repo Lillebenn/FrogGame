@@ -4,6 +4,8 @@
 #include "AdvCreature.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/Controller.h"
+#include "FrogGameInstance.h"
+#include "Components/SkeletalMeshComponent.h"
 
 // Sets default values
 AAdvCreature::AAdvCreature()
@@ -47,14 +49,28 @@ void AAdvCreature::DisableActor_Implementation()
 	AController* AI{GetController()};
 	if (AI)
 	{
+		AI->StopMovement();
 		AI->UnPossess();
+		AI->Destroy();
 	}
 }
 
+void AAdvCreature::OnDisabled_Implementation()
+{
+	DisableActor_Implementation();
+	UFrogGameInstance* FrogInstance{Cast<UFrogGameInstance>(GetWorld()->GetGameInstance())};
+	if (FrogInstance)
+	{
+		FrogInstance->OnActorDestroyed(this);
+	}
+}
+
+
 USceneComponent* AAdvCreature::GetTargetComponent_Implementation()
 {
-	return GetCapsuleComponent();
+	return GetMesh();
 }
+
 // Custom behaviour when saving or loading
 void AAdvCreature::ActorSaveDataLoaded_Implementation()
 {
@@ -67,4 +83,11 @@ FTransform AAdvCreature::GetStartTransform()
 
 void AAdvCreature::ActorSaveDataSaved_Implementation()
 {
+}
+void AAdvCreature::CalculateBoundingSize()
+{
+	const FVector RoughSize = GetMesh()->Bounds.GetBox().GetSize();
+	const FVector AbsoluteSize{RoughSize.GetAbsMin()};
+	// Get the average axis value of the bounding box
+	EdibleInfo.Size = (AbsoluteSize.X + AbsoluteSize.Y + AbsoluteSize.Z) / 3;
 }
