@@ -73,3 +73,13 @@ Plugins/*/Intermediate/*
 # Cache files for the editor to use
 DerivedDataCache/*
 *.user
+Content/Maps/World.umap
+Content/Blueprints/HUD/BP_FGIngame.uasset
+Content/Blueprints/Environment/BP_Pencil.uasset
+Content/Blueprints/Environment/BP_BaseDestructible.uasset
+Content/Blueprints/Characters/Main_Character/BP_TongueProjectile.uasset
+Content/Blueprints/Characters/Main_Character/BP_FrogCharacter.uasset
+Content/Blueprints/Characters/Main_Character/BP_FrogCameraShake.uasset
+Content/Blueprints/Characters/Creatures/BP_Mosquito.uasset
+Content/Blueprints/Characters/Creatures/BP_FlyingAdvCreature.uasset
+Content/Blueprints/AI/BTTask_MoveForward.uasset
