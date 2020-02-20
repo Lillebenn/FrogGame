@@ -49,7 +49,6 @@ public:
 	void VInterpTo(FVector InterpTo, float TongueSpeed, float DeltaTime);
 
 	void AttachEdible(AActor* EdibleActor);
-	void AttachEdible(AActor* EdibleActor, FName BoneName);
 
 
 	UPROPERTY(BlueprintReadOnly)
@@ -58,14 +57,12 @@ public:
 	class AFrogGameCharacter* Froggy;
 
 	bool bShouldReturn{false};
-	FName BoneTarget;
-	int32 ChunkIdx;
 	FVector TargetLocation;
 
 	UFUNCTION()
 	void OnComponentHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                    FVector NormalImpulse, const FHitResult& Hit);
-	void AttachToEdible(AActor* OtherActor);
+
 
 private:
 	void SeekTarget(float DeltaTime);

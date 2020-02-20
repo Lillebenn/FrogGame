@@ -4,9 +4,7 @@
 #include "TongueProjectile.h"
 #include "FrogGameCharacter.h"
 #include "Engine.h"
-#include "DestructibleComponent.h"
 #include "Edible.h"
-#include "DestructibleMesh.h"
 
 // Sets default values
 ATongueProjectile::ATongueProjectile()
@@ -46,7 +44,7 @@ void ATongueProjectile::VInterpTo(const FVector InterpTo, const float TongueSpee
 		// Get it to return in case it doesn't find a collision
 		if (FVector::Dist(GetActorLocation(), InterpTo) <= 0.f)
 		{
-			AttachToEdible(Target);
+			AttachEdible(Target);
 		}
 
 		return;
@@ -66,60 +64,22 @@ void ATongueProjectile::AttachEdible(AActor* EdibleActor)
 
 	// Turn off collision on the dragged object so we don't get affected by it on the way back.
 	EdibleActor->SetActorEnableCollision(false);
-	IEdible::Execute_OnDisabled(EdibleActor);
-}
-
-void ATongueProjectile::AttachEdible(AActor* EdibleActor, FName BoneName)
-{
-	UDestructibleComponent* Destructible{
-		Cast<UDestructibleComponent>(EdibleActor->GetComponentByClass(UDestructibleComponent::StaticClass()))
-	};
-	const FVector AttachLocation{
-		CollisionSphere->GetComponentLocation() + (GetActorForwardVector() * CollisionSphere->GetScaledSphereRadius())
-	};
-	const int32 BoneIdx{Destructible->GetBoneIndex(BoneName)};
-
-	ChunkIdx = Destructible->BoneIdxToChunkIdx(BoneIdx);
+	GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayCameraShake(TongueShakeEffect);
 
 	IEdible::Execute_OnDisabled(EdibleActor);
+	bShouldReturn = true;
 }
+
 
 void ATongueProjectile::OnComponentHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
                                        FVector NormalImpulse, const FHitResult& Hit)
 {
-	AttachToEdible(OtherActor);
-}
-
-void ATongueProjectile::AttachToEdible(AActor* OtherActor)
-{
-	if (OtherActor->Implements<UEdible>())
-	{
-		if (!BoneTarget.IsNone() && Target)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Attaching to bone!"))
-			AttachEdible(Target, BoneTarget);
-		}
-		else if (Target)
-		{
-			AttachEdible(Target);
-		}
-	}
-	GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayCameraShake(TongueShakeEffect);
-
-	bShouldReturn = true;
+	AttachEdible(OtherActor);
 }
 
 void ATongueProjectile::SeekTarget(const float DeltaTime)
 {
-	if (!BoneTarget.IsNone() && Target)
-	{
-		const FVector TargetLoc{
-			Cast<UDestructibleComponent>(Target->GetComponentByClass(UDestructibleComponent::StaticClass()))->
-			GetBoneLocation(BoneTarget)
-		};
-		VInterpTo(TargetLoc, TongueOutSpeed, DeltaTime);
-	}
-	else if (Target)
+	if (Target)
 	{
 		VInterpTo(IEdible::Execute_GetTargetComponent(Target)->GetComponentLocation(), TongueOutSpeed, DeltaTime);
 	}
@@ -146,25 +106,13 @@ void ATongueProjectile::Return(const float DeltaTime)
 	}
 	if (!bIsPaused)
 	{
-		const FVector ReturnPos{Froggy->GetRayMesh()->GetComponentLocation()};
+		const FVector ReturnPos{Froggy->GetTongueStart()->GetComponentLocation()};
 		VInterpTo(ReturnPos, TongueInSpeed, DeltaTime);
-		if (!BoneTarget.IsNone())
-		{
-			UDestructibleComponent* Destructible{
-				Cast<UDestructibleComponent>(Target->GetComponentByClass(UDestructibleComponent::StaticClass()))
-			};
-			const FQuat Rotation{Destructible->GetBoneQuaternion(BoneTarget)};
-			const FVector AttachLocation{
-				CollisionSphere->GetComponentLocation() + (GetActorForwardVector() * CollisionSphere->
-					GetScaledSphereRadius())
-			};
-			Destructible->SetChunkWorldRT(ChunkIdx, Rotation, AttachLocation);
-		}
 		if (FVector::Dist(GetActorLocation(), ReturnPos) <= CollisionSphere->GetScaledSphereRadius())
 		{
 			Froggy->bTongueSpawned = false;
 
-			Froggy->Consume(Target, BoneTarget);
+			Froggy->Consume(Target);
 
 			Destroy();
 		}
@@ -183,19 +131,13 @@ void ATongueProjectile::BeginPlay()
 	{
 		// Just taking the X scale since the scale should be uniform
 		const float ActualRange{TongueRange * Froggy->GetActorScale().X};
-		TargetLocation = Froggy->GetRayMesh()->GetComponentLocation() + (Froggy->GetActorForwardVector() * ActualRange);
+		TargetLocation = Froggy->GetTongueStart()->GetComponentLocation() + (Froggy->GetActorForwardVector() *
+			ActualRange);
+
 		TongueInSpeed = Froggy->TongueInSpeed;
 		TongueOutSpeed = Froggy->TongueOutSpeed;
-		if (Froggy->CurrentTarget)
-		{
-			Target = Froggy->CurrentTarget;
-			if (!Froggy->BoneTarget.IsNone())
-			{
-				BoneTarget = Froggy->BoneTarget;
-			}
-			bIsPaused = true;
-			UE_LOG(LogTemp, Warning, TEXT("Target is: %s, Bone: %s"), *Target->GetName(), *BoneTarget.ToString());
-		}
+
+		Target = Froggy->CurrentTarget;
 	}
 	else
 	{

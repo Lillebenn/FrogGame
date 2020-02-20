@@ -11,7 +11,6 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "DestructibleComponent.h"
 #include "TongueProjectile.h"
 #include "FrogGameInstance.h"
 #include "CableComponent.h"
@@ -44,7 +43,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = BaseBoomRange; // The camera follows at this distance behind the character	
+	CameraBoom->TargetArmLength = 500.f;
 	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 
 	// Create a follow camera
@@ -63,13 +62,21 @@ AFrogGameCharacter::AFrogGameCharacter()
 	TongueStart->bEditableWhenInherited = true;
 	TongueStart->SetupAttachment(GetMesh(), FName("head"));
 
+
+
 	// Creates a collision sphere and attaches it to the characters right hand.
 	RightHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("RightHandCollision"));
 	RightHandCollision->SetupAttachment(GetMesh(), FName("hand_r"));
+	RightHandCollision->SetNotifyRigidBodyCollision(true);
 
 	// Creates a collision sphere and attaches it to the characters left hand.
 	LeftHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("LeftHandCollision"));
 	LeftHandCollision->SetupAttachment(GetMesh(), FName("hand_l"));
+	LeftHandCollision->SetNotifyRigidBodyCollision(true);
+	SetHandCollision(RightHandCollision, TEXT("NoCollision"));
+	SetHandCollision(LeftHandCollision, TEXT("NoCollision"));
+	RightHandCollision->SetCollisionObjectType(ECC_WorldDynamic);
+	LeftHandCollision->SetCollisionObjectType(ECC_WorldDynamic);
 
 	// Setting Hud trackers to 0 at the start.
 	CurrentScore = 0.f;
@@ -78,9 +85,6 @@ AFrogGameCharacter::AFrogGameCharacter()
 	TongueInSpeed = BaseTongueInSpeed;
 	TongueOutSpeed = BaseTongueOutSpeed;
 	CurrentJump = BaseJump;
-
-	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
-	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
 }
 
 float AFrogGameCharacter::GetCurrentScore()
@@ -125,14 +129,14 @@ void AFrogGameCharacter::BeginPlay()
 	                                  Viewport.Y));
 	BoxCollider->SetRelativeLocation(FVector(CameraBoom->TargetArmLength + BoxCollider->GetUnscaledBoxExtent().X, 0,
 	                                         0));
-
 	BaseBoomRange = CameraBoom->TargetArmLength;
 	LeftHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
 	RightHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
 	MaxAngleRadians = FMath::RadiansToDegrees(MaxAngle);
+
 }
 
-UArrowComponent* AFrogGameCharacter::GetRayMesh()
+UArrowComponent* AFrogGameCharacter::GetTongueStart()
 {
 	return TongueStart;
 }
@@ -179,6 +183,8 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 		if (CurrentPowerPoints <= 0)
 		{
 			bPowerMode = false;
+			SetHandCollision(RightHandCollision, TEXT("NoCollision"));
+			SetHandCollision(LeftHandCollision, TEXT("NoCollision"));
 			// Put in set back to frog mesh & rig here
 		}
 	}
@@ -206,8 +212,8 @@ void AFrogGameCharacter::AutoAim()
 	float CurrentTargetScore{0.f};
 	for (AActor* Actor : OverlappingActors)
 	{
-
 		if (Actor == CurrentTarget) // Don't check against itself
+
 		{
 			continue;
 		}
@@ -283,10 +289,6 @@ void AFrogGameCharacter::Consume(AActor* OtherActor, const FName BoneName)
 		float ActualSize{SizeInfo.Size};
 		if (!BoneName.IsNone())
 		{
-			UDestructibleComponent* Destructible{
-				Cast<UDestructibleComponent>(OtherActor->GetComponentByClass(UDestructibleComponent::StaticClass()))
-			};
-			Destructible->HideBoneByName(BoneName, PBO_Term);
 			ActualSize /= SizeInfo.NumChunks; // Assuming that the actor splits into roughly same size chunks.
 		}
 		else
@@ -416,13 +418,16 @@ void AFrogGameCharacter::Lickitung()
 		Cable->SetRelativeRotation(Rotation);
 		const FAttachmentTransformRules InRule(EAttachmentRule::KeepWorld, false);
 		Cable->AttachToComponent(TongueStart, InRule);
+
 		FRotator FacingDirection{FollowCamera->GetForwardVector().ToOrientationRotator()};
 		FacingDirection.Pitch = GetActorRotation().Pitch;
 		SetActorRotation(FacingDirection);
 		ATongueProjectile* TongueCPP{
 			GetWorld()->SpawnActor<ATongueProjectile>(Tongue,
 			                                          TongueStart->GetComponentTransform())
+
 		};
+
 		Cable->SetMaterial(0, TongueCPP->CableMaterial);
 
 
@@ -440,7 +445,6 @@ void AFrogGameCharacter::StartJump()
 	bIsCharging = true;
 }
 
-
 void AFrogGameCharacter::SetHandCollision(USphereComponent* Collider, FName CollisionProfile)
 {
 	Collider->SetCollisionProfileName(CollisionProfile);
@@ -451,6 +455,7 @@ void AFrogGameCharacter::SetHandCollision(USphereComponent* Collider, FName Coll
 		Collider->SetSimulatePhysics(true);
 	}
 	else
+
 	{
 		Collider->SetSimulatePhysics(false);
 	}
@@ -468,7 +473,6 @@ void AFrogGameCharacter::Hitmonchan()
 	}
 }
 
-
 void AFrogGameCharacter::OnAttackHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
                                      FVector NormalImpulse, const FHitResult& Hit)
 {
@@ -477,12 +481,14 @@ void AFrogGameCharacter::OnAttackHit(UPrimitiveComponent* HitComp, AActor* Other
 		UE_LOG(LogTemp, Warning, TEXT("Hit Event!"))
 
 
+
 		//if (Destructible)
 		//{
 		TSubclassOf<UDamageType> const ValidDamageTypeClass = TSubclassOf<UDamageType>(UDamageType::StaticClass());
 		FDamageEvent DamageEvent(ValidDamageTypeClass);
 		//Destructible->TakeDamage(PunchDamage, DamageEvent, GetController(), this);
 		//}
+
 	}
 }
 
@@ -507,6 +513,8 @@ void AFrogGameCharacter::PowerMode()
 {
 	CurrentPowerPoints = MaxPowerPoints;
 	bPowerMode = true;
+	SetHandCollision(RightHandCollision, TEXT("Pawn"));
+	SetHandCollision(LeftHandCollision, TEXT("Pawn"));
 	// Change from frog mesh and rig to power-frog mesh & rig here.
 }
 
@@ -540,3 +548,4 @@ void AFrogGameCharacter::LoadGame()
 {
 	Cast<UFrogGameInstance>(GetGameInstance())->LoadCheckpoint();
 }
+

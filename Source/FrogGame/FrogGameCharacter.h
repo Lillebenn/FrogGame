@@ -21,7 +21,8 @@ class AFrogGameCharacter : public ACharacter
 
 	// Arrow component that is used to spawn the tongue projectile. 
 	UPROPERTY(VisibleAnywhere, Category = Character, meta = (AllowPrivateAccess = "true"))
-	class UArrowComponent* TongueStart; 
+	class UArrowComponent* TongueStart;
+
 
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
@@ -66,7 +67,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseTurnRate;
 
-	UArrowComponent* GetRayMesh();
+	UArrowComponent* GetTongueStart();
+
 	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
@@ -74,12 +76,12 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	bool bTongueSpawned{false};
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	uint8 SizeTier{2};
 
 	// How many size tiers larger the player needs to be compared to the target item in order to eat it.
 	UPROPERTY(EditDefaultsOnly)
-	uint8 EdibleThreshold{2};
+	uint8 EdibleThreshold{1};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AutoAim)
 	float MaxAngleScore{0.25f};
@@ -97,8 +99,6 @@ public:
 	UPROPERTY()
 	AActor* CurrentTarget;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	bool bPowerMode{false};
 
 	void Consume(AActor* OtherActor, FName BoneName = FName());
 	// Tongue Settings
@@ -106,8 +106,28 @@ public:
 	float BaseTongueInSpeed{10000.f};
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tongue)
 	float BaseTongueOutSpeed{4500.f};
+
+
 	float TongueInSpeed;
 	float TongueOutSpeed;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = PowerMode)
+	bool bPowerMode{false};
+	// Amount of damage the punch will do on each hit.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PowerMode)
+	float PunchDamage{100.f};
+	UPROPERTY(VisibleAnywhere, Category = PowerMode)
+	float CurrentPowerPoints;
+	UPROPERTY(EditAnywhere, Category = PowerMode)
+	float MaxPowerPoints{1.f};
+	// How quickly the Power Mode bar drains
+	UPROPERTY(EditAnywhere, Category = PowerMode)
+	float DrainSpeed{-0.075f};
+	/** The Players current score */
+	UPROPERTY(EditAnywhere, SaveGame, Category = "Score")
+	float CurrentScore;
+
+
 protected:
 
 	void BeginPlay() override;
@@ -144,6 +164,7 @@ private:
 
 	/** Uses fist to punch something, can only be used in power mode **/
 	void Hitmonchan();
+
 	void OnAttackHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                 FVector NormalImpulse, const FHitResult& Hit);
 
@@ -158,6 +179,8 @@ private:
 
 	/** Lets the frog jump higher by charging a jump **/
 	void StartJump();
+	void SetHandCollision(class USphereComponent* Collider, FName CollisionProfile);
+
 	/** Modifier for jump **/
 	void ChargeJump(float DeltaTime);
 
@@ -178,27 +201,16 @@ private:
 
 	// Jump stuff
 	float BaseJump{450};
+
 	float CurrentJump;
 	float JumpBonus{450};
 	// The speed at which the jump charges to max velocity when holding down spacebar.
-	UPROPERTY(EditAnywhere, Category = Character)
+	UPROPERTY(EditAnywhere, Category = Jump)
 	float ChargeSpeed{1.5f};
 	float JumpModifier{0};
 	bool bIsCharging{false};
 
 	float BaseMaxWalkSpeed{600.f};
-
-	// PowerMode Stuff
-	float DrainSpeed{-0.075f};
-
-	// Hud stuff
-
-	/** The Players current score */
-	UPROPERTY(EditAnywhere, SaveGame, Category = "Score")
-	float CurrentScore;
-	float CurrentPowerPoints;
-	float MaxPowerPoints{1.f};
-
 
 public:
 
