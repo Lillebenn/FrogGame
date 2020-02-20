@@ -16,7 +16,6 @@
 #include "FrogGameInstance.h"
 #include "CableComponent.h"
 #include "Edible.h"
-#include "DestructibleActor.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AFrogGameCharacter
@@ -59,7 +58,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	BoxCollider->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	BoxCollider->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Overlap);
 	BoxCollider->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnBoxTraceEnd);
-	// Create a spawn point for linetrace, only used to linetrace so does not need to ever be visible.
+	// We use the arrow component as spawn point for the tongue and attach it to the head bone
 	TongueStart = GetArrowComponent();
 	TongueStart->bEditableWhenInherited = true;
 	TongueStart->SetupAttachment(GetMesh(), FName("head"));
@@ -126,6 +125,11 @@ void AFrogGameCharacter::BeginPlay()
 	                                  Viewport.Y));
 	BoxCollider->SetRelativeLocation(FVector(CameraBoom->TargetArmLength + BoxCollider->GetUnscaledBoxExtent().X, 0,
 	                                         0));
+
+	BaseBoomRange = CameraBoom->TargetArmLength;
+	LeftHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
+	RightHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
+	MaxAngleRadians = FMath::RadiansToDegrees(MaxAngle);
 }
 
 UArrowComponent* AFrogGameCharacter::GetRayMesh()
@@ -196,52 +200,50 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 void AFrogGameCharacter::AutoAim()
 {
 	TArray<AActor*> OverlappingActors;
+	// Todo: Distance From Player and preferring actors based on the angle from player location
 	BoxCollider->GetOverlappingActors(OverlappingActors);
-	const FVector BoxOrigin{BoxCollider->GetComponentLocation()};
-	int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
-	if (MaxSize < 0)
-	{
-		MaxSize = 0;
-	}
+	const int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
+	float CurrentTargetScore{0.f};
 	for (AActor* Actor : OverlappingActors)
 	{
-		if (Actor == CurrentTarget && !Actor->GetComponentByClass(UDestructibleComponent::StaticClass()))
-			// Don't check against itself
+
+		if (Actor == CurrentTarget) // Don't check against itself
 		{
 			continue;
 		}
 		if (Actor->Implements<UEdible>())
 		{
-			// If this actor is closer to the center of the box collider than the current target is
-			const float DistToActor{FVector::Dist(BoxOrigin, Actor->GetActorLocation())};
-			const float DistToCurrentTarget{
-				CurrentTarget ? FVector::Dist(BoxOrigin, CurrentTarget->GetActorLocation()) : 5000.f
-			};
-			if (DistToActor <= DistToCurrentTarget)
+			const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(Actor)};
+			if (SizeInfo.SizeTier > MaxSize) // Object is too big, ignore.
 			{
-				const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(Actor)};
-				// Breaking something produces pieces two tiers smaller, so the actor must be exactly the size of the player
-				ADestructibleActor* DestructibleActor{Cast<ADestructibleActor>(Actor)};
-				if (DestructibleActor && BoneTarget.IsNone())
-				{
-					if (SizeInfo.SizeTier == SizeTier)
-					{
-						GetClosestChunk(DestructibleActor->GetDestructibleComponent());
-						CurrentTarget = Actor;
-					}
-					else if (SizeInfo.SizeTier <= MaxSize)
-					{
-						CurrentTarget = Actor;
-						BoneTarget = FName();
-					}
-				}
-					// If the actor's size is less than or equal to the frog's size 
-				else if (SizeInfo.SizeTier <= MaxSize
-					&& !Actor->GetComponentByClass(UDestructibleComponent::StaticClass()))
-				{
-					CurrentTarget = Actor;
-					BoneTarget = FName();
-				}
+				continue;
+			}
+			const float DistToActor{FVector::Dist(GetActorLocation(), Actor->GetActorLocation())};
+			// We use the box collider forward vector multiplied by twice the extent of the box.
+			const FVector MaxPointInBox{
+				BoxCollider->GetForwardVector() * (BoxCollider->GetUnscaledBoxExtent().X * 2.f)
+			};
+			const float DistToMaxRange{
+				FVector::Dist(GetActorLocation(), GetActorLocation() + MaxPointInBox)
+			};
+			// How ideal this actor is to become the current target based on distance.
+			const float DistanceScore{FMath::Clamp(DistToActor / DistToMaxRange, 0.f, 1.f)};
+			const float Dot = FVector::DotProduct(BoxCollider->GetForwardVector(),
+			                                      Actor->GetActorLocation().GetSafeNormal());
+			const float AngleInRadians{FMath::Acos(Dot)};
+			// How ideal this actor is to become the current target based on proximity to the middle of the camera view. A lower value is better.
+			float AngleScore{0.f};
+			if (AngleInRadians <= MaxAngleRadians)
+			{
+
+				// An angle exactly as large as the max angle will result in 1 / 1 * MaxAngleScore = MaxAngleScore.
+				AngleScore = (AngleInRadians / MaxAngleRadians) * MaxAngleScore;
+			}
+			const float TotalScore{DistanceScore - AngleScore};
+			if (TotalScore > CurrentTargetScore)
+			{
+				CurrentTarget = Actor;
+				CurrentTargetScore = TotalScore;
 			}
 		}
 	}
@@ -421,8 +423,6 @@ void AFrogGameCharacter::Lickitung()
 			GetWorld()->SpawnActor<ATongueProjectile>(Tongue,
 			                                          TongueStart->GetComponentTransform())
 		};
-		LastBone = BoneTarget;
-		BoneTarget = FName();
 		Cable->SetMaterial(0, TongueCPP->CableMaterial);
 
 
@@ -440,6 +440,22 @@ void AFrogGameCharacter::StartJump()
 	bIsCharging = true;
 }
 
+
+void AFrogGameCharacter::SetHandCollision(USphereComponent* Collider, FName CollisionProfile)
+{
+	Collider->SetCollisionProfileName(CollisionProfile);
+	Collider->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	if (CollisionProfile == TEXT("Pawn"))
+	{
+		Collider->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+		Collider->SetSimulatePhysics(true);
+	}
+	else
+	{
+		Collider->SetSimulatePhysics(false);
+	}
+}
+
 void AFrogGameCharacter::Hitmonchan()
 {
 	if (bPowerMode)
@@ -449,6 +465,24 @@ void AFrogGameCharacter::Hitmonchan()
 	else
 	{
 		// Does nothing if player is not in power mode.
+	}
+}
+
+
+void AFrogGameCharacter::OnAttackHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+                                     FVector NormalImpulse, const FHitResult& Hit)
+{
+	if (OtherActor != this && OtherComp != nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Hit Event!"))
+
+
+		//if (Destructible)
+		//{
+		TSubclassOf<UDamageType> const ValidDamageTypeClass = TSubclassOf<UDamageType>(UDamageType::StaticClass());
+		FDamageEvent DamageEvent(ValidDamageTypeClass);
+		//Destructible->TakeDamage(PunchDamage, DamageEvent, GetController(), this);
+		//}
 	}
 }
 
@@ -505,29 +539,4 @@ void AFrogGameCharacter::SaveGame()
 void AFrogGameCharacter::LoadGame()
 {
 	Cast<UFrogGameInstance>(GetGameInstance())->LoadCheckpoint();
-}
-
-void AFrogGameCharacter::GetClosestChunk(UDestructibleComponent* Component)
-{
-	FName ClosestBone;
-	float DistToBone{5000.f};
-	for (const auto Bone : Component->GetAllSocketNames())
-	{
-		if (Component->IsBoneHiddenByName(Bone) || Bone == TEXT("Root"))
-		{
-			continue;
-		}
-		const float Distance{FVector::Dist(Component->GetBoneLocation(Bone), GetActorLocation())};
-		if (Distance < DistToBone)
-		{
-			ClosestBone = Bone;
-			DistToBone = Distance;
-		}
-	}
-	if (ClosestBone == LastBone)
-	{
-		return;
-	}
-	BoneTarget = ClosestBone;
-	UE_LOG(LogTemp, Warning, TEXT("%s"), *BoneTarget.ToString());
 }

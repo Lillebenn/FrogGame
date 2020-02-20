@@ -81,6 +81,13 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 	uint8 EdibleThreshold{2};
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AutoAim)
+	float MaxAngleScore{0.25f};
+	// Max euclidean angle before the object's angle score will be set to 0.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AutoAim)
+	float MaxAngle{75.f};
+
+	float MaxAngleRadians;
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class ATongueProjectile> Tongue;
 
@@ -93,8 +100,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool bPowerMode{false};
 
-	FName BoneTarget;
-	FName LastBone;
 	void Consume(AActor* OtherActor, FName BoneName = FName());
 	// Tongue Settings
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tongue)
@@ -139,6 +144,8 @@ private:
 
 	/** Uses fist to punch something, can only be used in power mode **/
 	void Hitmonchan();
+	void OnAttackHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	                 FVector NormalImpulse, const FHitResult& Hit);
 
 	UFUNCTION()
 	void OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
@@ -148,8 +155,6 @@ private:
 
 
 	void LoadGame();
-
-	void GetClosestChunk(class UDestructibleComponent* Component);
 
 	/** Lets the frog jump higher by charging a jump **/
 	void StartJump();
