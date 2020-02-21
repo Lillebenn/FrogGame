@@ -266,7 +266,7 @@ void AFrogGameCharacter::AutoAim()
 				Targets[0] = Actor;
 				UE_LOG(LogTemp, Warning,
 				       TEXT("Current Target is: %s, with a distance score of: %f and angle score of: %f"),
-				       *CurrentTarget->GetName(), DistanceScore, AngleScore)
+				       *Targets[0]->GetName(), DistanceScore, AngleScore)
 				UE_LOG(LogTemp, Warning, TEXT("Total Score: %f, vs Last Score: %f"), TotalScore,
 				       CurrentTargetScore)
 
