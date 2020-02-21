@@ -82,17 +82,20 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 	uint8 EdibleThreshold{1};
 
+	// How much weight the auto-aim should give to the camera view angle.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AutoAim)
 	float MaxAngleScore{1.f};
+	// How much weight the auto-aim should give to the distance between target and player.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AutoAim)
 	float MaxDistanceScore{1.f};
-	// Max euclidean angle before the object's angle score will be set to 0.
+	// How much better a target an actor needs to be in order to become the new current target. Lower value means it's easier to switch targets by moving or turning the camera.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AutoAim)
+	float AimStickiness{-0.05f};
+	// Max euclidean angle (i.e. 75°) before the object's angle score will be nullifying. 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AutoAim)
 	float MaxAngle{75.f};
 	float MaxAngleRadians;
-	// How much better a target an actor needs to be in order to become the new current target.
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AutoAim)
-	float AimStickiness{-0.05f};
+
 	UPROPERTY()
 	AActor* CurrentTarget;
 	float CurrentTargetScore{0.f};

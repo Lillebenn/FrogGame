@@ -242,8 +242,9 @@ void AFrogGameCharacter::AutoAim()
 			V2.Normalize();
 			const float Dot = FVector::DotProduct(V1, V2);
 			float AngleRad{FMath::Acos(Dot)};
-			float Dot2{FVector::DotProduct(FollowCamera->GetRightVector(), V2)};
-			if (Dot2 < 0.f)
+			// We need another dot product to figure out our winding
+			// in case the angle is something like 480 or -900 we normalize it to +-PI
+			if (FVector::DotProduct(FollowCamera->GetRightVector(), V2) < 0.f)
 			{
 				AngleRad = PI * 2.f - AngleRad;
 			}
