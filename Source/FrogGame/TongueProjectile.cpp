@@ -74,7 +74,10 @@ void ATongueProjectile::AttachEdible(AActor* EdibleActor)
 void ATongueProjectile::OnComponentHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
                                        FVector NormalImpulse, const FHitResult& Hit)
 {
-	AttachEdible(OtherActor);
+	if(OtherActor->Implements<UEdible>())
+	{
+		AttachEdible(OtherActor);
+	}
 }
 
 void ATongueProjectile::SeekTarget(const float DeltaTime)
@@ -136,8 +139,10 @@ void ATongueProjectile::BeginPlay()
 
 		TongueInSpeed = Froggy->TongueInSpeed;
 		TongueOutSpeed = Froggy->TongueOutSpeed;
-
-		Target = Froggy->CurrentTarget;
+		if (Froggy->CurrentTarget)
+		{
+			Target = Froggy->CurrentTarget;
+		}
 	}
 	else
 	{

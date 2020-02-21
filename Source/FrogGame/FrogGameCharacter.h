@@ -24,7 +24,6 @@ class AFrogGameCharacter : public ACharacter
 	class UArrowComponent* TongueStart;
 
 
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* BoxCollider;
 
@@ -84,20 +83,24 @@ public:
 	uint8 EdibleThreshold{1};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AutoAim)
-	float MaxAngleScore{0.25f};
+	float MaxAngleScore{1.f};
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AutoAim)
+	float MaxDistanceScore{1.f};
 	// Max euclidean angle before the object's angle score will be set to 0.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AutoAim)
 	float MaxAngle{75.f};
-
 	float MaxAngleRadians;
+	// How much better a target an actor needs to be in order to become the new current target.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AutoAim)
+	float AimStickiness{-0.05f};
+	UPROPERTY()
+	AActor* CurrentTarget;
+	float CurrentTargetScore{0.f};
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class ATongueProjectile> Tongue;
 
 	UPROPERTY()
 	class UCableComponent* Cable;
-
-	UPROPERTY()
-	AActor* CurrentTarget;
 
 
 	void Consume(AActor* OtherActor, FName BoneName = FName());
@@ -110,7 +113,7 @@ public:
 
 	float TongueInSpeed;
 	float TongueOutSpeed;
-	
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = PowerMode)
 	bool bPowerMode{false};
 	// Amount of damage the punch will do on each hit.
@@ -152,6 +155,7 @@ protected:
 	void Landed(const FHitResult& Hit) override;
 	// APawn interface
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	void ClearCurrentTarget();
 	// End of APawn interface
 
 private:
@@ -164,7 +168,7 @@ private:
 
 	/** Uses fist to punch something, can only be used in power mode **/
 	void Hitmonchan();
-
+	UFUNCTION()
 	void OnAttackHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                 FVector NormalImpulse, const FHitResult& Hit);
 

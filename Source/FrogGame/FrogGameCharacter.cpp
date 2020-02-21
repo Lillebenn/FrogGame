@@ -63,7 +63,6 @@ AFrogGameCharacter::AFrogGameCharacter()
 	TongueStart->SetupAttachment(GetMesh(), FName("head"));
 
 
-
 	// Creates a collision sphere and attaches it to the characters right hand.
 	RightHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("RightHandCollision"));
 	RightHandCollision->SetupAttachment(GetMesh(), FName("hand_r"));
@@ -132,8 +131,7 @@ void AFrogGameCharacter::BeginPlay()
 	BaseBoomRange = CameraBoom->TargetArmLength;
 	LeftHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
 	RightHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
-	MaxAngleRadians = FMath::RadiansToDegrees(MaxAngle);
-
+	MaxAngleRadians = FMath::DegreesToRadians(MaxAngle);
 }
 
 UArrowComponent* AFrogGameCharacter::GetTongueStart()
@@ -160,7 +158,7 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 
 	PlayerInputComponent->BindAction("TestSave", IE_Pressed, this, &AFrogGameCharacter::SaveGame);
 	PlayerInputComponent->BindAction("TestLoad", IE_Pressed, this, &AFrogGameCharacter::LoadGame);
-
+	PlayerInputComponent->BindAction("ClearTarget", IE_Pressed, this, &AFrogGameCharacter::ClearCurrentTarget);
 	PlayerInputComponent->BindAxis("MoveForward", this, &AFrogGameCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AFrogGameCharacter::MoveRight);
 
@@ -173,6 +171,11 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AFrogGameCharacter::LookUpAtRate);
 }
 
+void AFrogGameCharacter::ClearCurrentTarget()
+{
+	CurrentTarget = nullptr;
+	CurrentTargetScore = 0.0f;
+}
 
 void AFrogGameCharacter::Tick(float DeltaTime)
 {
@@ -206,14 +209,13 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 void AFrogGameCharacter::AutoAim()
 {
 	TArray<AActor*> OverlappingActors;
-	// Todo: Distance From Player and preferring actors based on the angle from player location
+	// Necessary to update the auto-aim volume whenever the camera is turned. Might be expensive?
+	BoxCollider->UpdateOverlapsImpl();
 	BoxCollider->GetOverlappingActors(OverlappingActors);
 	const int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
-	float CurrentTargetScore{0.f};
 	for (AActor* Actor : OverlappingActors)
 	{
-		if (Actor == CurrentTarget) // Don't check against itself
-
+		if (Actor == CurrentTarget) // Don't check against itself	
 		{
 			continue;
 		}
@@ -233,25 +235,45 @@ void AFrogGameCharacter::AutoAim()
 				FVector::Dist(GetActorLocation(), GetActorLocation() + MaxPointInBox)
 			};
 			// How ideal this actor is to become the current target based on distance.
-			const float DistanceScore{FMath::Clamp(DistToActor / DistToMaxRange, 0.f, 1.f)};
-			const float Dot = FVector::DotProduct(BoxCollider->GetForwardVector(),
-			                                      Actor->GetActorLocation().GetSafeNormal());
-			const float AngleInRadians{FMath::Acos(Dot)};
-			// How ideal this actor is to become the current target based on proximity to the middle of the camera view. A lower value is better.
-			float AngleScore{0.f};
-			if (AngleInRadians <= MaxAngleRadians)
+			const float DistanceScore{1.f - FMath::Clamp(DistToActor / DistToMaxRange, 0.f, MaxDistanceScore)};
+			FVector V1{FollowCamera->GetForwardVector()};
+			// Get a line from camera to actor
+			FVector V2{FollowCamera->GetComponentLocation() - Actor->GetActorLocation()};
+			V2.Normalize();
+			const float Dot = FVector::DotProduct(V1, V2);
+			float AngleRad{FMath::Acos(Dot)};
+			float Dot2{FVector::DotProduct(FollowCamera->GetRightVector(), V2)};
+			if (Dot2 < 0.f)
 			{
-
-				// An angle exactly as large as the max angle will result in 1 / 1 * MaxAngleScore = MaxAngleScore.
-				AngleScore = (AngleInRadians / MaxAngleRadians) * MaxAngleScore;
+				AngleRad = PI * 2.f - AngleRad;
 			}
+			AngleRad = FMath::Abs(FMath::Clamp(AngleRad - PI, -PI, PI));
+			// How ideal this actor is to become the current target based on proximity to the middle of the camera view. A lower value is better.
+			// An angle exactly as large as the max angle will result in (X / X) * MaxAngleScore = MaxAngleScore.
+			const float AngleScore = FMath::Clamp(AngleRad / MaxAngleRadians, 0.f, MaxAngleScore);
+
 			const float TotalScore{DistanceScore - AngleScore};
-			if (TotalScore > CurrentTargetScore)
+			if (TotalScore > CurrentTargetScore + AimStickiness)
 			{
 				CurrentTarget = Actor;
+				UE_LOG(LogTemp, Warning,
+				       TEXT("Current Target is: %s, with a distance score of: %f and angle score of: %f"),
+				       *CurrentTarget->GetName(), DistanceScore, AngleScore)
+				UE_LOG(LogTemp, Warning, TEXT("Total Score: %f, vs Last Score: %f"), TotalScore,
+				       CurrentTargetScore)
+
 				CurrentTargetScore = TotalScore;
 			}
 		}
+	}
+	if (CurrentTarget)
+	{
+		UKismetSystemLibrary::DrawDebugArrow(
+			GetWorld(),
+			BoxCollider->GetComponentLocation() - BoxCollider->GetForwardVector() * BoxCollider
+			                                                                        ->GetUnscaledBoxExtent().X,
+			CurrentTarget->GetActorLocation(), 3.f,
+			FLinearColor::Red);
 	}
 }
 
@@ -481,14 +503,12 @@ void AFrogGameCharacter::OnAttackHit(UPrimitiveComponent* HitComp, AActor* Other
 		UE_LOG(LogTemp, Warning, TEXT("Hit Event!"))
 
 
-
 		//if (Destructible)
 		//{
 		TSubclassOf<UDamageType> const ValidDamageTypeClass = TSubclassOf<UDamageType>(UDamageType::StaticClass());
 		FDamageEvent DamageEvent(ValidDamageTypeClass);
 		//Destructible->TakeDamage(PunchDamage, DamageEvent, GetController(), this);
 		//}
-
 	}
 }
 
@@ -534,6 +554,8 @@ void AFrogGameCharacter::OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AAct
 		if (OtherActor == CurrentTarget)
 		{
 			CurrentTarget = nullptr;
+			CurrentTargetScore = 0.0f;
+			UE_LOG(LogTemp, Warning, TEXT("Target stopped overlapping."))
 		}
 	}
 }
@@ -548,4 +570,3 @@ void AFrogGameCharacter::LoadGame()
 {
 	Cast<UFrogGameInstance>(GetGameInstance())->LoadCheckpoint();
 }
-

@@ -160,7 +160,7 @@ FActorSaveData UFrogGameInstance::SaveData(AActor* Actor)
 	ActorRecord.ActorName = FName(*Actor->GetName());
 	ActorRecord.ActorTransform = Actor->GetTransform();
 	FVector Location{Actor->GetActorLocation()};
-	UE_LOG(LogTemp, Warning, TEXT("%f, %f, %f"), Location.X, Location.Y, Location.Z);
+	//UE_LOG(LogTemp, Warning, TEXT("%f, %f, %f"), Location.X, Location.Y, Location.Z);
 
 	FMemoryWriter MemoryWriter(ActorRecord.ActorData, true);
 	FSaveGameArchive Ar(MemoryWriter);
