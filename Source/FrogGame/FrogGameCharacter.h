@@ -32,6 +32,8 @@ class AFrogGameCharacter : public ACharacter
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class USphereComponent* LeftHandCollision;
+
+	friend class ATongueProjectile;
 public:
 	AFrogGameCharacter();
 
@@ -96,17 +98,12 @@ public:
 	float MaxAngle{75.f};
 	float MaxAngleRadians;
 
-	UPROPERTY()
-	AActor* CurrentTarget;
 	float CurrentTargetScore{0.f};
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<class ATongueProjectile> Tongue;
-
+	TSubclassOf<class ATongueProjectile> TongueBP;
 	UPROPERTY()
-	class UCableComponent* Cable;
-
-
-	void Consume(AActor* OtherActor, FName BoneName = FName());
+	TArray<class ATongueProjectile*> Tongues;
+	void Consume(AActor* OtherActor, ATongueProjectile* Tongue);
 	// Tongue Settings
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tongue)
 	float BaseTongueInSpeed{10000.f};
@@ -168,6 +165,8 @@ private:
 	void UpdateAimRange() const;
 	/** Uses the tongue to eat something, and then grows **/
 	void Lickitung();
+	UPROPERTY()
+	TArray<AActor*> Targets;
 
 	/** Uses fist to punch something, can only be used in power mode **/
 	void Hitmonchan();
@@ -197,6 +196,8 @@ private:
 	void PowerMode();
 
 	void PowerDrain(float DeltaTime);
+
+	void DeactivatePowerMode();
 
 
 	float ScaleAlpha{0.0f};
@@ -230,3 +231,4 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };
+

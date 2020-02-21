@@ -74,7 +74,7 @@ void ATongueProjectile::AttachEdible(AActor* EdibleActor)
 void ATongueProjectile::OnComponentHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
                                        FVector NormalImpulse, const FHitResult& Hit)
 {
-	if(OtherActor->Implements<UEdible>())
+	if (OtherActor->Implements<UEdible>())
 	{
 		AttachEdible(OtherActor);
 	}
@@ -84,11 +84,11 @@ void ATongueProjectile::SeekTarget(const float DeltaTime)
 {
 	if (Target)
 	{
-		VInterpTo(IEdible::Execute_GetTargetComponent(Target)->GetComponentLocation(), TongueOutSpeed, DeltaTime);
+		VInterpTo(IEdible::Execute_GetTargetComponent(Target)->GetComponentLocation(), TongueReturnSpeed, DeltaTime);
 	}
 	else
 	{
-		VInterpTo(TargetLocation, TongueOutSpeed, DeltaTime);
+		VInterpTo(TargetLocation, TongueReturnSpeed, DeltaTime);
 		// Keep going until you hit something or reach the max distance
 		if (FVector::Dist(TargetLocation, GetActorLocation()) <= 0.5f)
 		{
@@ -110,14 +110,10 @@ void ATongueProjectile::Return(const float DeltaTime)
 	if (!bIsPaused)
 	{
 		const FVector ReturnPos{Froggy->GetTongueStart()->GetComponentLocation()};
-		VInterpTo(ReturnPos, TongueInSpeed, DeltaTime);
+		VInterpTo(ReturnPos, TongueSeekSpeed, DeltaTime);
 		if (FVector::Dist(GetActorLocation(), ReturnPos) <= CollisionSphere->GetScaledSphereRadius())
 		{
-			Froggy->bTongueSpawned = false;
-
-			Froggy->Consume(Target);
-
-			Destroy();
+			Froggy->Consume(Target, this);
 		}
 		CurrentPause = PauseDuration;
 	}
@@ -130,38 +126,67 @@ void ATongueProjectile::BeginPlay()
 	Super::BeginPlay();
 
 	Froggy = Cast<AFrogGameCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-	if (Froggy)
-	{
-		// Just taking the X scale since the scale should be uniform
-		const float ActualRange{TongueRange * Froggy->GetActorScale().X};
-		TargetLocation = Froggy->GetTongueStart()->GetComponentLocation() + (Froggy->GetActorForwardVector() *
-			ActualRange);
-
-		TongueInSpeed = Froggy->TongueInSpeed;
-		TongueOutSpeed = Froggy->TongueOutSpeed;
-		if (Froggy->CurrentTarget)
-		{
-			Target = Froggy->CurrentTarget;
-		}
-	}
-	else
+	if (!Froggy)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Failed to find FrogCharacter reference!"));
 		Destroy();
 	}
 }
 
+void ATongueProjectile::ActivateTongue(AActor* InTarget)
+{
+	Cable = NewObject<UCableComponent>(Froggy, UCableComponent::StaticClass());
+
+	Cable->CableLength = 0.f;
+	Cable->NumSegments = 10;
+	Cable->CableGravityScale = 0.f;
+	Cable->SolverIterations = 3;
+	Cable->bEnableStiffness = false;
+	Cable->CableWidth = Froggy->CurrentCableWidth;
+	Cable->EndLocation = FVector(5, 0, 0); // Zero vector seems to bug
+
+	USceneComponent* AttachComponent{Froggy->TongueStart};
+	const FVector Location{AttachComponent->GetComponentTransform().GetLocation()};
+	const FRotator Rotation{AttachComponent->GetComponentTransform().GetRotation()};
+	Cable->SetRelativeLocation(Location);
+	Cable->SetRelativeRotation(Rotation);
+	const FAttachmentTransformRules InRule(EAttachmentRule::KeepWorld, false);
+	Cable->AttachToComponent(AttachComponent, InRule);
+
+	Cable->SetMaterial(0, CableMaterial);
+
+	Cable->SetAttachEndTo(this, FName());
+	Cable->RegisterComponent();
+	if (!InTarget)
+	{
+		// Just taking the X scale since the scale should be uniform
+		const float ActualRange{TongueRange * Froggy->GetActorScale().X};
+		TargetLocation = Froggy->GetTongueStart()->GetComponentLocation() + (Froggy->GetActorForwardVector() *
+			ActualRange);
+	}
+	else
+	{
+		Target = InTarget;
+	}
+	TongueSeekSpeed = Froggy->TongueOutSpeed;
+	TongueReturnSpeed = Froggy->TongueInSpeed;
+	Activated = true;
+}
+
+
 // Called every frame
 void ATongueProjectile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	if (!bShouldReturn)
+	if (Activated)
 	{
-		SeekTarget(DeltaTime);
-	}
-	else
-	{
-		Return(DeltaTime);
+		if (!bShouldReturn)
+		{
+			SeekTarget(DeltaTime);
+		}
+		else
+		{
+			Return(DeltaTime);
+		}
 	}
 }

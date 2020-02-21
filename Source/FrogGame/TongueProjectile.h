@@ -5,15 +5,19 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/TimelineComponent.h"
+#include "CableComponent.h"
+#include "Materials/Material.h"
 #include "TongueProjectile.generated.h"
 
 class UCurveFloat;
+
 
 UCLASS()
 class FROGGAME_API ATongueProjectile : public AActor
 {
 	GENERATED_BODY()
 
+	friend class AFrogGameCharacter;
 public:
 	// Sets default values for this actor's properties
 	ATongueProjectile();
@@ -32,13 +36,13 @@ public:
 	class UProjectileMovementComponent* TongueProjectile;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Cable)
-	class UMaterial* CableMaterial;
+	UMaterial* CableMaterial;
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class UCameraShake> TongueShakeEffect;
 	// Speed at which the tongue snaps out at a target. Default value - Will be overridden by FrogCharacter.
-	float TongueOutSpeed{4500.0f};
+	float TongueReturnSpeed{4500.0f};
 	// Speed at which the tongue returns. Default value - Will be overridden by FrogCharacter.
-	float TongueInSpeed{10000.0f};
+	float TongueSeekSpeed{10000.0f};
 	// Duration at which the tongue will "pause" at the target before snapping back in.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Tongue)
 	float PauseDuration{0.1f};
@@ -50,6 +54,7 @@ public:
 
 	void AttachEdible(AActor* EdibleActor);
 
+	void ActivateTongue(AActor* InTarget);
 
 	UPROPERTY(BlueprintReadOnly)
 	AActor* Target;
@@ -67,6 +72,11 @@ public:
 private:
 	void SeekTarget(float DeltaTime);
 	void Return(float DeltaTime);
+	bool Activated{false};
+	UPROPERTY()
+	class UCableComponent* Cable;
+		int32 ArrayIndex{0};
+
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
