@@ -122,12 +122,13 @@ void AFrogGameCharacter::UpdatePowerPoints(float Points)
 void AFrogGameCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	if(TongueBP)
+	if (TongueBP)
 	{
 		const FVector Viewport{GetWorld()->GetGameViewport()->Viewport->GetSizeXY()};
 		BoxCollider->SetBoxExtent(FVector(TongueBP.GetDefaultObject()->TongueRange / 2.f, Viewport.X / 2.f,
-                                          Viewport.Y));
-	}else
+		                                  Viewport.Y));
+	}
+	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("Missing reference to TongueProjectile blueprint!"));
 	}
@@ -178,7 +179,6 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 
 void AFrogGameCharacter::ClearCurrentTarget()
 {
-	
 	CurrentTarget = nullptr;
 	Targets.RemoveAt(0);
 	CurrentTargetScore = 0.0f;
@@ -429,8 +429,9 @@ void AFrogGameCharacter::Lickitung()
 					FacingDirection.Pitch = GetActorRotation().Pitch;
 					SetActorRotation(FacingDirection);
 				}
-				Tongues.Add(TongueCPP);
 				TongueCPP->ArrayIndex = Tongues.Num();
+				Tongues.Add(TongueCPP);
+
 				TongueCPP->ActivateTongue(Target);
 			}
 		}
