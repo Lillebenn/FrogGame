@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/TimelineComponent.h"
-#include "CableComponent.h"
 #include "Materials/Material.h"
 #include "TongueProjectile.generated.h"
 

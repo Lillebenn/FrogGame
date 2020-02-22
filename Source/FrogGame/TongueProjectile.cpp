@@ -3,6 +3,7 @@
 
 #include "TongueProjectile.h"
 #include "FrogGameCharacter.h"
+#include "CableComponent.h"
 #include "Engine.h"
 #include "Edible.h"
 
@@ -59,15 +60,18 @@ void ATongueProjectile::VInterpTo(const FVector InterpTo, const float TongueSpee
 
 void ATongueProjectile::AttachEdible(AActor* EdibleActor)
 {
-	const FAttachmentTransformRules InRule(EAttachmentRule::KeepWorld, false);
-	EdibleActor->AttachToActor(this, InRule);
+	if (EdibleActor->Implements<UEdible>())
+	{
+		const FAttachmentTransformRules InRule(EAttachmentRule::KeepWorld, false);
+		EdibleActor->AttachToActor(this, InRule);
 
-	// Turn off collision on the dragged object so we don't get affected by it on the way back.
-	EdibleActor->SetActorEnableCollision(false);
-	GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayCameraShake(TongueShakeEffect);
+		// Turn off collision on the dragged object so we don't get affected by it on the way back.
+		EdibleActor->SetActorEnableCollision(false);
+		GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayCameraShake(TongueShakeEffect);
 
-	IEdible::Execute_OnDisabled(EdibleActor);
-	bShouldReturn = true;
+		IEdible::Execute_OnDisabled(EdibleActor);
+		bShouldReturn = true;
+	}
 }
 
 
@@ -84,11 +88,11 @@ void ATongueProjectile::SeekTarget(const float DeltaTime)
 {
 	if (Target)
 	{
-		VInterpTo(IEdible::Execute_GetTargetComponent(Target)->GetComponentLocation(), TongueReturnSpeed, DeltaTime);
+		VInterpTo(IEdible::Execute_GetTargetComponent(Target)->GetComponentLocation(), TongueSeekSpeed, DeltaTime);
 	}
 	else
 	{
-		VInterpTo(TargetLocation, TongueReturnSpeed, DeltaTime);
+		VInterpTo(TargetLocation, TongueSeekSpeed, DeltaTime);
 		// Keep going until you hit something or reach the max distance
 		if (FVector::Dist(TargetLocation, GetActorLocation()) <= 0.5f)
 		{
@@ -110,7 +114,7 @@ void ATongueProjectile::Return(const float DeltaTime)
 	if (!bIsPaused)
 	{
 		const FVector ReturnPos{Froggy->GetTongueStart()->GetComponentLocation()};
-		VInterpTo(ReturnPos, TongueSeekSpeed, DeltaTime);
+		VInterpTo(ReturnPos, TongueReturnSpeed, DeltaTime);
 		if (FVector::Dist(GetActorLocation(), ReturnPos) <= CollisionSphere->GetScaledSphereRadius())
 		{
 			Froggy->Consume(Target, this);
@@ -143,7 +147,7 @@ void ATongueProjectile::ActivateTongue(AActor* InTarget)
 	Cable->SolverIterations = 3;
 	Cable->bEnableStiffness = false;
 	Cable->CableWidth = Froggy->CurrentCableWidth;
-	Cable->EndLocation = FVector(5, 0, 0); // Zero vector seems to bug
+	Cable->EndLocation = FVector(0, 0, 0); // Zero vector seems to bug
 
 	USceneComponent* AttachComponent{Froggy->TongueStart};
 	const FVector Location{AttachComponent->GetComponentTransform().GetLocation()};
@@ -168,8 +172,8 @@ void ATongueProjectile::ActivateTongue(AActor* InTarget)
 	{
 		Target = InTarget;
 	}
-	TongueSeekSpeed = Froggy->TongueOutSpeed;
-	TongueReturnSpeed = Froggy->TongueInSpeed;
+	TongueSeekSpeed = Froggy->TongueSeekSpeed;
+	TongueReturnSpeed = Froggy->TongueReturnSpeed;
 	Activated = true;
 }
 

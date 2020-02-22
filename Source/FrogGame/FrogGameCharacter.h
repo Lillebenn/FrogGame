@@ -106,13 +106,13 @@ public:
 	void Consume(AActor* OtherActor, ATongueProjectile* Tongue);
 	// Tongue Settings
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tongue)
-	float BaseTongueInSpeed{10000.f};
+	float BaseTongueReturnSpeed{10000.f};
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tongue)
-	float BaseTongueOutSpeed{4500.f};
+	float BaseTongueSeekSpeed{4500.f};
 
 
-	float TongueInSpeed;
-	float TongueOutSpeed;
+	float TongueReturnSpeed;
+	float TongueSeekSpeed;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = PowerMode)
 	bool bPowerMode{false};

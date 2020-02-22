@@ -14,6 +14,7 @@
 #include "TongueProjectile.h"
 #include "FrogGameInstance.h"
 #include "Edible.h"
+#include "CableComponent.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AFrogGameCharacter
@@ -75,14 +76,6 @@ AFrogGameCharacter::AFrogGameCharacter()
 	SetHandCollision(LeftHandCollision, TEXT("NoCollision"));
 	RightHandCollision->SetCollisionObjectType(ECC_WorldDynamic);
 	LeftHandCollision->SetCollisionObjectType(ECC_WorldDynamic);
-
-	// Setting Hud trackers to 0 at the start.
-	CurrentScore = 0.f;
-	CurrentPowerPoints = 0.f;
-
-	TongueInSpeed = BaseTongueInSpeed;
-	TongueOutSpeed = BaseTongueOutSpeed;
-	CurrentJump = BaseJump;
 }
 
 float AFrogGameCharacter::GetCurrentScore()
@@ -138,6 +131,14 @@ void AFrogGameCharacter::BeginPlay()
 	LeftHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
 	RightHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
 	MaxAngleRadians = FMath::DegreesToRadians(MaxAngle);
+
+	// Setting Hud trackers to 0 at the start.
+	CurrentScore = 0.f;
+	CurrentPowerPoints = 0.f;
+
+	TongueReturnSpeed = BaseTongueReturnSpeed;
+	TongueSeekSpeed = BaseTongueSeekSpeed;
+	CurrentJump = BaseJump;
 }
 
 UArrowComponent* AFrogGameCharacter::GetTongueStart()
@@ -375,8 +376,8 @@ void AFrogGameCharacter::UpdateCharacterMovement(const float ScaleDelta)
 	Movement->MaxWalkSpeed += BaseMaxWalkSpeed * ScaleDelta;
 	CurrentJump += BaseJump * ScaleDelta;
 	Movement->JumpZVelocity = CurrentJump;
-	TongueInSpeed += BaseTongueInSpeed * ScaleDelta;
-	TongueOutSpeed += BaseTongueOutSpeed * ScaleDelta;
+	TongueReturnSpeed += BaseTongueReturnSpeed * ScaleDelta;
+	TongueSeekSpeed += BaseTongueSeekSpeed * ScaleDelta;
 }
 
 void AFrogGameCharacter::UpdateCameraBoom(const float ScaleDelta) const
