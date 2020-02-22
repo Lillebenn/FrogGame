@@ -122,9 +122,15 @@ void AFrogGameCharacter::UpdatePowerPoints(float Points)
 void AFrogGameCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	const FVector Viewport{GetWorld()->GetGameViewport()->Viewport->GetSizeXY()};
-	BoxCollider->SetBoxExtent(FVector(TongueBP.GetDefaultObject()->TongueRange / 2.f, Viewport.X / 2.f,
-	                                  Viewport.Y));
+	if(TongueBP)
+	{
+		const FVector Viewport{GetWorld()->GetGameViewport()->Viewport->GetSizeXY()};
+		BoxCollider->SetBoxExtent(FVector(TongueBP.GetDefaultObject()->TongueRange / 2.f, Viewport.X / 2.f,
+                                          Viewport.Y));
+	}else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Missing reference to TongueProjectile blueprint!"));
+	}
 	BoxCollider->SetRelativeLocation(FVector(CameraBoom->TargetArmLength + BoxCollider->GetUnscaledBoxExtent().X, 0,
 	                                         0));
 	BaseBoomRange = CameraBoom->TargetArmLength;
@@ -172,7 +178,9 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 
 void AFrogGameCharacter::ClearCurrentTarget()
 {
-	Targets[0] = nullptr;
+	
+	CurrentTarget = nullptr;
+	Targets.RemoveAt(0);
 	CurrentTargetScore = 0.0f;
 }
 
@@ -222,7 +230,7 @@ void AFrogGameCharacter::AutoAim()
 	const int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
 	for (AActor* Actor : OverlappingActors)
 	{
-		if (Actor == Targets[0]) // Don't check against itself	
+		if (Actor == CurrentTarget) // Don't check against itself	
 		{
 			continue;
 		}
@@ -263,10 +271,11 @@ void AFrogGameCharacter::AutoAim()
 			const float TotalScore{DistanceScore - AngleScore};
 			if (TotalScore > CurrentTargetScore + AimStickiness)
 			{
-				Targets[0] = Actor;
+				CurrentTarget = Actor;
+				Targets.Add(CurrentTarget);
 				UE_LOG(LogTemp, Warning,
 				       TEXT("Current Target is: %s, with a distance score of: %f and angle score of: %f"),
-				       *Targets[0]->GetName(), DistanceScore, AngleScore)
+				       *CurrentTarget->GetName(), DistanceScore, AngleScore)
 				UE_LOG(LogTemp, Warning, TEXT("Total Score: %f, vs Last Score: %f"), TotalScore,
 				       CurrentTargetScore)
 
@@ -274,13 +283,13 @@ void AFrogGameCharacter::AutoAim()
 			}
 		}
 	}
-	if (Targets[0])
+	if (CurrentTarget)
 	{
 		UKismetSystemLibrary::DrawDebugArrow(
 			GetWorld(),
 			BoxCollider->GetComponentLocation() - BoxCollider->GetForwardVector() * BoxCollider
 			                                                                        ->GetUnscaledBoxExtent().X,
-			Targets[0]->GetActorLocation(), 3.f,
+			CurrentTarget->GetActorLocation(), 3.f,
 			FLinearColor::Red);
 	}
 }
@@ -557,10 +566,9 @@ void AFrogGameCharacter::OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AAct
 
 	if (OtherActor && (OtherActor != this) && OtherComp)
 	{
-		if (OtherActor == Targets[0])
+		if (OtherActor == CurrentTarget)
 		{
-			Targets[0] = nullptr;
-			CurrentTargetScore = 0.0f;
+			ClearCurrentTarget();
 			UE_LOG(LogTemp, Warning, TEXT("Target stopped overlapping."))
 		}
 	}

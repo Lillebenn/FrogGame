@@ -167,6 +167,8 @@ private:
 	void Lickitung();
 	UPROPERTY()
 	TArray<AActor*> Targets;
+	UPROPERTY()
+	AActor* CurrentTarget;
 
 	/** Uses fist to punch something, can only be used in power mode **/
 	void Hitmonchan();
