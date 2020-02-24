@@ -13,8 +13,8 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "TongueProjectile.h"
 #include "FrogGameInstance.h"
-#include "CableComponent.h"
 #include "Edible.h"
+#include "CableComponent.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AFrogGameCharacter
@@ -56,6 +56,9 @@ AFrogGameCharacter::AFrogGameCharacter()
 	BoxCollider->SetupAttachment(FollowCamera);
 	BoxCollider->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	BoxCollider->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Overlap);
+	BoxCollider->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Ignore);
+	BoxCollider->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Ignore);
+
 	BoxCollider->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnBoxTraceEnd);
 	// We use the arrow component as spawn point for the tongue and attach it to the head bone
 	TongueStart = GetArrowComponent();
@@ -76,14 +79,6 @@ AFrogGameCharacter::AFrogGameCharacter()
 	SetHandCollision(LeftHandCollision, TEXT("NoCollision"));
 	RightHandCollision->SetCollisionObjectType(ECC_WorldDynamic);
 	LeftHandCollision->SetCollisionObjectType(ECC_WorldDynamic);
-
-	// Setting Hud trackers to 0 at the start.
-	CurrentScore = 0.f;
-	CurrentPowerPoints = 0.f;
-
-	TongueInSpeed = BaseTongueInSpeed;
-	TongueOutSpeed = BaseTongueOutSpeed;
-	CurrentJump = BaseJump;
 }
 
 float AFrogGameCharacter::GetCurrentScore()
@@ -123,15 +118,30 @@ void AFrogGameCharacter::UpdatePowerPoints(float Points)
 void AFrogGameCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	const FVector Viewport{GetWorld()->GetGameViewport()->Viewport->GetSizeXY()};
-	BoxCollider->SetBoxExtent(FVector(Tongue.GetDefaultObject()->TongueRange / 2.f, Viewport.X / 2.f,
-	                                  Viewport.Y));
+	if (TongueBP)
+	{
+		const FVector Viewport{GetWorld()->GetGameViewport()->Viewport->GetSizeXY()};
+		BoxCollider->SetBoxExtent(FVector(TongueBP.GetDefaultObject()->TongueRange / 2.f, Viewport.X / 2.f,
+		                                  Viewport.Y));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Missing reference to TongueProjectile blueprint!"));
+	}
 	BoxCollider->SetRelativeLocation(FVector(CameraBoom->TargetArmLength + BoxCollider->GetUnscaledBoxExtent().X, 0,
 	                                         0));
 	BaseBoomRange = CameraBoom->TargetArmLength;
 	LeftHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
 	RightHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
 	MaxAngleRadians = FMath::DegreesToRadians(MaxAngle);
+
+	// Setting Hud trackers to 0 at the start.
+	CurrentScore = 0.f;
+	CurrentPowerPoints = 0.f;
+
+	TongueReturnSpeed = BaseTongueReturnSpeed;
+	TongueSeekSpeed = BaseTongueSeekSpeed;
+	CurrentJump = BaseJump;
 }
 
 UArrowComponent* AFrogGameCharacter::GetTongueStart()
@@ -174,7 +184,16 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 void AFrogGameCharacter::ClearCurrentTarget()
 {
 	CurrentTarget = nullptr;
+	Targets.RemoveAt(0);
 	CurrentTargetScore = 0.0f;
+}
+
+void AFrogGameCharacter::DeactivatePowerMode()
+{
+	bPowerMode = false;
+	SetHandCollision(RightHandCollision, TEXT("NoCollision"));
+	SetHandCollision(LeftHandCollision, TEXT("NoCollision"));
+	// Put in set back to frog mesh & rig here
 }
 
 void AFrogGameCharacter::Tick(float DeltaTime)
@@ -185,10 +204,7 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 		PowerDrain(DeltaTime);
 		if (CurrentPowerPoints <= 0)
 		{
-			bPowerMode = false;
-			SetHandCollision(RightHandCollision, TEXT("NoCollision"));
-			SetHandCollision(LeftHandCollision, TEXT("NoCollision"));
-			// Put in set back to frog mesh & rig here
+			DeactivatePowerMode();
 		}
 	}
 	if (bIsCharging)
@@ -199,10 +215,8 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	{
 		UpdateCharacterScale(DeltaTime);
 	}
-	if (!bTongueSpawned)
-	{
-		AutoAim();
-	}
+
+	AutoAim();
 }
 
 // TODO: Choose target close to box origin AND player
@@ -212,6 +226,11 @@ void AFrogGameCharacter::AutoAim()
 	// Necessary to update the auto-aim volume whenever the camera is turned. Might be expensive?
 	BoxCollider->UpdateOverlapsImpl();
 	BoxCollider->GetOverlappingActors(OverlappingActors);
+	if (bPowerMode)
+	{
+		Targets = OverlappingActors; // Remember to clear this when exiting Power mode
+		return;
+	}
 	const int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
 	for (AActor* Actor : OverlappingActors)
 	{
@@ -257,6 +276,7 @@ void AFrogGameCharacter::AutoAim()
 			if (TotalScore > CurrentTargetScore + AimStickiness)
 			{
 				CurrentTarget = Actor;
+				Targets.Add(CurrentTarget);
 				UE_LOG(LogTemp, Warning,
 				       TEXT("Current Target is: %s, with a distance score of: %f and angle score of: %f"),
 				       *CurrentTarget->GetName(), DistanceScore, AngleScore)
@@ -295,43 +315,6 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 	GetCharacterMovement()->JumpZVelocity = CurrentJump;
 }
 
-void AFrogGameCharacter::Consume(AActor* OtherActor, const FName BoneName)
-{
-	if (Cable)
-	{
-		Cable->DestroyComponent();
-		bTongueSpawned = false;
-	}
-	if (!OtherActor)
-	{
-		return;
-	}
-	if (OtherActor->Implements<UEdible>())
-	{
-		const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(OtherActor)};
-		float ActualSize{SizeInfo.Size};
-		if (!BoneName.IsNone())
-		{
-			ActualSize /= SizeInfo.NumChunks; // Assuming that the actor splits into roughly same size chunks.
-		}
-		else
-		{
-			OtherActor->Destroy();
-		}
-		// just reset the lerp values
-		bScalingUp = true;
-		// We use the scaled radius value of the capsule collider to get an approximate size value for the main character.
-		const float ScaledRadius{GetCapsuleComponent()->GetScaledCapsuleRadius()};
-		// Compare this to the averaged bounding box size of the object being eaten and factor in the growth coefficient.
-		const float SizeDiff{ActualSize / ScaledRadius * SizeInfo.GrowthCoefficient};
-		// If SizeInfo.Size = 10 and ScaledRadius = 50 then we get a value of 10/50 = 0.2 or 20%.
-		// Increase actor scale by this value. 
-		const FVector ScaleVector = GetActorScale() * (1 + SizeDiff);
-		ExtraScaleTotal += (ScaleVector - GetActorScale());
-		UpdateCurrentScore(SizeInfo.ScorePoints);
-		UpdatePowerPoints(SizeInfo.PowerPoints);
-	}
-}
 
 void AFrogGameCharacter::MoveForward(float Value)
 {
@@ -396,8 +379,8 @@ void AFrogGameCharacter::UpdateCharacterMovement(const float ScaleDelta)
 	Movement->MaxWalkSpeed += BaseMaxWalkSpeed * ScaleDelta;
 	CurrentJump += BaseJump * ScaleDelta;
 	Movement->JumpZVelocity = CurrentJump;
-	TongueInSpeed += BaseTongueInSpeed * ScaleDelta;
-	TongueOutSpeed += BaseTongueOutSpeed * ScaleDelta;
+	TongueReturnSpeed += BaseTongueReturnSpeed * ScaleDelta;
+	TongueSeekSpeed += BaseTongueSeekSpeed * ScaleDelta;
 }
 
 void AFrogGameCharacter::UpdateCameraBoom(const float ScaleDelta) const
@@ -410,7 +393,7 @@ void AFrogGameCharacter::UpdateCameraBoom(const float ScaleDelta) const
 void AFrogGameCharacter::UpdateAimRange() const
 {
 	FVector Extent{BoxCollider->GetUnscaledBoxExtent()};
-	Extent.X = (Tongue.GetDefaultObject()->TongueRange / 2.f) * GetActorScale().X;
+	Extent.X = (TongueBP.GetDefaultObject()->TongueRange / 2.f) * GetActorScale().X;
 	const float XDiff{Extent.X - BoxCollider->GetUnscaledBoxExtent().X};
 	BoxCollider->SetBoxExtent(Extent);
 	FVector NewPosition{BoxCollider->GetRelativeLocation()};
@@ -424,42 +407,83 @@ void AFrogGameCharacter::Lickitung()
 	// TODO: When activating this, set the target's collision channel to a custom one that only that object has. 
 	if (!bTongueSpawned)
 	{
-		Cable = NewObject<UCableComponent>(this, UCableComponent::StaticClass());
-
-		Cable->CableLength = 0.f;
-		Cable->NumSegments = 10;
-		Cable->CableGravityScale = 0.f;
-		Cable->SolverIterations = 3;
-		Cable->bEnableStiffness = false;
-		Cable->CableWidth = CurrentCableWidth;
-		Cable->EndLocation = FVector(5, 0, 0); // Zero vector seems to bug
-
-
-		const FVector Location{TongueStart->GetComponentTransform().GetLocation()};
-		const FRotator Rotation{TongueStart->GetComponentTransform().GetRotation()};
-		Cable->SetRelativeLocation(Location);
-		Cable->SetRelativeRotation(Rotation);
-		const FAttachmentTransformRules InRule(EAttachmentRule::KeepWorld, false);
-		Cable->AttachToComponent(TongueStart, InRule);
-
-		FRotator FacingDirection{FollowCamera->GetForwardVector().ToOrientationRotator()};
-		FacingDirection.Pitch = GetActorRotation().Pitch;
-		SetActorRotation(FacingDirection);
-		ATongueProjectile* TongueCPP{
-			GetWorld()->SpawnActor<ATongueProjectile>(Tongue,
-			                                          TongueStart->GetComponentTransform())
-
-		};
-
-		Cable->SetMaterial(0, TongueCPP->CableMaterial);
-
-
-		Cable->SetAttachEndTo(TongueCPP, FName());
-		Cable->RegisterComponent();
-
+		NumTongues = 0;
+		UE_LOG(LogTemp, Warning, TEXT("Num Tongues left: %d, Num Targets: %d"), NumTongues, Targets.Num());
+		if (Targets.Num() == 0)
+		{
+			ATongueProjectile* TongueCPP{
+				GetWorld()->SpawnActor<ATongueProjectile>(TongueBP,
+				                                          TongueStart->
+				                                          GetComponentTransform())
+			};
+			NumTongues++;
+			TongueCPP->ActivateTongue(nullptr);
+		}
+		else
+		{
+			for (auto Target : Targets)
+			{
+				if (Target->Implements<UEdible>())
+				{
+					ATongueProjectile* TongueCPP{
+						GetWorld()->SpawnActor<ATongueProjectile>(TongueBP,
+						                                          TongueStart->
+						                                          GetComponentTransform())
+					};
+					if (Targets.Num() == 1)
+					{
+						FRotator FacingDirection{FollowCamera->GetForwardVector().ToOrientationRotator()};
+						FacingDirection.Pitch = GetActorRotation().Pitch;
+						SetActorRotation(FacingDirection);
+					}
+					NumTongues++;
+					TongueCPP->ActivateTongue(Target);
+				}
+			}
+		}
 		bTongueSpawned = true;
 	}
 	// If PowerMeter is full & PowerMode is not already active, activate PowerMode here?
+}
+
+void AFrogGameCharacter::Consume(AActor* OtherActor, ATongueProjectile* Tongue)
+{
+	if (Tongue->Cable)
+	{
+		Tongue->Cable->DestroyComponent();
+		Tongue->Destroy();
+		UE_LOG(LogTemp, Warning, TEXT("Destroying Tongue"));
+
+		NumTongues--;
+
+		if (NumTongues == 0)
+		{
+			bTongueSpawned = false;
+		}
+	}
+	if (!OtherActor)
+	{
+		return;
+	}
+	if (OtherActor->Implements<UEdible>())
+	{
+		const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(OtherActor)};
+
+		OtherActor->Destroy();
+
+		// just reset the lerp values
+		bScalingUp = true;
+		// We use the scaled radius value of the capsule collider to get an approximate size value for the main character.
+		const float ScaledRadius{GetCapsuleComponent()->GetScaledCapsuleRadius()};
+		// Compare this to the averaged bounding box size of the object being eaten and factor in the growth coefficient.
+		const float SizeDiff{SizeInfo.Size / ScaledRadius * SizeInfo.GrowthCoefficient};
+		// If SizeInfo.Size = 10 and ScaledRadius = 50 then we get a value of 10/50 = 0.2 or 20%.
+		// Increase actor scale by this value. 
+		const FVector ScaleVector = GetActorScale() * (1 + SizeDiff);
+		ExtraScaleTotal += (ScaleVector - GetActorScale());
+		UpdateCurrentScore(SizeInfo.ScorePoints);
+		UpdatePowerPoints(SizeInfo.PowerPoints);
+	}
 }
 
 // Called in the jump function. For every second the player holds spacebar / bumper it increases the jump charge by 1 to a max of 3.
@@ -499,9 +523,9 @@ void AFrogGameCharacter::Hitmonchan()
 void AFrogGameCharacter::OnAttackHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
                                      FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (OtherActor != this && OtherComp != nullptr)
+	if (OtherActor != this && OtherComp != nullptr && OtherActor->Implements<UEdible>())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Hit Event!"))
+		UE_LOG(LogTemp, Warning, TEXT("Hit Event with %s!"), *OtherActor->GetName())
 
 
 		//if (Destructible)
@@ -554,8 +578,7 @@ void AFrogGameCharacter::OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AAct
 	{
 		if (OtherActor == CurrentTarget)
 		{
-			CurrentTarget = nullptr;
-			CurrentTargetScore = 0.0f;
+			ClearCurrentTarget();
 			UE_LOG(LogTemp, Warning, TEXT("Target stopped overlapping."))
 		}
 	}

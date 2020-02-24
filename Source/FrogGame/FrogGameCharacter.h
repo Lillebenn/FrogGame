@@ -32,6 +32,8 @@ class AFrogGameCharacter : public ACharacter
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class USphereComponent* LeftHandCollision;
+
+	friend class ATongueProjectile;
 public:
 	AFrogGameCharacter();
 
@@ -91,31 +93,26 @@ public:
 	// How much better a target an actor needs to be in order to become the new current target. Lower value means it's easier to switch targets by moving or turning the camera.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AutoAim)
 	float AimStickiness{-0.05f};
-	// Max euclidean angle (i.e. 75°) before the object's angle score will be nullifying. 
+	// Max euclidean angle before the object's angle score will be nullifying. 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AutoAim)
 	float MaxAngle{75.f};
 	float MaxAngleRadians;
 
-	UPROPERTY()
-	AActor* CurrentTarget;
 	float CurrentTargetScore{0.f};
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<class ATongueProjectile> Tongue;
-
-	UPROPERTY()
-	class UCableComponent* Cable;
-
-
-	void Consume(AActor* OtherActor, FName BoneName = FName());
+	TSubclassOf<class ATongueProjectile> TongueBP;
+	uint32 NumTongues{0};
+	void Consume(AActor* OtherActor, ATongueProjectile* Tongue);
 	// Tongue Settings
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tongue)
-	float BaseTongueInSpeed{10000.f};
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tongue)
-	float BaseTongueOutSpeed{4500.f};
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Tongue)
+	float BaseTongueReturnSpeed{10000.f};
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Tongue)
+	float BaseTongueSeekSpeed{4500.f};
 
-
-	float TongueInSpeed;
-	float TongueOutSpeed;
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = Tongue)
+	float TongueReturnSpeed;
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = Tongue)
+	float TongueSeekSpeed;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = PowerMode)
 	bool bPowerMode{false};
@@ -168,6 +165,10 @@ private:
 	void UpdateAimRange() const;
 	/** Uses the tongue to eat something, and then grows **/
 	void Lickitung();
+	UPROPERTY()
+	TArray<AActor*> Targets;
+	UPROPERTY()
+	AActor* CurrentTarget;
 
 	/** Uses fist to punch something, can only be used in power mode **/
 	void Hitmonchan();
@@ -197,6 +198,8 @@ private:
 	void PowerMode();
 
 	void PowerDrain(float DeltaTime);
+
+	void DeactivatePowerMode();
 
 
 	float ScaleAlpha{0.0f};

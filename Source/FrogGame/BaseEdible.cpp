@@ -7,6 +7,8 @@
 ABaseEdible::ABaseEdible()
 {
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
+	StaticMesh->SetCollisionObjectType(ECC_GameTraceChannel1);
+
 	RootComponent = StaticMesh;
 }
 
@@ -46,5 +48,4 @@ FTransform ABaseEdible::GetStartTransform()
 void ABaseEdible::BeginPlay()
 {
 	Super::BeginPlay();
-
 }
