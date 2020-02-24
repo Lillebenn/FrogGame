@@ -101,8 +101,7 @@ public:
 	float CurrentTargetScore{0.f};
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class ATongueProjectile> TongueBP;
-	UPROPERTY()
-	TArray<class ATongueProjectile*> Tongues;
+	uint32 NumTongues{0};
 	void Consume(AActor* OtherActor, ATongueProjectile* Tongue);
 	// Tongue Settings
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Tongue)

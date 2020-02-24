@@ -29,7 +29,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Edible)
 	FEdibleInfo EdibleInfo;
 
-
 	FEdibleInfo GetInfo_Implementation() const override;
 
 	void DisableActor_Implementation() override;

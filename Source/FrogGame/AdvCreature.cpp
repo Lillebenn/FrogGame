@@ -24,6 +24,7 @@ void AAdvCreature::BeginPlay()
 	Super::BeginPlay();
 
 	StartTransform = GetTransform();
+	GetCapsuleComponent()->SetCollisionObjectType(ECC_GameTraceChannel1);
 }
 
 // Called every frame
@@ -84,6 +85,7 @@ FTransform AAdvCreature::GetStartTransform()
 void AAdvCreature::ActorSaveDataSaved_Implementation()
 {
 }
+
 void AAdvCreature::CalculateBoundingSize()
 {
 	const FVector RoughSize = GetMesh()->Bounds.GetBox().GetSize();

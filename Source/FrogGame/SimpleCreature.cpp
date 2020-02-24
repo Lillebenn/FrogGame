@@ -28,6 +28,7 @@ void ASimpleCreature::BeginPlay()
 	Super::BeginPlay();
 	CalculateBoundingSize();
 	StartTransform = GetTransform();
+	CreatureMesh->SetCollisionObjectType(ECC_GameTraceChannel1);
 }
 
 // Called every frame

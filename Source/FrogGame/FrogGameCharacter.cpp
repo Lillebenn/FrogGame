@@ -56,6 +56,9 @@ AFrogGameCharacter::AFrogGameCharacter()
 	BoxCollider->SetupAttachment(FollowCamera);
 	BoxCollider->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	BoxCollider->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Overlap);
+	BoxCollider->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Ignore);
+	BoxCollider->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Ignore);
+
 	BoxCollider->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnBoxTraceEnd);
 	// We use the arrow component as spawn point for the tongue and attach it to the head bone
 	TongueStart = GetArrowComponent();
@@ -404,7 +407,8 @@ void AFrogGameCharacter::Lickitung()
 	// TODO: When activating this, set the target's collision channel to a custom one that only that object has. 
 	if (!bTongueSpawned)
 	{
-		Tongues.Empty();
+		NumTongues = 0;
+		UE_LOG(LogTemp, Warning, TEXT("Num Tongues left: %d, Num Targets: %d"), NumTongues, Targets.Num());
 		if (Targets.Num() == 0)
 		{
 			ATongueProjectile* TongueCPP{
@@ -412,7 +416,7 @@ void AFrogGameCharacter::Lickitung()
 				                                          TongueStart->
 				                                          GetComponentTransform())
 			};
-			Tongues.Add(TongueCPP);
+			NumTongues++;
 			TongueCPP->ActivateTongue(nullptr);
 		}
 		else
@@ -432,9 +436,7 @@ void AFrogGameCharacter::Lickitung()
 						FacingDirection.Pitch = GetActorRotation().Pitch;
 						SetActorRotation(FacingDirection);
 					}
-					TongueCPP->ArrayIndex = Tongues.Num();
-					Tongues.Add(TongueCPP);
-
+					NumTongues++;
 					TongueCPP->ActivateTongue(Target);
 				}
 			}
@@ -449,14 +451,12 @@ void AFrogGameCharacter::Consume(AActor* OtherActor, ATongueProjectile* Tongue)
 	if (Tongue->Cable)
 	{
 		Tongue->Cable->DestroyComponent();
-		int32 ArrayIndex{Tongue->ArrayIndex};
 		Tongue->Destroy();
-		UE_LOG(LogTemp, Warning, TEXT("Removing: %d"), ArrayIndex);
+		UE_LOG(LogTemp, Warning, TEXT("Destroying Tongue"));
 
-		Tongues.RemoveAt(ArrayIndex, 1, false);
-		UE_LOG(LogTemp, Warning, TEXT("Num Tongues left: %d"), Tongues.Num());
+		NumTongues--;
 
-		if (Tongues.Num() == 0)
+		if (NumTongues == 0)
 		{
 			bTongueSpawned = false;
 		}
