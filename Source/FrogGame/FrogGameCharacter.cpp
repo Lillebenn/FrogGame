@@ -225,7 +225,7 @@ void AFrogGameCharacter::AutoAim()
 	BoxCollider->GetOverlappingActors(OverlappingActors);
 	if (bPowerMode)
 	{
-		OverlappingActors = Targets; // Remember to clear this when exiting Power mode
+		Targets = OverlappingActors; // Remember to clear this when exiting Power mode
 		return;
 	}
 	const int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
@@ -419,21 +419,24 @@ void AFrogGameCharacter::Lickitung()
 		{
 			for (auto Target : Targets)
 			{
-				ATongueProjectile* TongueCPP{
-					GetWorld()->SpawnActor<ATongueProjectile>(TongueBP,
-					                                          TongueStart->
-					                                          GetComponentTransform())
-				};
-				if (Targets.Num() == 1)
+				if (Target->Implements<UEdible>())
 				{
-					FRotator FacingDirection{FollowCamera->GetForwardVector().ToOrientationRotator()};
-					FacingDirection.Pitch = GetActorRotation().Pitch;
-					SetActorRotation(FacingDirection);
-				}
-				TongueCPP->ArrayIndex = Tongues.Num();
-				Tongues.Add(TongueCPP);
+					ATongueProjectile* TongueCPP{
+						GetWorld()->SpawnActor<ATongueProjectile>(TongueBP,
+						                                          TongueStart->
+						                                          GetComponentTransform())
+					};
+					if (Targets.Num() == 1)
+					{
+						FRotator FacingDirection{FollowCamera->GetForwardVector().ToOrientationRotator()};
+						FacingDirection.Pitch = GetActorRotation().Pitch;
+						SetActorRotation(FacingDirection);
+					}
+					TongueCPP->ArrayIndex = Tongues.Num();
+					Tongues.Add(TongueCPP);
 
-				TongueCPP->ActivateTongue(Target);
+					TongueCPP->ActivateTongue(Target);
+				}
 			}
 		}
 		bTongueSpawned = true;
@@ -446,8 +449,13 @@ void AFrogGameCharacter::Consume(AActor* OtherActor, ATongueProjectile* Tongue)
 	if (Tongue->Cable)
 	{
 		Tongue->Cable->DestroyComponent();
+		int32 ArrayIndex{Tongue->ArrayIndex};
 		Tongue->Destroy();
-		Tongues.RemoveAt(Tongue->ArrayIndex);
+		UE_LOG(LogTemp, Warning, TEXT("Removing: %d"), ArrayIndex);
+
+		Tongues.RemoveAt(ArrayIndex, 1, false);
+		UE_LOG(LogTemp, Warning, TEXT("Num Tongues left: %d"), Tongues.Num());
+
 		if (Tongues.Num() == 0)
 		{
 			bTongueSpawned = false;
@@ -515,9 +523,9 @@ void AFrogGameCharacter::Hitmonchan()
 void AFrogGameCharacter::OnAttackHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
                                      FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (OtherActor != this && OtherComp != nullptr)
+	if (OtherActor != this && OtherComp != nullptr && OtherActor->Implements<UEdible>())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Hit Event!"))
+		UE_LOG(LogTemp, Warning, TEXT("Hit Event with %s!"), *OtherActor->GetName())
 
 
 		//if (Destructible)

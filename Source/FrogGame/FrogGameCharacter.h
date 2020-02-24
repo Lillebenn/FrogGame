@@ -93,7 +93,7 @@ public:
 	// How much better a target an actor needs to be in order to become the new current target. Lower value means it's easier to switch targets by moving or turning the camera.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AutoAim)
 	float AimStickiness{-0.05f};
-	// Max euclidean angle (i.e. 75°) before the object's angle score will be nullifying. 
+	// Max euclidean angle before the object's angle score will be nullifying. 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AutoAim)
 	float MaxAngle{75.f};
 	float MaxAngleRadians;
@@ -105,13 +105,14 @@ public:
 	TArray<class ATongueProjectile*> Tongues;
 	void Consume(AActor* OtherActor, ATongueProjectile* Tongue);
 	// Tongue Settings
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tongue)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Tongue)
 	float BaseTongueReturnSpeed{10000.f};
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tongue)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Tongue)
 	float BaseTongueSeekSpeed{4500.f};
 
-
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = Tongue)
 	float TongueReturnSpeed;
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = Tongue)
 	float TongueSeekSpeed;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = PowerMode)
@@ -233,4 +234,3 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };
-

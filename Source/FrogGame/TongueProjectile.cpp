@@ -88,7 +88,15 @@ void ATongueProjectile::SeekTarget(const float DeltaTime)
 {
 	if (Target)
 	{
-		VInterpTo(IEdible::Execute_GetTargetComponent(Target)->GetComponentLocation(), TongueSeekSpeed, DeltaTime);
+		USceneComponent* TargetComponent{IEdible::Execute_GetTargetComponent(Target)};
+		if(TargetComponent)
+		{
+			VInterpTo(IEdible::Execute_GetTargetComponent(Target)->GetComponentLocation(), TongueSeekSpeed, DeltaTime);
+		}else
+		{
+			VInterpTo(Target->GetActorLocation(), TongueSeekSpeed, DeltaTime);
+			UE_LOG(LogTemp, Error, TEXT("Missing Target Component Setup in %s!"), *Target->GetName());
+		}
 	}
 	else
 	{
