@@ -6,6 +6,7 @@
 #include "Engine/StaticMesh.h"
 #include "GameFramework/FloatingPawnMovement.h"
 #include "GameFramework/Controller.h"
+#include "TargetingReticle.h"
 #include "FrogGameInstance.h"
 
 
@@ -16,11 +17,21 @@ ASimpleCreature::ASimpleCreature()
 	PrimaryActorTick.bCanEverTick = true;
 
 	CreatureMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Creature Mesh"));
+	RootComponent = CreatureMesh;
+
+	Reticle = CreateDefaultSubobject<UTargetingReticle>(TEXT("Targeting Reticule"));
 
 	MovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComponent"));
 
+
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
+
+UTargetingReticle* ASimpleCreature::GetTargetingReticule_Implementation()
+{
+	return Reticle;
+}
+
 
 // Called when the game starts or when spawned
 void ASimpleCreature::BeginPlay()

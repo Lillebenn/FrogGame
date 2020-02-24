@@ -5,6 +5,7 @@
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/Controller.h"
 #include "FrogGameInstance.h"
+#include "TargetingReticle.h"
 #include "Components/SkeletalMeshComponent.h"
 
 // Sets default values
@@ -13,8 +14,8 @@ AAdvCreature::AAdvCreature()
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	// For capsules we just use the radius value. Could potentially do a combination/average of the half-height and radius if the creature is particularly tall.
-	EdibleInfo.Size = GetCapsuleComponent()->GetScaledCapsuleRadius();
+	Reticle = CreateDefaultSubobject<UTargetingReticle>(TEXT("Targeting Reticule"));
+	
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
@@ -25,6 +26,8 @@ void AAdvCreature::BeginPlay()
 
 	StartTransform = GetTransform();
 	GetCapsuleComponent()->SetCollisionObjectType(ECC_GameTraceChannel1);
+	// For capsules we just use the radius value. Could potentially do a combination/average of the half-height and radius if the creature is particularly tall.
+	EdibleInfo.Size = GetCapsuleComponent()->GetScaledCapsuleRadius();
 }
 
 // Called every frame
@@ -72,9 +75,16 @@ USceneComponent* AAdvCreature::GetTargetComponent_Implementation()
 	return GetMesh();
 }
 
+
+
 // Custom behaviour when saving or loading
 void AAdvCreature::ActorSaveDataLoaded_Implementation()
 {
+}
+
+UTargetingReticle* AAdvCreature::GetTargetingReticule_Implementation()
+{
+	return Reticle;
 }
 
 FTransform AAdvCreature::GetStartTransform()

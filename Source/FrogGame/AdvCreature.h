@@ -35,11 +35,12 @@ public:
 	void OnDisabled_Implementation() override;
 
 	USceneComponent* GetTargetComponent_Implementation() override;
-
 	void ActorSaveDataSaved_Implementation() override;
 	void CalculateBoundingSize();
 	void ActorSaveDataLoaded_Implementation() override;
-
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AutoAim)
+	class UTargetingReticle* Reticle;
+	class UTargetingReticle* GetTargetingReticule_Implementation() override;
 	FTransform GetStartTransform() override;
 protected:
 	// Called when the game starts or when spawned

@@ -36,6 +36,8 @@ public:
 	void OnDisabled();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	USceneComponent* GetTargetComponent();
-
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
+	class UTargetingReticle* GetTargetingReticule();
+	
 	virtual FTransform GetStartTransform();
 };

@@ -8,6 +8,7 @@
 #include "Components/InputComponent.h"
 #include "Engine.h"
 #include "Engine/EngineTypes.h"
+#include "TargetingReticle.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -247,20 +248,15 @@ void AFrogGameCharacter::AutoAim()
 			}
 			const float DistToActor{FVector::Dist(GetActorLocation(), Actor->GetActorLocation())};
 			// We use the box collider forward vector multiplied by twice the extent of the box.
-			const FVector MaxPointInBox{
-				BoxCollider->GetForwardVector() * (BoxCollider->GetUnscaledBoxExtent().X * 2.f)
-			};
-			const float DistToMaxRange{
-				FVector::Dist(GetActorLocation(), GetActorLocation() + MaxPointInBox)
-			};
+			const FVector MaxPointInBox{BoxCollider->GetForwardVector() * (BoxCollider->GetUnscaledBoxExtent().X * 2.f)};
+			const float DistToMaxRange{FVector::Dist(GetActorLocation(), GetActorLocation() + MaxPointInBox)};
 			// How ideal this actor is to become the current target based on distance.
 			const float DistanceScore{1.f - FMath::Clamp(DistToActor / DistToMaxRange, 0.f, MaxDistanceScore)};
 			FVector V1{FollowCamera->GetForwardVector()};
 			// Get a line from camera to actor
 			FVector V2{FollowCamera->GetComponentLocation() - Actor->GetActorLocation()};
 			V2.Normalize();
-			const float Dot = FVector::DotProduct(V1, V2);
-			float AngleRad{FMath::Acos(Dot)};
+			float AngleRad{FMath::Acos(FVector::DotProduct(V1, V2))};
 			// We need another dot product to figure out our winding
 			// in case the angle is something like 480 or -900 we normalize it to +-PI
 			if (FVector::DotProduct(FollowCamera->GetRightVector(), V2) < 0.f)
@@ -271,7 +267,6 @@ void AFrogGameCharacter::AutoAim()
 			// How ideal this actor is to become the current target based on proximity to the middle of the camera view. A lower value is better.
 			// An angle exactly as large as the max angle will result in (X / X) * MaxAngleScore = MaxAngleScore.
 			const float AngleScore = FMath::Clamp(AngleRad / MaxAngleRadians, 0.f, MaxAngleScore);
-
 			const float TotalScore{DistanceScore - AngleScore};
 			if (TotalScore > CurrentTargetScore + AimStickiness)
 			{
@@ -287,14 +282,40 @@ void AFrogGameCharacter::AutoAim()
 			}
 		}
 	}
-	if (CurrentTarget)
+	if (Targets.Num() > 0)
 	{
+		SpawnTargetingMesh();
+	}
+}
+
+void AFrogGameCharacter::SpawnTargetingMesh()
+{
+	for (auto Target : Targets)
+	{
+		// Temp
 		UKismetSystemLibrary::DrawDebugArrow(
 			GetWorld(),
 			BoxCollider->GetComponentLocation() - BoxCollider->GetForwardVector() * BoxCollider
 			                                                                        ->GetUnscaledBoxExtent().X,
-			CurrentTarget->GetActorLocation(), 3.f,
+			Target->GetActorLocation(), 3.f,
 			FLinearColor::Red);
+		if (TargetingMesh && !bTongueSpawned)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Test"))
+			FVector TargetToPlayer{
+				IEdible::Execute_GetTargetComponent(Target)->GetComponentLocation() - FollowCamera->
+				GetComponentLocation()
+			};
+			TargetToPlayer.Normalize();
+			const FRotator RotationToPlayer{TargetToPlayer.ToOrientationRotator()};
+
+			auto TargetingReticule{IEdible::Execute_GetTargetingReticule(Target)};
+			if (TargetingReticule)
+			{
+				TargetingReticule->DrawReticle(TargetToPlayer, RotationToPlayer, 1.f);
+				// Normalize the line from A to B, multiply with desired distance from Target
+			}
+		}
 	}
 }
 
@@ -425,6 +446,7 @@ void AFrogGameCharacter::Lickitung()
 			{
 				if (Target->Implements<UEdible>())
 				{
+					IEdible::Execute_GetTargetingReticule(Target)->SetHiddenInGame(true);
 					ATongueProjectile* TongueCPP{
 						GetWorld()->SpawnActor<ATongueProjectile>(TongueBP,
 						                                          TongueStart->

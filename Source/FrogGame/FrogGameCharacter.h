@@ -98,6 +98,7 @@ public:
 	float MaxAngle{75.f};
 	float MaxAngleRadians;
 
+
 	float CurrentTargetScore{0.f};
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class ATongueProjectile> TongueBP;
@@ -163,6 +164,10 @@ private:
 	void UpdateCharacterMovement(float ScaleDelta);
 	void UpdateCameraBoom(float ScaleDelta) const;
 	void UpdateAimRange() const;
+	void AutoAim();
+	UPROPERTY(EditDefaultsOnly, Category = AutoAim)
+	class UStaticMeshComponent* TargetingMesh;
+	void SpawnTargetingMesh();
 	/** Uses the tongue to eat something, and then grows **/
 	void Lickitung();
 	UPROPERTY()
@@ -225,7 +230,7 @@ private:
 public:
 
 	void Tick(float DeltaTime) override;
-	void AutoAim();
+
 
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
