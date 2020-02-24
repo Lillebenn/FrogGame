@@ -3,11 +3,6 @@
 
 #include "TargetingReticle.h"
 
-UTargetingReticle::UTargetingReticle()
-{
-
-	SetHiddenInGame(true);
-}
 
 
 
@@ -20,13 +15,14 @@ void UTargetingReticle::HideReticle()
 void UTargetingReticle::DrawReticle(const FVector Position, const FRotator Orientation, float LifeTime)
 {
 	// Set the timer to re-hide the reticle if we stop receiving calls to this function.
-	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &UTargetingReticle::HideReticle, 1.f, false);
-
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &UTargetingReticle::HideReticle, LifeTime, false);
+	UE_LOG(LogTemp, Warning, TEXT("Drawing Reticle!"))
 	SetHiddenInGame(false);
-	SetWorldLocationAndRotation(Position * ReticleDistance, Orientation);
+	//SetRelativeLocationAndRotation(Position, Orientation);
 }
 
 void UTargetingReticle::BeginPlay()
 {
 	ReticleDistance = GetRelativeLocation().Size();
+	//SetHiddenInGame(true);
 }

@@ -248,7 +248,9 @@ void AFrogGameCharacter::AutoAim()
 			}
 			const float DistToActor{FVector::Dist(GetActorLocation(), Actor->GetActorLocation())};
 			// We use the box collider forward vector multiplied by twice the extent of the box.
-			const FVector MaxPointInBox{BoxCollider->GetForwardVector() * (BoxCollider->GetUnscaledBoxExtent().X * 2.f)};
+			const FVector MaxPointInBox{
+				BoxCollider->GetForwardVector() * (BoxCollider->GetUnscaledBoxExtent().X * 2.f)
+			};
 			const float DistToMaxRange{FVector::Dist(GetActorLocation(), GetActorLocation() + MaxPointInBox)};
 			// How ideal this actor is to become the current target based on distance.
 			const float DistanceScore{1.f - FMath::Clamp(DistToActor / DistToMaxRange, 0.f, MaxDistanceScore)};
@@ -299,9 +301,9 @@ void AFrogGameCharacter::SpawnTargetingMesh()
 			                                                                        ->GetUnscaledBoxExtent().X,
 			Target->GetActorLocation(), 3.f,
 			FLinearColor::Red);
-		if (TargetingMesh && !bTongueSpawned)
+
+		if (!bTongueSpawned)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Test"))
 			FVector TargetToPlayer{
 				IEdible::Execute_GetTargetComponent(Target)->GetComponentLocation() - FollowCamera->
 				GetComponentLocation()
@@ -312,7 +314,7 @@ void AFrogGameCharacter::SpawnTargetingMesh()
 			auto TargetingReticule{IEdible::Execute_GetTargetingReticule(Target)};
 			if (TargetingReticule)
 			{
-				TargetingReticule->DrawReticle(TargetToPlayer, RotationToPlayer, 1.f);
+				//TargetingReticule->DrawReticle(TargetToPlayer, RotationToPlayer, 1.f);
 				// Normalize the line from A to B, multiply with desired distance from Target
 			}
 		}

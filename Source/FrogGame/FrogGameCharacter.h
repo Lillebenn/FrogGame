@@ -165,8 +165,7 @@ private:
 	void UpdateCameraBoom(float ScaleDelta) const;
 	void UpdateAimRange() const;
 	void AutoAim();
-	UPROPERTY(EditDefaultsOnly, Category = AutoAim)
-	class UStaticMeshComponent* TargetingMesh;
+
 	void SpawnTargetingMesh();
 	/** Uses the tongue to eat something, and then grows **/
 	void Lickitung();

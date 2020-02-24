@@ -20,6 +20,7 @@ ASimpleCreature::ASimpleCreature()
 	RootComponent = CreatureMesh;
 
 	Reticle = CreateDefaultSubobject<UTargetingReticle>(TEXT("Targeting Reticule"));
+	Reticle->SetupAttachment(RootComponent);
 
 	MovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComponent"));
 

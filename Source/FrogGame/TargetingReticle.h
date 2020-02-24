@@ -17,7 +17,6 @@ class FROGGAME_API UTargetingReticle : public UWidgetComponent
 
 
 public:
-	UTargetingReticle();
 	FTimerDelegate TimerDel;
 	FTimerHandle TimerHandle;
 

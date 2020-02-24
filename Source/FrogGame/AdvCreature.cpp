@@ -15,6 +15,8 @@ AAdvCreature::AAdvCreature()
 	PrimaryActorTick.bCanEverTick = true;
 
 	Reticle = CreateDefaultSubobject<UTargetingReticle>(TEXT("Targeting Reticule"));
+	Reticle->SetupAttachment(RootComponent);
+	Reticle->InitWidget();
 	
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
