@@ -29,6 +29,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Edible)
 	FEdibleInfo EdibleInfo;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName AttachBoneName;
+
 	FEdibleInfo GetInfo_Implementation() const override;
 
 	void DisableActor_Implementation() override;

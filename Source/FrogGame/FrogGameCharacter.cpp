@@ -185,7 +185,7 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 void AFrogGameCharacter::ClearCurrentTarget()
 {
 	CurrentTarget = nullptr;
-	Targets.RemoveAt(0);
+	Targets.Empty();
 	CurrentTargetScore = 0.0f;
 }
 
@@ -216,8 +216,10 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	{
 		UpdateCharacterScale(DeltaTime);
 	}
-
-	AutoAim();
+	if (!bTongueSpawned)
+	{
+		AutoAim();
+	}
 }
 
 // TODO: Choose target close to box origin AND player
@@ -230,69 +232,83 @@ void AFrogGameCharacter::AutoAim()
 	if (bPowerMode)
 	{
 		Targets = OverlappingActors; // Remember to clear this when exiting Power mode
-		return;
 	}
-	const int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
-	for (AActor* Actor : OverlappingActors)
+	else
 	{
-		if (Actor == CurrentTarget) // Don't check against itself	
+		const int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
+		for (AActor* Actor : OverlappingActors)
 		{
-			continue;
-		}
-		if (Actor->Implements<UEdible>())
-		{
-			const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(Actor)};
-			if (SizeInfo.SizeTier > MaxSize) // Object is too big, ignore.
+			if (Actor == CurrentTarget) // Don't check against itself	
 			{
 				continue;
 			}
-			const float DistToActor{FVector::Dist(GetActorLocation(), Actor->GetActorLocation())};
-			// We use the box collider forward vector multiplied by twice the extent of the box.
-			const FVector MaxPointInBox{
-				BoxCollider->GetForwardVector() * (BoxCollider->GetUnscaledBoxExtent().X * 2.f)
-			};
-			const float DistToMaxRange{FVector::Dist(GetActorLocation(), GetActorLocation() + MaxPointInBox)};
-			// How ideal this actor is to become the current target based on distance.
-			const float DistanceScore{1.f - FMath::Clamp(DistToActor / DistToMaxRange, 0.f, MaxDistanceScore)};
-			FVector V1{FollowCamera->GetForwardVector()};
-			// Get a line from camera to actor
-			FVector V2{FollowCamera->GetComponentLocation() - Actor->GetActorLocation()};
-			V2.Normalize();
-			float AngleRad{FMath::Acos(FVector::DotProduct(V1, V2))};
-			// We need another dot product to figure out our winding
-			// in case the angle is something like 480 or -900 we normalize it to +-PI
-			if (FVector::DotProduct(FollowCamera->GetRightVector(), V2) < 0.f)
+			if (Actor->Implements<UEdible>())
 			{
-				AngleRad = PI * 2.f - AngleRad;
-			}
-			AngleRad = FMath::Abs(FMath::Clamp(AngleRad - PI, -PI, PI));
-			// How ideal this actor is to become the current target based on proximity to the middle of the camera view. A lower value is better.
-			// An angle exactly as large as the max angle will result in (X / X) * MaxAngleScore = MaxAngleScore.
-			const float AngleScore = FMath::Clamp(AngleRad / MaxAngleRadians, 0.f, MaxAngleScore);
-			const float TotalScore{DistanceScore - AngleScore};
-			if (TotalScore > CurrentTargetScore + AimStickiness)
-			{
-				CurrentTarget = Actor;
-				Targets.Add(CurrentTarget);
-				UE_LOG(LogTemp, Warning,
-				       TEXT("Current Target is: %s, with a distance score of: %f and angle score of: %f"),
-				       *CurrentTarget->GetName(), DistanceScore, AngleScore)
-				UE_LOG(LogTemp, Warning, TEXT("Total Score: %f, vs Last Score: %f"), TotalScore,
-				       CurrentTargetScore)
+				const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(Actor)};
+				if (SizeInfo.SizeTier > MaxSize) // Object is too big, ignore.
+				{
+					continue;
+				}
+				const float DistanceScore{CalcDistanceScore(Actor)};
+				const float AngleScore{CalcAngleScore(Actor)};
+				const float TotalScore{DistanceScore - AngleScore};
+				if (TotalScore > CurrentTargetScore + AimStickiness)
+				{
+					CurrentTarget = Actor;
+					UE_LOG(LogTemp, Warning,
+					       TEXT("Current Target is: %s, with a distance score of: %f and angle score of: %f"),
+					       *CurrentTarget->GetName(), DistanceScore, AngleScore)
+					UE_LOG(LogTemp, Warning, TEXT("Total Score: %f, vs Last Score: %f"), TotalScore,
+					       CurrentTargetScore)
 
-				CurrentTargetScore = TotalScore;
+					CurrentTargetScore = TotalScore;
+				}
 			}
 		}
 	}
+	if (CurrentTarget)
+	{
+		SpawnTargetingMesh(TArray<AActor*>{CurrentTarget});
+	}
 	if (Targets.Num() > 0)
 	{
-		SpawnTargetingMesh();
+		SpawnTargetingMesh(Targets);
 	}
 }
 
-void AFrogGameCharacter::SpawnTargetingMesh()
+float AFrogGameCharacter::CalcDistanceScore(AActor* Actor) const
 {
-	for (auto Target : Targets)
+	const float DistToActor{FVector::Dist(GetActorLocation(), Actor->GetActorLocation())};
+	// We use the box collider forward vector multiplied by twice the extent of the box.
+	const FVector MaxPointInBox{
+		BoxCollider->GetForwardVector() * (BoxCollider->GetUnscaledBoxExtent().X * 2.f)
+	};
+	const float DistToMaxRange{FVector::Dist(GetActorLocation(), GetActorLocation() + MaxPointInBox)};
+	// How ideal this actor is to become the current target based on distance.
+	return {1.f - FMath::Clamp(DistToActor / DistToMaxRange, 0.f, MaxDistanceScore)};
+}
+
+float AFrogGameCharacter::CalcAngleScore(AActor* Actor) const
+{
+	const FVector V1{FollowCamera->GetForwardVector()};
+	// Get a line from camera to actor
+	FVector V2{(FollowCamera->GetComponentLocation() - Actor->GetActorLocation())};
+	V2.Normalize();
+	float AngleRad{FMath::Acos(FVector::DotProduct(V1, V2))};
+	// We need another dot product to figure out our winding
+	// in case the angle is something like 480 or -900 we normalize it to +-PI
+	if (FVector::DotProduct(FollowCamera->GetRightVector(), V2) < 0.f)
+	{
+		AngleRad = PI * 2.f - AngleRad;
+	}
+	AngleRad = FMath::Abs(FMath::Clamp(AngleRad - PI, -PI, PI));
+
+	return {FMath::Clamp(AngleRad / MaxAngleRadians, 0.f, MaxAngleScore)};
+}
+
+void AFrogGameCharacter::SpawnTargetingMesh(const TArray<AActor*>& TargetEdibles) const
+{
+	for (auto Target : TargetEdibles)
 	{
 		// Temp
 		UKismetSystemLibrary::DrawDebugArrow(
@@ -302,21 +318,16 @@ void AFrogGameCharacter::SpawnTargetingMesh()
 			Target->GetActorLocation(), 3.f,
 			FLinearColor::Red);
 
-		if (!bTongueSpawned)
+		auto TargetingReticule{IEdible::Execute_GetTargetingReticule(Target)};
+		if (TargetingReticule)
 		{
 			FVector TargetToPlayer{
-				IEdible::Execute_GetTargetComponent(Target)->GetComponentLocation() - FollowCamera->
+				FollowCamera->GetComponentLocation() - IEdible::Execute_GetTargetComponent(Target)->
 				GetComponentLocation()
 			};
 			TargetToPlayer.Normalize();
-			const FRotator RotationToPlayer{TargetToPlayer.ToOrientationRotator()};
-
-			auto TargetingReticule{IEdible::Execute_GetTargetingReticule(Target)};
-			if (TargetingReticule)
-			{
-				//TargetingReticule->DrawReticle(TargetToPlayer, RotationToPlayer, 1.f);
-				// Normalize the line from A to B, multiply with desired distance from Target
-			}
+			TargetingReticule->DrawReticle(TargetToPlayer, 0.1f);
+			// Normalize the line from A to B, multiply with desired distance from Target
 		}
 	}
 }
@@ -430,9 +441,10 @@ void AFrogGameCharacter::Lickitung()
 	// TODO: When activating this, set the target's collision channel to a custom one that only that object has. 
 	if (!bTongueSpawned)
 	{
+		TArray<AActor*> Edibles = Targets;
 		NumTongues = 0;
-		UE_LOG(LogTemp, Warning, TEXT("Num Tongues left: %d, Num Targets: %d"), NumTongues, Targets.Num());
-		if (Targets.Num() == 0)
+		UE_LOG(LogTemp, Warning, TEXT("Num Tongues left: %d, Num Targets: %d"), NumTongues, Edibles.Num());
+		if (Edibles.Num() == 0)
 		{
 			ATongueProjectile* TongueCPP{
 				GetWorld()->SpawnActor<ATongueProjectile>(TongueBP,
@@ -444,7 +456,7 @@ void AFrogGameCharacter::Lickitung()
 		}
 		else
 		{
-			for (auto Target : Targets)
+			for (auto Target : Edibles)
 			{
 				if (Target->Implements<UEdible>())
 				{
@@ -600,7 +612,7 @@ void AFrogGameCharacter::OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AAct
 
 	if (OtherActor && (OtherActor != this) && OtherComp)
 	{
-		if (OtherActor == CurrentTarget)
+		if (OtherActor == CurrentTarget && !bPowerMode)
 		{
 			ClearCurrentTarget();
 			UE_LOG(LogTemp, Warning, TEXT("Target stopped overlapping."))
