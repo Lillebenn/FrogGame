@@ -105,10 +105,13 @@ public:
 	uint32 NumTongues{0};
 	void Consume(AActor* OtherActor, ATongueProjectile* Tongue);
 	// Tongue Settings
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Tongue)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Tongue)
 	float BaseTongueReturnSpeed{10000.f};
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Tongue)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Tongue)
 	float BaseTongueSeekSpeed{4500.f};
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Tongue)
+	float BaseCableWidth{4.f};
+	float CurrentCableWidth{0.f};
 
 	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = Tongue)
 	float TongueReturnSpeed;
@@ -217,8 +220,6 @@ private:
 	bool bScalingUp{false};
 	FVector ExtraScaleTotal{0};
 
-	float BaseCableWidth{10.f};
-	float CurrentCableWidth{10.f};
 
 	// Jump stuff
 	float BaseJump{450};

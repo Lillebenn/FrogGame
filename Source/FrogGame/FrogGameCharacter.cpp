@@ -142,6 +142,7 @@ void AFrogGameCharacter::BeginPlay()
 
 	TongueReturnSpeed = BaseTongueReturnSpeed;
 	TongueSeekSpeed = BaseTongueSeekSpeed;
+	CurrentCableWidth = BaseCableWidth;
 	CurrentJump = BaseJump;
 }
 
