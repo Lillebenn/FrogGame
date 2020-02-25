@@ -6,7 +6,7 @@
 #include "Engine/StaticMesh.h"
 #include "GameFramework/FloatingPawnMovement.h"
 #include "GameFramework/Controller.h"
-#include "TargetingReticle.h"
+#include "TargetingReticule.h"
 #include "FrogGameInstance.h"
 
 
@@ -19,8 +19,8 @@ ASimpleCreature::ASimpleCreature()
 	CreatureMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Creature Mesh"));
 	RootComponent = CreatureMesh;
 
-	Reticle = CreateDefaultSubobject<UTargetingReticle>(TEXT("Targeting Reticule"));
-	Reticle->SetupAttachment(RootComponent);
+	Reticule = CreateDefaultSubobject<UTargetingReticule>(TEXT("Targeting Reticule"));
+	Reticule->SetupAttachment(RootComponent);
 
 	MovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComponent"));
 
@@ -28,9 +28,9 @@ ASimpleCreature::ASimpleCreature()
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
-UTargetingReticle* ASimpleCreature::GetTargetingReticule_Implementation()
+UTargetingReticule* ASimpleCreature::GetTargetingReticule_Implementation()
 {
-	return Reticle;
+	return Reticule;
 }
 
 
@@ -38,7 +38,7 @@ UTargetingReticle* ASimpleCreature::GetTargetingReticule_Implementation()
 void ASimpleCreature::BeginPlay()
 {
 	Super::BeginPlay();
-	Reticle->InitWidget();
+	Reticule->InitWidget();
 	//CalculateBoundingSize(); This was causing an error somewhere
 	StartTransform = GetTransform();
 	CreatureMesh->SetCollisionObjectType(ECC_GameTraceChannel1);

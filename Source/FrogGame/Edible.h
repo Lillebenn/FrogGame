@@ -37,7 +37,7 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	USceneComponent* GetTargetComponent();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
-	class UTargetingReticle* GetTargetingReticule();
+	class UTargetingReticule* GetTargetingReticule();
 	
 	virtual FTransform GetStartTransform();
 };

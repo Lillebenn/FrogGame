@@ -8,7 +8,7 @@
 #include "Components/InputComponent.h"
 #include "Engine.h"
 #include "Engine/EngineTypes.h"
-#include "TargetingReticle.h"
+#include "TargetingReticule.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -326,7 +326,7 @@ void AFrogGameCharacter::SpawnTargetingMesh(const TArray<AActor*>& TargetEdibles
 				GetComponentLocation()
 			};
 			TargetToPlayer.Normalize();
-			TargetingReticule->DrawReticle(TargetToPlayer, 0.1f);
+			TargetingReticule->DrawReticule(TargetToPlayer, 0.1f);
 			// Normalize the line from A to B, multiply with desired distance from Target
 		}
 	}

@@ -5,7 +5,7 @@
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/Controller.h"
 #include "FrogGameInstance.h"
-#include "TargetingReticle.h"
+#include "TargetingReticule.h"
 #include "Components/SkeletalMeshComponent.h"
 
 // Sets default values
@@ -14,8 +14,8 @@ AAdvCreature::AAdvCreature()
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	Reticle = CreateDefaultSubobject<UTargetingReticle>(TEXT("Targeting Reticule"));
-	Reticle->SetupAttachment(GetMesh());
+	Reticule = CreateDefaultSubobject<UTargetingReticule>(TEXT("Targeting Reticule"));
+	Reticule->SetupAttachment(GetMesh());
 
 
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
@@ -25,13 +25,13 @@ AAdvCreature::AAdvCreature()
 void AAdvCreature::BeginPlay()
 {
 	Super::BeginPlay();
-	Reticle->InitWidget();
+	Reticule->InitWidget();
 
 	StartTransform = GetTransform();
 	GetCapsuleComponent()->SetCollisionObjectType(ECC_GameTraceChannel1);
 	// For capsules we just use the radius value. Could potentially do a combination/average of the half-height and radius if the creature is particularly tall.
 	EdibleInfo.Size = GetCapsuleComponent()->GetScaledCapsuleRadius();
-	Reticle->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, AttachBoneName);
+	Reticule->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, AttachBoneName);
 }
 
 // Called every frame
@@ -85,9 +85,9 @@ void AAdvCreature::ActorSaveDataLoaded_Implementation()
 {
 }
 
-UTargetingReticle* AAdvCreature::GetTargetingReticule_Implementation()
+UTargetingReticule* AAdvCreature::GetTargetingReticule_Implementation()
 {
-	return Reticle;
+	return Reticule;
 }
 
 FTransform AAdvCreature::GetStartTransform()

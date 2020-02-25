@@ -5,25 +5,25 @@
 #include "CoreMinimal.h"
 #include "Components/WidgetComponent.h"
 #include "TimerManager.h"
-#include "TargetingReticle.generated.h"
+#include "TargetingReticule.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class FROGGAME_API UTargetingReticle : public UWidgetComponent
+class FROGGAME_API UTargetingReticule : public UWidgetComponent
 {
 	GENERATED_BODY()
 
 
 public:
-	UTargetingReticle();
+	UTargetingReticule();
 	FTimerDelegate TimerDel;
 	FTimerHandle TimerHandle;
 
 	UFUNCTION()
-	void HideReticle();
-	void DrawReticle(FVector Position, float LifeTime);
+	void HideReticule();
+	void DrawReticule(FVector Position, float LifeTime);
 protected:
 	void BeginPlay() override;
 };

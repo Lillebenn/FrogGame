@@ -26,8 +26,8 @@ public:
 	class UFloatingPawnMovement* MovementComponent;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AutoAim)
-	class UTargetingReticle* Reticle;
-	class UTargetingReticle* GetTargetingReticule_Implementation() override;
+	class UTargetingReticule* Reticule;
+	class UTargetingReticule* GetTargetingReticule_Implementation() override;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Edible)
 	FEdibleInfo EdibleInfo;
 
