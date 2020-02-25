@@ -444,15 +444,17 @@ void AFrogGameCharacter::Lickitung()
 		TArray<AActor*> Edibles = Targets;
 		NumTongues = 0;
 		UE_LOG(LogTemp, Warning, TEXT("Num Tongues left: %d, Num Targets: %d"), NumTongues, Edibles.Num());
-		if (Edibles.Num() == 0)
+		if (Edibles.Num() == 0 && !CurrentTarget)
 		{
-			ATongueProjectile* TongueCPP{
-				GetWorld()->SpawnActor<ATongueProjectile>(TongueBP,
-				                                          TongueStart->
-				                                          GetComponentTransform())
-			};
-			NumTongues++;
-			TongueCPP->ActivateTongue(nullptr);
+			SpawnTongue(nullptr);
+		}
+		else if (CurrentTarget)
+		{
+			SpawnTongue(CurrentTarget);
+			// Additionally face the target 
+			FRotator FacingDirection{FollowCamera->GetForwardVector().ToOrientationRotator()};
+			FacingDirection.Pitch = GetActorRotation().Pitch;
+			SetActorRotation(FacingDirection);
 		}
 		else
 		{
@@ -460,26 +462,24 @@ void AFrogGameCharacter::Lickitung()
 			{
 				if (Target->Implements<UEdible>())
 				{
-					IEdible::Execute_GetTargetingReticule(Target)->SetHiddenInGame(true);
-					ATongueProjectile* TongueCPP{
-						GetWorld()->SpawnActor<ATongueProjectile>(TongueBP,
-						                                          TongueStart->
-						                                          GetComponentTransform())
-					};
-					if (Targets.Num() == 1)
-					{
-						FRotator FacingDirection{FollowCamera->GetForwardVector().ToOrientationRotator()};
-						FacingDirection.Pitch = GetActorRotation().Pitch;
-						SetActorRotation(FacingDirection);
-					}
-					NumTongues++;
-					TongueCPP->ActivateTongue(Target);
+					SpawnTongue(Target);
 				}
 			}
 		}
 		bTongueSpawned = true;
 	}
 	// If PowerMeter is full & PowerMode is not already active, activate PowerMode here?
+}
+
+void AFrogGameCharacter::SpawnTongue(AActor* Target)
+{
+	ATongueProjectile* TongueCPP{
+		GetWorld()->SpawnActor<ATongueProjectile>(TongueBP,
+		                                          TongueStart->
+		                                          GetComponentTransform())
+	};
+	NumTongues++;
+	TongueCPP->ActivateTongue(Target);
 }
 
 void AFrogGameCharacter::Consume(AActor* OtherActor, ATongueProjectile* Tongue)
@@ -594,6 +594,7 @@ void AFrogGameCharacter::PowerMode()
 {
 	CurrentPowerPoints = MaxPowerPoints;
 	bPowerMode = true;
+	CurrentTarget = nullptr;
 	SetHandCollision(RightHandCollision, TEXT("Pawn"));
 	SetHandCollision(LeftHandCollision, TEXT("Pawn"));
 	// Change from frog mesh and rig to power-frog mesh & rig here.

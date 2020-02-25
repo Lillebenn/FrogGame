@@ -17,6 +17,7 @@ AAdvCreature::AAdvCreature()
 	Reticle = CreateDefaultSubobject<UTargetingReticle>(TEXT("Targeting Reticule"));
 	Reticle->SetupAttachment(GetMesh());
 
+
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
@@ -25,13 +26,12 @@ void AAdvCreature::BeginPlay()
 {
 	Super::BeginPlay();
 	Reticle->InitWidget();
-	
 
 	StartTransform = GetTransform();
 	GetCapsuleComponent()->SetCollisionObjectType(ECC_GameTraceChannel1);
 	// For capsules we just use the radius value. Could potentially do a combination/average of the half-height and radius if the creature is particularly tall.
 	EdibleInfo.Size = GetCapsuleComponent()->GetScaledCapsuleRadius();
-	Reticle->SetupAttachment(GetMesh(), AttachBoneName);
+	Reticle->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, AttachBoneName);
 }
 
 // Called every frame

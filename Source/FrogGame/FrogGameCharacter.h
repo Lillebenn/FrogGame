@@ -175,6 +175,7 @@ private:
 	void SpawnTargetingMesh(const TArray<AActor*>& TargetEdibles) const;
 	/** Uses the tongue to eat something, and then grows **/
 	void Lickitung();
+	void SpawnTongue(AActor* Target);
 	UPROPERTY()
 	TArray<AActor*> Targets;
 	UPROPERTY()
