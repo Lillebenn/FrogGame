@@ -311,12 +311,12 @@ void AFrogGameCharacter::SpawnTargetingMesh(const TArray<AActor*>& TargetEdibles
 	for (auto Target : TargetEdibles)
 	{
 		// Temp
-		UKismetSystemLibrary::DrawDebugArrow(
-			GetWorld(),
-			BoxCollider->GetComponentLocation() - BoxCollider->GetForwardVector() * BoxCollider
-			                                                                        ->GetUnscaledBoxExtent().X,
-			Target->GetActorLocation(), 3.f,
-			FLinearColor::Red);
+		//UKismetSystemLibrary::DrawDebugArrow(
+		//	GetWorld(),
+		//	BoxCollider->GetComponentLocation() - BoxCollider->GetForwardVector() * BoxCollider
+		//	                                                                        ->GetUnscaledBoxExtent().X,
+		//	Target->GetActorLocation(), 3.f,
+		//	FLinearColor::Red);
 
 		auto TargetingReticule{IEdible::Execute_GetTargetingReticule(Target)};
 		if (TargetingReticule)
