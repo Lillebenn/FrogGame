@@ -165,11 +165,17 @@ private:
 	void UpdateCameraBoom(float ScaleDelta) const;
 	void UpdateAimRange() const;
 	void AutoAim();
-	UPROPERTY(EditDefaultsOnly, Category = AutoAim)
-	class UStaticMeshComponent* TargetingMesh;
-	void SpawnTargetingMesh();
+	float CalcDistanceScore(AActor* Actor) const;
+	/**
+	 * 	How ideal this actor is to become the current target based on proximity to the middle of the camera view. A lower value is better.
+	 *	An angle exactly as large as the max angle will result in (X / X) * MaxAngleScore = MaxAngleScore.
+	 */
+	float CalcAngleScore(AActor* Actor) const;
+
+	void SpawnTargetingMesh(const TArray<AActor*>& TargetEdibles) const;
 	/** Uses the tongue to eat something, and then grows **/
 	void Lickitung();
+	void SpawnTongue(AActor* Target);
 	UPROPERTY()
 	TArray<AActor*> Targets;
 	UPROPERTY()

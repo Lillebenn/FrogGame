@@ -17,5 +17,8 @@ AFlyingSimpleCreature::AFlyingSimpleCreature()
 void AFlyingSimpleCreature::BeginPlay()
 {
 	Super::BeginPlay();
-	GetMesh()->SetRelativeLocation(FVector(0, 0, 50.f));
+	if(GetMesh())
+	{
+		GetMesh()->SetRelativeLocation(FVector(0, 0, 50.f));
+	}
 }

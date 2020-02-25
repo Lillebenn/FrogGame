@@ -20,6 +20,7 @@ ASimpleCreature::ASimpleCreature()
 	RootComponent = CreatureMesh;
 
 	Reticle = CreateDefaultSubobject<UTargetingReticle>(TEXT("Targeting Reticule"));
+	Reticle->SetupAttachment(RootComponent);
 
 	MovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComponent"));
 
@@ -37,7 +38,8 @@ UTargetingReticle* ASimpleCreature::GetTargetingReticule_Implementation()
 void ASimpleCreature::BeginPlay()
 {
 	Super::BeginPlay();
-	CalculateBoundingSize();
+	Reticle->InitWidget();
+	//CalculateBoundingSize(); This was causing an error somewhere
 	StartTransform = GetTransform();
 	CreatureMesh->SetCollisionObjectType(ECC_GameTraceChannel1);
 }
@@ -113,8 +115,11 @@ FTransform ASimpleCreature::GetStartTransform()
 
 void ASimpleCreature::CalculateBoundingSize()
 {
-	const FVector RoughSize = CreatureMesh->GetStaticMesh()->GetBoundingBox().GetSize();
-	const FVector AbsoluteSize{RoughSize.GetAbsMin()};
-	// Get the average axis value of the bounding box
-	EdibleInfo.Size = (AbsoluteSize.X + AbsoluteSize.Y + AbsoluteSize.Z) / 3;
+	if (CreatureMesh)
+	{
+		const FVector RoughSize = CreatureMesh->GetStaticMesh()->GetBoundingBox().GetSize();
+		const FVector AbsoluteSize{RoughSize.GetAbsMin()};
+		// Get the average axis value of the bounding box
+		EdibleInfo.Size = (AbsoluteSize.X + AbsoluteSize.Y + AbsoluteSize.Z) / 3;
+	}
 }

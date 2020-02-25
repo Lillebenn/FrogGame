@@ -21,12 +21,9 @@ public:
 	FTimerDelegate TimerDel;
 	FTimerHandle TimerHandle;
 
-	// Distance between the reticle's parent component and the reticle. 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AutoAim)
-	float ReticleDistance{0.f};
 	UFUNCTION()
 	void HideReticle();
-	void DrawReticle(const FVector Position, const FRotator Orientation, float LifeTime);
+	void DrawReticle(FVector Position, float LifeTime);
 protected:
 	void BeginPlay() override;
 };
