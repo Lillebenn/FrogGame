@@ -38,7 +38,7 @@ UTargetingReticule* ASimpleCreature::GetTargetingReticule_Implementation()
 void ASimpleCreature::BeginPlay()
 {
 	Super::BeginPlay();
-	Reticule->InitWidget();
+	//Reticule->InitWidget();
 	//CalculateBoundingSize(); This was causing an error somewhere
 	StartTransform = GetTransform();
 	CreatureMesh->SetCollisionObjectType(ECC_GameTraceChannel1);

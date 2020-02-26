@@ -81,6 +81,20 @@ void ATongueProjectile::OnComponentHit(UPrimitiveComponent* HitComp, AActor* Oth
 	if (OtherActor->Implements<UEdible>())
 	{
 		AttachEdible(OtherActor);
+		
+	}else
+	{
+		bShouldReturn = true;
+	}
+}
+
+void ATongueProjectile::OnComponentOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+                                           UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+                                           const FHitResult& SweepResult)
+{
+	if (OtherActor->Implements<UEdible>())
+	{
+		AttachEdible(OtherActor);
 	}
 }
 
@@ -89,10 +103,11 @@ void ATongueProjectile::SeekTarget(const float DeltaTime)
 	if (Target)
 	{
 		USceneComponent* TargetComponent{IEdible::Execute_GetTargetComponent(Target)};
-		if(TargetComponent)
+		if (TargetComponent)
 		{
 			VInterpTo(IEdible::Execute_GetTargetComponent(Target)->GetComponentLocation(), TongueSeekSpeed, DeltaTime);
-		}else
+		}
+		else
 		{
 			VInterpTo(Target->GetActorLocation(), TongueSeekSpeed, DeltaTime);
 			UE_LOG(LogTemp, Error, TEXT("Missing Target Component Setup in %s!"), *Target->GetName());

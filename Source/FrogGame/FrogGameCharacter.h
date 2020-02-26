@@ -37,26 +37,42 @@ class AFrogGameCharacter : public ACharacter
 public:
 	AFrogGameCharacter();
 
+
 	/** Accessor Function for Current Score */
 	UFUNCTION(BlueprintCallable, Category = "Score")
-	float GetCurrentScore();
+	float GetCurrentScore() const
+	{
+		return CurrentScore;
+	}
 
 	/** Accessor Function for current size tier **/
 	UFUNCTION(BlueprintCallable, Category = "Size")
-	uint8 GetCurrentSizeTier();
+	uint8 GetCurrentSizeTier() const
+	{
+		return SizeTier;
+	}
 
 	/** Accessor function for next size tier **/
 	UFUNCTION(BlueprintCallable, Category = "Size")
-	uint8 GetNextSizeTier();
+	uint8 GetNextSizeTier() const
+	{
+		return SizeTier + 1;
+	}
 
 	/** Updates the players score 
 	* @Param Score This is the amount to increase the players score by. This should only be positive!
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Score")
-	void UpdateCurrentScore(float Score);
+	void UpdateCurrentScore(const float Score)
+	{
+		CurrentScore = CurrentScore + Score;
+	}
 
 	UFUNCTION(BlueprintCallable, Category = "PowerMode")
-	float GetCurrentPowerPoints();
+	float GetCurrentPowerPoints() const
+	{
+		return CurrentPowerPoints;
+	}
 
 	/**
 	* @Param Points This is the amount to increase the players powerpoints by. This should only be positive on objects!
@@ -68,7 +84,10 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseTurnRate;
 
-	UArrowComponent* GetTongueStart();
+	UArrowComponent* GetTongueStart()
+	{
+		return TongueStart;
+	}
 
 	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
@@ -176,6 +195,7 @@ private:
 	float CalcAngleScore(AActor* Actor) const;
 
 	void SpawnTargetingMesh(const TArray<AActor*>& TargetEdibles) const;
+	void PositionAimBox();
 	/** Uses the tongue to eat something, and then grows **/
 	void Lickitung();
 	void SpawnTongue(AActor* Target);

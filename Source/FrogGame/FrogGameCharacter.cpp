@@ -82,39 +82,6 @@ AFrogGameCharacter::AFrogGameCharacter()
 	LeftHandCollision->SetCollisionObjectType(ECC_WorldDynamic);
 }
 
-float AFrogGameCharacter::GetCurrentScore()
-{
-	return CurrentScore;
-}
-
-uint8 AFrogGameCharacter::GetCurrentSizeTier()
-{
-	return SizeTier;
-}
-
-uint8 AFrogGameCharacter::GetNextSizeTier()
-{
-	return SizeTier + 1;
-}
-
-void AFrogGameCharacter::UpdateCurrentScore(float Score)
-{
-	CurrentScore = CurrentScore + Score;
-}
-
-float AFrogGameCharacter::GetCurrentPowerPoints()
-{
-	return CurrentPowerPoints;
-}
-
-void AFrogGameCharacter::UpdatePowerPoints(float Points)
-{
-	CurrentPowerPoints = CurrentPowerPoints + Points;
-	if (CurrentPowerPoints > MaxPowerPoints)
-	{
-		CurrentPowerPoints = MaxPowerPoints;
-	}
-}
 
 void AFrogGameCharacter::BeginPlay()
 {
@@ -144,11 +111,6 @@ void AFrogGameCharacter::BeginPlay()
 	TongueSeekSpeed = BaseTongueSeekSpeed;
 	CurrentCableWidth = BaseCableWidth;
 	CurrentJump = BaseJump;
-}
-
-UArrowComponent* AFrogGameCharacter::GetTongueStart()
-{
-	return TongueStart;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -183,24 +145,11 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AFrogGameCharacter::LookUpAtRate);
 }
 
-void AFrogGameCharacter::ClearCurrentTarget()
-{
-	CurrentTarget = nullptr;
-	Targets.Empty();
-	CurrentTargetScore = 0.0f;
-}
-
-void AFrogGameCharacter::DeactivatePowerMode()
-{
-	bPowerMode = false;
-	SetHandCollision(RightHandCollision, TEXT("NoCollision"));
-	SetHandCollision(LeftHandCollision, TEXT("NoCollision"));
-	// Put in set back to frog mesh & rig here
-}
 
 void AFrogGameCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	PositionAimBox();
 	if (bPowerMode)
 	{
 		PowerDrain(DeltaTime);
@@ -256,11 +205,11 @@ void AFrogGameCharacter::AutoAim()
 				if (TotalScore > CurrentTargetScore + AimStickiness)
 				{
 					CurrentTarget = Actor;
-					UE_LOG(LogTemp, Warning,
+					/*UE_LOG(LogTemp, Warning,
 					       TEXT("Current Target is: %s, with a distance score of: %f and angle score of: %f"),
 					       *CurrentTarget->GetName(), DistanceScore, AngleScore)
 					UE_LOG(LogTemp, Warning, TEXT("Total Score: %f, vs Last Score: %f"), TotalScore,
-					       CurrentTargetScore)
+					       CurrentTargetScore)*/
 
 					CurrentTargetScore = TotalScore;
 				}
@@ -327,10 +276,24 @@ void AFrogGameCharacter::SpawnTargetingMesh(const TArray<AActor*>& TargetEdibles
 				GetComponentLocation()
 			};
 			TargetToPlayer.Normalize();
-			TargetingReticule->DrawReticule(TargetToPlayer, 0.1f);
+			TargetingReticule->DrawReticule(TargetToPlayer, 0.05f);
 			// Normalize the line from A to B, multiply with desired distance from Target
 		}
 	}
+}
+
+void AFrogGameCharacter::ClearCurrentTarget()
+{
+	CurrentTarget = nullptr;
+	Targets.Empty();
+	CurrentTargetScore = 0.0f;
+}
+
+
+void AFrogGameCharacter::PositionAimBox()
+{
+	BoxCollider->SetWorldLocation(
+		GetActorLocation() + FollowCamera->GetForwardVector() * BoxCollider->GetUnscaledBoxExtent().X);
 }
 
 void AFrogGameCharacter::TurnAtRate(float Rate)
@@ -431,9 +394,9 @@ void AFrogGameCharacter::UpdateAimRange() const
 	Extent.X = (TongueBP.GetDefaultObject()->TongueRange / 2.f) * GetActorScale().X;
 	const float XDiff{Extent.X - BoxCollider->GetUnscaledBoxExtent().X};
 	BoxCollider->SetBoxExtent(Extent);
-	FVector NewPosition{BoxCollider->GetRelativeLocation()};
-	NewPosition.X += XDiff;
-	BoxCollider->SetRelativeLocation(NewPosition);
+	//FVector NewPosition{BoxCollider->GetRelativeLocation()};
+	//NewPosition.X += XDiff;
+	//BoxCollider->SetRelativeLocation(NewPosition);
 }
 
 
@@ -474,6 +437,10 @@ void AFrogGameCharacter::Lickitung()
 
 void AFrogGameCharacter::SpawnTongue(AActor* Target)
 {
+	if (Target)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Target is: %s"), *Target->GetName())
+	}
 	ATongueProjectile* TongueCPP{
 		GetWorld()->SpawnActor<ATongueProjectile>(TongueBP,
 		                                          TongueStart->
@@ -516,8 +483,10 @@ void AFrogGameCharacter::Consume(AActor* OtherActor, ATongueProjectile* Tongue)
 		const float SizeDiff{SizeInfo.Size / ScaledRadius * SizeInfo.GrowthCoefficient};
 		// If SizeInfo.Size = 10 and ScaledRadius = 50 then we get a value of 10/50 = 0.2 or 20%.
 		// Increase actor scale by this value. 
-		const FVector ScaleVector = GetActorScale() * (1 + SizeDiff);
+		const FVector ScaleVector = GetActorScale() * (1 + (SizeDiff * 2.f));
 		ExtraScaleTotal += (ScaleVector - GetActorScale());
+		const FVector DesiredScale{GetActorScale() + ExtraScaleTotal};
+		UE_LOG(LogTemp, Warning, TEXT("Desired scale: %f, %f, %f"), DesiredScale.X, DesiredScale.Y, DesiredScale.Z)
 		UpdateCurrentScore(SizeInfo.ScorePoints);
 		UpdatePowerPoints(SizeInfo.PowerPoints);
 	}
@@ -599,6 +568,23 @@ void AFrogGameCharacter::PowerMode()
 	SetHandCollision(RightHandCollision, TEXT("Pawn"));
 	SetHandCollision(LeftHandCollision, TEXT("Pawn"));
 	// Change from frog mesh and rig to power-frog mesh & rig here.
+}
+
+void AFrogGameCharacter::DeactivatePowerMode()
+{
+	bPowerMode = false;
+	SetHandCollision(RightHandCollision, TEXT("NoCollision"));
+	SetHandCollision(LeftHandCollision, TEXT("NoCollision"));
+	// Put in set back to frog mesh & rig here
+}
+
+void AFrogGameCharacter::UpdatePowerPoints(float Points)
+{
+	CurrentPowerPoints = CurrentPowerPoints + Points;
+	if (CurrentPowerPoints > MaxPowerPoints)
+	{
+		CurrentPowerPoints = MaxPowerPoints;
+	}
 }
 
 void AFrogGameCharacter::PowerDrain(float DeltaTime)
