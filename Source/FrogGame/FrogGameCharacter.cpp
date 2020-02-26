@@ -23,8 +23,11 @@
 AFrogGameCharacter::AFrogGameCharacter()
 {
 	// Set size for collision capsule
-	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-
+	GetCapsuleComponent()->InitCapsuleSize(13.f, 13.0f);
+	FVector2D Capsule;
+	GetCapsuleComponent()->GetUnscaledCapsuleSize(Capsule.X, Capsule.Y);
+	NeutralModeSettings.CapsuleSize = Capsule;
+	PowerModeSettings.CapsuleSize = FVector2D(42.f, 96.0f);
 
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
@@ -568,6 +571,11 @@ void AFrogGameCharacter::PowerMode()
 	SetHandCollision(RightHandCollision, TEXT("Pawn"));
 	SetHandCollision(LeftHandCollision, TEXT("Pawn"));
 	// Change from frog mesh and rig to power-frog mesh & rig here.
+}
+
+void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSettings)
+{
+
 }
 
 void AFrogGameCharacter::DeactivatePowerMode()

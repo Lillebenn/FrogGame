@@ -5,6 +5,21 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "FrogGameCharacter.generated.h"
+USTRUCT(BlueprintType)
+struct FCharacterSettings
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	class USkeletalMesh* Mesh;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TSubclassOf<class UAnimInstance> AnimBP;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	FVector2D CapsuleSize{};
+	// Add other variables here based on what we change between modes.
+};
 
 UCLASS(config=Game, Abstract)
 class AFrogGameCharacter : public ACharacter
@@ -32,6 +47,10 @@ class AFrogGameCharacter : public ACharacter
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class USphereComponent* LeftHandCollision;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Character, meta = (AllowPrivateAccess = "true"))
+	FCharacterSettings NeutralModeSettings;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Character, meta = (AllowPrivateAccess = "true"))
+	FCharacterSettings PowerModeSettings;
 
 	friend class ATongueProjectile;
 public:
@@ -74,6 +93,11 @@ public:
 		return CurrentPowerPoints;
 	}
 
+	UArrowComponent* GetTongueStart() const
+	{
+		return TongueStart;
+	}
+
 	/**
 	* @Param Points This is the amount to increase the players powerpoints by. This should only be positive on objects!
 	*/
@@ -84,10 +108,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseTurnRate;
 
-	UArrowComponent* GetTongueStart()
-	{
-		return TongueStart;
-	}
 
 	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
@@ -230,9 +250,8 @@ private:
 
 	/** Changing to Powermode **/
 	void PowerMode();
-
+	void SetPlayerModel(const FCharacterSettings& CharacterSettings);
 	void PowerDrain(float DeltaTime);
-
 	void DeactivatePowerMode();
 
 
