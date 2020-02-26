@@ -575,7 +575,9 @@ void AFrogGameCharacter::PowerMode()
 
 void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSettings)
 {
-
+	GetMesh()->SetSkeletalMesh(CharacterSettings.Mesh);
+	GetMesh()->SetAnimInstanceClass(CharacterSettings.AnimBP->StaticClass());
+	GetCapsuleComponent()->SetCapsuleSize(CharacterSettings.CapsuleSize.X, CharacterSettings.CapsuleSize.Y);
 }
 
 void AFrogGameCharacter::DeactivatePowerMode()
@@ -586,7 +588,7 @@ void AFrogGameCharacter::DeactivatePowerMode()
 	// Put in set back to frog mesh & rig here
 }
 
-void AFrogGameCharacter::UpdatePowerPoints(float Points)
+void AFrogGameCharacter::UpdatePowerPoints(const float Points)
 {
 	CurrentPowerPoints = CurrentPowerPoints + Points;
 	if (CurrentPowerPoints > MaxPowerPoints)
@@ -595,7 +597,7 @@ void AFrogGameCharacter::UpdatePowerPoints(float Points)
 	}
 }
 
-void AFrogGameCharacter::PowerDrain(float DeltaTime)
+void AFrogGameCharacter::PowerDrain(const float DeltaTime)
 {
 	const float DrainPoints = (DeltaTime * DrainSpeed);
 	UpdatePowerPoints(DrainPoints);
