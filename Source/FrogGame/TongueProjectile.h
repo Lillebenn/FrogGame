@@ -48,7 +48,7 @@ public:
 	float CurrentPause;
 	bool bIsPaused;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tongue)
-	float TongueRange{700.0f};
+	float TongueRange{200.0f};
 	void VInterpTo(FVector InterpTo, float TongueSpeed, float DeltaTime);
 
 	void AttachEdible(AActor* EdibleActor);

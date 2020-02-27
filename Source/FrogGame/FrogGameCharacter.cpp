@@ -67,9 +67,9 @@ AFrogGameCharacter::AFrogGameCharacter()
 	// We use the arrow component as spawn point for the tongue and attach it to the head bone
 	TongueStart = GetArrowComponent();
 	TongueStart->bEditableWhenInherited = true;
-	TongueStart->SetupAttachment(GetMesh(), FName("head"));
+	TongueStart->SetupAttachment(GetMesh(), FName("Head_joint"));
 
-
+	// Power mode punch volumes need to be changed once we get the correct mesh
 	// Creates a collision sphere and attaches it to the characters right hand.
 	RightHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("RightHandCollision"));
 	RightHandCollision->SetupAttachment(GetMesh(), FName("hand_r"));
