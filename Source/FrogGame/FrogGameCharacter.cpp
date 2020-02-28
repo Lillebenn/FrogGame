@@ -130,8 +130,8 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	// This is here for test purposes, will activate when the powerbar is filled up.
 	PlayerInputComponent->BindAction("PowerMode", IE_Pressed, this, &AFrogGameCharacter::PowerMode);
 
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AFrogGameCharacter::StartJump);
-	PlayerInputComponent->BindAction("Jump", IE_Released, this, &AFrogGameCharacter::ExecuteJump);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+	//PlayerInputComponent->BindAction("Jump", IE_Released, this, &AFrogGameCharacter::ExecuteJump);
 
 	PlayerInputComponent->BindAction("TestSave", IE_Pressed, this, &AFrogGameCharacter::SaveGame);
 	PlayerInputComponent->BindAction("TestLoad", IE_Pressed, this, &AFrogGameCharacter::LoadGame);
@@ -378,7 +378,7 @@ void AFrogGameCharacter::UpdateCharacterMovement(const float ScaleDelta)
 {
 	UCharacterMovementComponent* Movement{GetCharacterMovement()};
 	Movement->MaxWalkSpeed += BaseMaxWalkSpeed * ScaleDelta;
-	CurrentJump += BaseJump * ScaleDelta;
+	CurrentJump += BaseJump * (ScaleDelta * 0.2f); // temp to reduce jump height increase
 	Movement->JumpZVelocity = CurrentJump;
 	TongueReturnSpeed += BaseTongueReturnSpeed * ScaleDelta;
 	TongueSeekSpeed += BaseTongueSeekSpeed * ScaleDelta;
