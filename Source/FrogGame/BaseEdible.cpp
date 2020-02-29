@@ -3,6 +3,7 @@
 
 #include "BaseEdible.h"
 #include "Engine/StaticMesh.h"
+#include "FrogGameCharacter.h"
 #include "SphereDrop.h"
 
 ABaseEdible::ABaseEdible()
