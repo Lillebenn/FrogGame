@@ -10,7 +10,6 @@ ABaseEdible::ABaseEdible()
 {
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	StaticMesh->SetCollisionObjectType(ECC_GameTraceChannel1);
-	StaticMesh->OnComponentHit.AddDynamic(this, &ABaseEdible::OnComponentHit);
 	RootComponent = StaticMesh;
 }
 
@@ -18,21 +17,6 @@ void ABaseEdible::Tick(float DeltaTime)
 {
 }
 
-
-void ABaseEdible::OnComponentHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-	FVector NormalImpulse, const FHitResult& Hit)
-{
-	AFrogGameCharacter* Frog{Cast<AFrogGameCharacter>(OtherActor)}; // This needs to be more specific to the punches or we could just walk it to death
-	if(Frog)
-	{
-		CurrentHealth -= 100.f; // TODO: Remove magic number
-		if(CurrentHealth <= 0.f)
-		{
-			Destroy();
-		}
-		
-	}
-}
 
 FEdibleInfo ABaseEdible::GetInfo_Implementation() const
 {
@@ -62,6 +46,26 @@ FTransform ABaseEdible::GetStartTransform()
 	return GetTransform();
 }
 
+float ABaseEdible::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
+                              AActor* DamageCauser)
+{
+	const float ActualDamage{Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser)};
+	if(ActualDamage > 0.f)
+	{
+		AFrogGameCharacter* Frog{Cast<AFrogGameCharacter>(DamageCauser)};
+		// This needs to be more specific to the punches or we could just walk it to death
+		if (Frog)
+		{
+			CurrentHealth -= ActualDamage;
+			if (CurrentHealth <= 0.f)
+			{
+				SetLifeSpan(0.001f);
+			}
+		}
+	}
+	return ActualDamage;
+}
+
 void ABaseEdible::BeginPlay()
 {
 	Super::BeginPlay();
@@ -70,7 +74,7 @@ void ABaseEdible::BeginPlay()
 
 void ABaseEdible::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	if(Drop)
+	if (Drop)
 	{
 		for (int i{0}; i < 5; i++)
 		{

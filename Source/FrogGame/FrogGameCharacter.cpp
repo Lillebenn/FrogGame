@@ -16,6 +16,7 @@
 #include "FrogGameInstance.h"
 #include "Edible.h"
 #include "CableComponent.h"
+#include "BaseEdible.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AFrogGameCharacter
@@ -541,13 +542,13 @@ void AFrogGameCharacter::OnAttackHit(UPrimitiveComponent* HitComp, AActor* Other
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Hit Event with %s!"), *OtherActor->GetName())
 
-
-		//if (Destructible)
-		//{
-		TSubclassOf<UDamageType> const ValidDamageTypeClass = TSubclassOf<UDamageType>(UDamageType::StaticClass());
-		FDamageEvent DamageEvent(ValidDamageTypeClass);
-		//Destructible->TakeDamage(PunchDamage, DamageEvent, GetController(), this);
-		//}
+		ABaseEdible* Destructible{Cast<ABaseEdible>(OtherActor)};
+		if (Destructible)
+		{
+			TSubclassOf<UDamageType> const ValidDamageTypeClass = TSubclassOf<UDamageType>(UDamageType::StaticClass());
+			const FDamageEvent DamageEvent(ValidDamageTypeClass);
+			Destructible->TakeDamage(PunchDamage, DamageEvent, GetController(), this);
+		}
 	}
 }
 

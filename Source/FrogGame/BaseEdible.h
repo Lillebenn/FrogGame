@@ -33,9 +33,7 @@ public:
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, SaveGame, Category = Destructible)
 	float CurrentHealth;
-	UFUNCTION()
-	void OnComponentHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-	                    FVector NormalImpulse, const FHitResult& Hit);
+
 	UPROPERTY(EditDefaultsOnly, Category = Edible)
 	TSubclassOf<class ASphereDrop> Drop;
 	// Interface stuff
@@ -47,6 +45,7 @@ public:
 
 	FTransform GetStartTransform() override;
 
+	float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 protected:
 	// Called when the game starts or when spawned
