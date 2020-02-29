@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "EdibleInfo.h"
 #include "FrogGameCharacter.generated.h"
 USTRUCT(BlueprintType)
 struct FCharacterSettings
@@ -143,6 +144,7 @@ public:
 	TSubclassOf<class ATongueProjectile> TongueBP;
 	uint32 NumTongues{0};
 	void Consume(AActor* OtherActor, ATongueProjectile* Tongue);
+	void IncreaseScale(const FEdibleInfo SizeInfo);
 	// Tongue Settings
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Tongue)
 	float BaseTongueReturnSpeed{10000.f};

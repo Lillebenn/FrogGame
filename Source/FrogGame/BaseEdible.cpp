@@ -3,6 +3,7 @@
 
 #include "BaseEdible.h"
 #include "Engine/StaticMesh.h"
+#include "SphereDrop.h"
 
 ABaseEdible::ABaseEdible()
 {
@@ -48,4 +49,16 @@ FTransform ABaseEdible::GetStartTransform()
 void ABaseEdible::BeginPlay()
 {
 	Super::BeginPlay();
+}
+
+void ABaseEdible::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if(Drop)
+	{
+		for (int i{0}; i < 5; i++)
+		{
+			GetWorld()->SpawnActor<ASphereDrop>(Drop, GetActorLocation(), FRotator());
+		}
+	}
+	Super::EndPlay(EndPlayReason);
 }

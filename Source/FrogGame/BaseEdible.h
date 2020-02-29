@@ -17,7 +17,7 @@ class FROGGAME_API ABaseEdible : public AActor, public IEdible, public ISaveable
 {
 	GENERATED_BODY()
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UStaticMeshComponent* StaticMesh;
 public:
 	ABaseEdible();
@@ -25,8 +25,12 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Edible)
 	FEdibleInfo EdibleInfo;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Edible)
-	TArray<class UStaticMesh*> StaticMeshes;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Edible)
+	int32 NumDrops{5};
+
+
+	UPROPERTY(EditDefaultsOnly, Category = Edible)
+	TSubclassOf<class ASphereDrop> Drop;
 	// Interface stuff
 	FEdibleInfo GetInfo_Implementation() const override;
 	void DisableActor_Implementation() override;
@@ -40,4 +44,6 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
+
+	void EndPlay(EEndPlayReason::Type EndPlayReason) override;
 };

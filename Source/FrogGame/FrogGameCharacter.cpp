@@ -478,21 +478,26 @@ void AFrogGameCharacter::Consume(AActor* OtherActor, ATongueProjectile* Tongue)
 
 		OtherActor->Destroy();
 
-		// just reset the lerp values
-		bScalingUp = true;
-		// We use the scaled radius value of the capsule collider to get an approximate size value for the main character.
-		const float ScaledRadius{GetCapsuleComponent()->GetScaledCapsuleRadius()};
-		// Compare this to the averaged bounding box size of the object being eaten and factor in the growth coefficient.
-		const float SizeDiff{SizeInfo.Size / ScaledRadius * SizeInfo.GrowthCoefficient};
-		// If SizeInfo.Size = 10 and ScaledRadius = 50 then we get a value of 10/50 = 0.2 or 20%.
-		// Increase actor scale by this value. 
-		const FVector ScaleVector = GetActorScale() * (1 + (SizeDiff * 2.f));
-		ExtraScaleTotal += (ScaleVector - GetActorScale());
-		const FVector DesiredScale{GetActorScale() + ExtraScaleTotal};
-		UE_LOG(LogTemp, Warning, TEXT("Desired scale: %f, %f, %f"), DesiredScale.X, DesiredScale.Y, DesiredScale.Z)
-		UpdateCurrentScore(SizeInfo.ScorePoints);
-		UpdatePowerPoints(SizeInfo.PowerPoints);
+		IncreaseScale(SizeInfo);
 	}
+}
+
+void AFrogGameCharacter::IncreaseScale(const FEdibleInfo SizeInfo)
+{
+	// just reset the lerp values
+	bScalingUp = true;
+	// We use the scaled radius value of the capsule collider to get an approximate size value for the main character.
+	const float ScaledRadius{GetCapsuleComponent()->GetScaledCapsuleRadius()};
+	// Compare this to the averaged bounding box size of the object being eaten and factor in the growth coefficient.
+	const float SizeDiff{SizeInfo.Size / ScaledRadius * SizeInfo.GrowthCoefficient};
+	// If SizeInfo.Size = 10 and ScaledRadius = 50 then we get a value of 10/50 = 0.2 or 20%.
+	// Increase actor scale by this value. 
+	const FVector ScaleVector = GetActorScale() * (1 + (SizeDiff * 2.f));
+	ExtraScaleTotal += (ScaleVector - GetActorScale());
+	const FVector DesiredScale{GetActorScale() + ExtraScaleTotal};
+	UE_LOG(LogTemp, Warning, TEXT("Desired scale: %f, %f, %f"), DesiredScale.X, DesiredScale.Y, DesiredScale.Z)
+	UpdateCurrentScore(SizeInfo.ScorePoints);
+	UpdatePowerPoints(SizeInfo.PowerPoints);
 }
 
 // Called in the jump function. For every second the player holds spacebar / bumper it increases the jump charge by 1 to a max of 3.
