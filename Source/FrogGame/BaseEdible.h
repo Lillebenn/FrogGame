@@ -28,7 +28,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Edible)
 	int32 NumDrops{5};
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Destructible)
+	float Health{100.f};
 
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, SaveGame, Category = Destructible)
+	float CurrentHealth;
+	UFUNCTION()
+	void OnComponentHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	                    FVector NormalImpulse, const FHitResult& Hit);
 	UPROPERTY(EditDefaultsOnly, Category = Edible)
 	TSubclassOf<class ASphereDrop> Drop;
 	// Interface stuff
