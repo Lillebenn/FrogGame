@@ -102,7 +102,7 @@ void AFrogGameCharacter::BeginPlay()
 	}
 	BoxCollider->SetRelativeLocation(FVector(CameraBoom->TargetArmLength + BoxCollider->GetUnscaledBoxExtent().X, 0,
 	                                         0));
-	BaseBoomRange = CameraBoom->TargetArmLength;
+	BaseBoomRange = CameraBoom->TargetArmLength / GetActorScale().X;
 	LeftHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
 	RightHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
 	MaxAngleRadians = FMath::DegreesToRadians(MaxAngle);
@@ -574,6 +574,7 @@ void AFrogGameCharacter::PowerMode()
 	CurrentPowerPoints = MaxPowerPoints;
 	bPowerMode = true;
 	CurrentTarget = nullptr;
+	SetPlayerModel(PowerModeSettings);
 	SetHandCollision(RightHandCollision, TEXT("Pawn"));
 	SetHandCollision(LeftHandCollision, TEXT("Pawn"));
 	// Change from frog mesh and rig to power-frog mesh & rig here.
@@ -581,17 +582,26 @@ void AFrogGameCharacter::PowerMode()
 
 void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSettings)
 {
+	GetMesh()->SetAnimInstanceClass(CharacterSettings.AnimBP);
 	GetMesh()->SetSkeletalMesh(CharacterSettings.Mesh);
-	GetMesh()->SetAnimInstanceClass(CharacterSettings.AnimBP->StaticClass());
+
 	GetCapsuleComponent()->SetCapsuleSize(CharacterSettings.CapsuleSize.X, CharacterSettings.CapsuleSize.Y);
+	const FVector Offset{0, 0, -CharacterSettings.CapsuleSize.Y};
+	// not sure if this will be correct when more scale is applied.
+	GetMesh()->SetRelativeLocation(Offset);
+	CameraBoom->TargetArmLength = CharacterSettings.BaseBoomRange * GetActorScale().X;
+	GetCharacterMovement()->MaxWalkSpeed = CharacterSettings.BaseWalkSpeed * GetActorScale().X;
+	const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
+	TongueStart->AttachToComponent(GetMesh(), InRule, CharacterSettings.TongueBoneTarget);
+	// Note: Stuff like Cable width and the size of the nodule at the end of the tongue not set right now.
 }
 
 void AFrogGameCharacter::DeactivatePowerMode()
 {
 	bPowerMode = false;
+	SetPlayerModel(NeutralModeSettings);
 	SetHandCollision(RightHandCollision, TEXT("NoCollision"));
 	SetHandCollision(LeftHandCollision, TEXT("NoCollision"));
-	// Put in set back to frog mesh & rig here
 }
 
 void AFrogGameCharacter::UpdatePowerPoints(const float Points)

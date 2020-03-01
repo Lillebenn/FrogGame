@@ -19,6 +19,21 @@ struct FCharacterSettings
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FVector2D CapsuleSize{};
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float BaseBoomRange{200.f};
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float BaseTongueCableWidth{4.f};
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float BaseTongueNodeScale{0.5f};
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float BaseWalkSpeed{600.f};
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	FName TongueBoneTarget{"Head_joint"};
 	// Add other variables here based on what we change between modes.
 };
 
@@ -30,7 +45,7 @@ class AFrogGameCharacter : public ACharacter
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
-	float BaseBoomRange{500.f};
+	float BaseBoomRange{200.f};
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
@@ -144,7 +159,7 @@ public:
 	TSubclassOf<class ATongueProjectile> TongueBP;
 	uint32 NumTongues{0};
 	void Consume(AActor* OtherActor, ATongueProjectile* Tongue);
-	void IncreaseScale(const FEdibleInfo SizeInfo);
+	void IncreaseScale(FEdibleInfo SizeInfo);
 	// Tongue Settings
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Tongue)
 	float BaseTongueReturnSpeed{10000.f};
