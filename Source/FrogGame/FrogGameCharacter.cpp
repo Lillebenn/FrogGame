@@ -17,6 +17,7 @@
 #include "Edible.h"
 #include "CableComponent.h"
 #include "BaseEdible.h"
+#include "TonguePivot.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AFrogGameCharacter
@@ -60,32 +61,34 @@ AFrogGameCharacter::AFrogGameCharacter()
 	BoxCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxTrace"));
 	BoxCollider->SetupAttachment(FollowCamera);
 	BoxCollider->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	BoxCollider->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Overlap);
-	BoxCollider->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Ignore);
-	BoxCollider->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Ignore);
-
+	BoxCollider->SetCollisionProfileName(TEXT("AutoAim"));
 	BoxCollider->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnBoxTraceEnd);
+
 	// We use the arrow component as spawn point for the tongue and attach it to the head bone
 	TongueStart = GetArrowComponent();
 	TongueStart->bEditableWhenInherited = true;
 	TongueStart->SetupAttachment(GetMesh(), FName("Head_joint"));
-
+	static ConstructorHelpers::FClassFinder<ATongueProjectile> TongueProjectileBP(
+		TEXT("/Game/Blueprints/Characters/Main_Character/BP_TongueProjectile"));
+	if (TongueProjectileBP.Class != nullptr)
+	{
+		TongueBP = TongueProjectileBP.Class;
+	}
 	// Power mode punch volumes need to be changed once we get the correct mesh
 	// Creates a collision sphere and attaches it to the characters right hand.
 	RightHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("RightHandCollision"));
-	RightHandCollision->SetupAttachment(GetMesh(), FName("hand_r"));
-	RightHandCollision->SetNotifyRigidBodyCollision(true);
-
+	InitHandCollider(RightHandCollision, TEXT("hand_r"));
 	// Creates a collision sphere and attaches it to the characters left hand.
 	LeftHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("LeftHandCollision"));
-	LeftHandCollision->SetupAttachment(GetMesh(), FName("hand_l"));
-	LeftHandCollision->SetNotifyRigidBodyCollision(true);
-	SetHandCollision(RightHandCollision, TEXT("NoCollision"));
-	SetHandCollision(LeftHandCollision, TEXT("NoCollision"));
-	RightHandCollision->SetCollisionObjectType(ECC_WorldDynamic);
-	LeftHandCollision->SetCollisionObjectType(ECC_WorldDynamic);
+	InitHandCollider(LeftHandCollision, TEXT("hand_l"));
 }
 
+void AFrogGameCharacter::InitHandCollider(USphereComponent* Hand, const FName& Socket)
+{
+	Hand->SetupAttachment(GetMesh(), Socket);
+	SetHandCollision(Hand, TEXT("NoCollision"));
+	Hand->CanCharacterStepUpOn = ECB_No;
+}
 
 void AFrogGameCharacter::BeginPlay()
 {
@@ -280,7 +283,17 @@ void AFrogGameCharacter::SpawnTargetingMesh(const TArray<AActor*>& TargetEdibles
 				GetComponentLocation()
 			};
 			TargetToPlayer.Normalize();
-			TargetingReticule->DrawReticule(TargetToPlayer, 0.05f);
+			const int TierDiff{SizeTier - IEdible::Execute_GetInfo(Target).SizeTier};
+			float Size = 70.f;
+			if (TierDiff == 2)
+			{
+				Size = 500.f;
+			}
+			else if (TierDiff < 2)
+			{
+				Size = 25.f;
+			}
+			TargetingReticule->DrawReticule(TargetToPlayer, 0.05f, Size);
 			// Normalize the line from A to B, multiply with desired distance from Target
 		}
 	}
@@ -353,10 +366,10 @@ void AFrogGameCharacter::UpdateCharacterScale(const float DeltaTime)
 	{
 		ScaleAlpha += DeltaTime;
 		const FVector PrevScale{GetActorScale()};
-		const FVector DesiredScale{GetActorScale() + ExtraScaleTotal};
+		const FVector DesiredScale{GetActorScale() + FVector(ExtraScaleBank)};
 		SetActorScale3D(FMath::Lerp(GetActorScale(), DesiredScale, ScaleAlpha));
 		const float ScaleDelta{(GetActorScale() - PrevScale).X};
-		ExtraScaleTotal -= FVector(ScaleDelta);
+		ExtraScaleBank -= ScaleDelta;
 		UpdateCharacterMovement(ScaleDelta);
 		UpdateCameraBoom(ScaleDelta);
 		UpdateAimRange();
@@ -490,13 +503,12 @@ void AFrogGameCharacter::IncreaseScale(const FEdibleInfo SizeInfo)
 	// We use the scaled radius value of the capsule collider to get an approximate size value for the main character.
 	const float ScaledRadius{GetCapsuleComponent()->GetScaledCapsuleRadius()};
 	// Compare this to the averaged bounding box size of the object being eaten and factor in the growth coefficient.
-	const float SizeDiff{SizeInfo.Size / ScaledRadius * SizeInfo.GrowthCoefficient};
 	// If SizeInfo.Size = 10 and ScaledRadius = 50 then we get a value of 10/50 = 0.2 or 20%.
 	// Increase actor scale by this value. 
-	const FVector ScaleVector = GetActorScale() * (1 + (SizeDiff * 2.f));
-	ExtraScaleTotal += (ScaleVector - GetActorScale());
-	const FVector DesiredScale{GetActorScale() + ExtraScaleTotal};
-	UE_LOG(LogTemp, Warning, TEXT("Desired scale: %f, %f, %f"), DesiredScale.X, DesiredScale.Y, DesiredScale.Z)
+	const float SizeDiff{SizeInfo.Size * SizeInfo.GrowthCoefficient / ScaledRadius};
+	ExtraScaleBank += SizeDiff;
+	UE_LOG(LogTemp, Warning, TEXT("SizeDiff = %f"), SizeDiff)
+
 	UpdateCurrentScore(SizeInfo.ScorePoints);
 	UpdatePowerPoints(SizeInfo.PowerPoints);
 }
@@ -510,16 +522,13 @@ void AFrogGameCharacter::StartJump()
 void AFrogGameCharacter::SetHandCollision(USphereComponent* Collider, FName CollisionProfile)
 {
 	Collider->SetCollisionProfileName(CollisionProfile);
-	Collider->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
-	if (CollisionProfile == TEXT("Pawn"))
+	if (CollisionProfile == TEXT("Punch"))
 	{
-		Collider->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-		Collider->SetSimulatePhysics(true);
+		Collider->SetNotifyRigidBodyCollision(true);
 	}
 	else
-
 	{
-		Collider->SetSimulatePhysics(false);
+		Collider->SetNotifyRigidBodyCollision(false);
 	}
 }
 
@@ -527,12 +536,24 @@ void AFrogGameCharacter::Hitmonchan()
 {
 	if (bPowerMode)
 	{
+		// For later, when we have a proper punch animation, turn on collision only when the punch of the player is at the end point
+		// Also need to make sure the animation cancels early if it hits something, or turns off collision once it does, so it doesn't keep adding collision events.
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AFrogGameCharacter::RemoveHandCollision, 0.5f,
+		                                       false);
+		SetHandCollision(RightHandCollision, TEXT("Punch"));
+		SetHandCollision(LeftHandCollision, TEXT("Punch"));
 		// Add execution here
 	}
 	else
 	{
 		// Does nothing if player is not in power mode.
 	}
+}
+
+void AFrogGameCharacter::RemoveHandCollision()
+{
+	SetHandCollision(RightHandCollision, TEXT("NoCollision"));
+	SetHandCollision(LeftHandCollision, TEXT("NoCollision"));
 }
 
 void AFrogGameCharacter::OnAttackHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
@@ -575,8 +596,6 @@ void AFrogGameCharacter::PowerMode()
 	bPowerMode = true;
 	CurrentTarget = nullptr;
 	SetPlayerModel(PowerModeSettings);
-	SetHandCollision(RightHandCollision, TEXT("Pawn"));
-	SetHandCollision(LeftHandCollision, TEXT("Pawn"));
 	// Change from frog mesh and rig to power-frog mesh & rig here.
 }
 

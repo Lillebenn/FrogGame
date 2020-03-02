@@ -35,7 +35,7 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	void OnDisabled();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
-	USceneComponent* GetTargetComponent();
+	class UTonguePivot* GetTargetComponent();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	class UTargetingReticule* GetTargetingReticule();
 	

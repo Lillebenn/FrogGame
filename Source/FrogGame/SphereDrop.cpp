@@ -13,11 +13,9 @@ ASphereDrop::ASphereDrop()
 	PrimaryActorTick.bCanEverTick = true;
 
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
-	StaticMesh->SetCollisionObjectType(ECC_GameTraceChannel1);
+	StaticMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	RootComponent = StaticMesh;
-
-	StaticMesh->SetNotifyRigidBodyCollision(true);
 }
 
 // Called when the game starts or when spawned
@@ -26,24 +24,7 @@ void ASphereDrop::BeginPlay()
 	Super::BeginPlay();
 
 	Frog = Cast<AFrogGameCharacter>(GetWorld()->GetFirstPlayerController()->GetCharacter());
-
 	LinearUpPosition = InitialZPosition;
-}
-
-void ASphereDrop::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	if (Frog)
-	{
-		Frog->IncreaseScale(EdibleInfo);
-	}
-	Super::EndPlay(EndPlayReason);
-}
-
-float ASphereDrop::FindRadialDistance() const
-{
-	const FVector2D FrogXY{GetActorLocation() - Frog->GetActorLocation()};
-	const float SquaredRadialDistance{(FrogXY.X * FrogXY.X) + (FrogXY.Y * FrogXY.Y)};
-	return SquaredRadialDistance;
 }
 
 void ASphereDrop::MoveToPlayer(const float DeltaTime)
@@ -81,6 +62,15 @@ void ASphereDrop::Swirl(const float DeltaTime)
 	SetActorLocation(FVector{X, Y, Z});
 }
 
+void ASphereDrop::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (Frog)
+	{
+		Frog->IncreaseScale(EdibleInfo);
+	}
+	Super::EndPlay(EndPlayReason);
+}
+
 // Called every frame
 void ASphereDrop::Tick(float DeltaTime)
 {
@@ -95,7 +85,7 @@ void ASphereDrop::Tick(float DeltaTime)
 			{
 				CurrentRadius = FMath::Sqrt(RadialDistance);
 				const FVector2D FrogXY{GetActorLocation() - Frog->GetActorLocation()};
-				RadianDelta = FMath::Atan2(FrogXY.Y,FrogXY.X);
+				RadianDelta = FMath::Atan2(FrogXY.Y, FrogXY.X);
 
 				bShouldSwirl = true;
 			}
@@ -105,4 +95,11 @@ void ASphereDrop::Tick(float DeltaTime)
 			Swirl(DeltaTime);
 		}
 	}
+}
+
+float ASphereDrop::FindRadialDistance() const
+{
+	const FVector2D FrogXY{GetActorLocation() - Frog->GetActorLocation()};
+	const float SquaredRadialDistance{(FrogXY.X * FrogXY.X) + (FrogXY.Y * FrogXY.Y)};
+	return SquaredRadialDistance;
 }

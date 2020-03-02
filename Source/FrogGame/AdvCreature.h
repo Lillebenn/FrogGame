@@ -25,7 +25,8 @@ public:
 
 	// Called to bind functionality to input
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	class UTonguePivot* TongueTarget;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Edible)
 	FEdibleInfo EdibleInfo;
 
@@ -37,7 +38,7 @@ public:
 	void DisableActor_Implementation() override;
 	void OnDisabled_Implementation() override;
 
-	USceneComponent* GetTargetComponent_Implementation() override;
+	UTonguePivot* GetTargetComponent_Implementation() override;
 	void ActorSaveDataSaved_Implementation() override;
 	void CalculateBoundingSize();
 	void ActorSaveDataLoaded_Implementation() override;

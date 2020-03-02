@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "EdibleInfo.h"
+#include "TimerManager.h"
 #include "FrogGameCharacter.generated.h"
 USTRUCT(BlueprintType)
 struct FCharacterSettings
@@ -25,12 +26,15 @@ struct FCharacterSettings
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float BaseTongueCableWidth{4.f};
-	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float BaseTongueNodeScale{0.5f};
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float BaseWalkSpeed{600.f};
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float BaseJumpZHeight{450.f};
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FName TongueBoneTarget{"Head_joint"};
@@ -67,10 +71,13 @@ class AFrogGameCharacter : public ACharacter
 	FCharacterSettings NeutralModeSettings;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Character, meta = (AllowPrivateAccess = "true"))
 	FCharacterSettings PowerModeSettings;
-
+	
+	FTimerHandle TimerHandle;
+	
 	friend class ATongueProjectile;
 public:
 	AFrogGameCharacter();
+	void InitHandCollider(USphereComponent* Hand, const FName& Socket);
 
 
 	/** Accessor Function for Current Score */
@@ -186,6 +193,9 @@ public:
 	// How quickly the Power Mode bar drains
 	UPROPERTY(EditAnywhere, Category = PowerMode)
 	float DrainSpeed{-0.075f};
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = PowerMode)
+	bool bIsPunching{false};
 	/** The Players current score */
 	UPROPERTY(EditAnywhere, SaveGame, Category = "Score")
 	float CurrentScore;
@@ -243,6 +253,7 @@ private:
 
 	/** Uses fist to punch something, can only be used in power mode **/
 	void Hitmonchan();
+	void RemoveHandCollision();
 	UFUNCTION()
 	void OnAttackHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                 FVector NormalImpulse, const FHitResult& Hit);
@@ -274,7 +285,7 @@ private:
 
 	float ScaleAlpha{0.0f};
 	bool bScalingUp{false};
-	FVector ExtraScaleTotal{0};
+	float ExtraScaleBank{0.f};
 
 
 	// Jump stuff

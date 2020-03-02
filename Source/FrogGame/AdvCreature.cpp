@@ -7,6 +7,7 @@
 #include "FrogGameInstance.h"
 #include "TargetingReticule.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "TonguePivot.h"
 
 // Sets default values
 AAdvCreature::AAdvCreature()
@@ -16,7 +17,8 @@ AAdvCreature::AAdvCreature()
 
 	Reticule = CreateDefaultSubobject<UTargetingReticule>(TEXT("Targeting Reticule"));
 	Reticule->SetupAttachment(GetMesh());
-
+		TongueTarget = CreateDefaultSubobject<UTonguePivot>(TEXT("Tongue Pivot Object"));
+	TongueTarget->SetupAttachment(RootComponent);
 
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
@@ -74,9 +76,9 @@ void AAdvCreature::OnDisabled_Implementation()
 }
 
 
-USceneComponent* AAdvCreature::GetTargetComponent_Implementation()
+UTonguePivot* AAdvCreature::GetTargetComponent_Implementation()
 {
-	return GetMesh();
+	return TongueTarget;
 }
 
 

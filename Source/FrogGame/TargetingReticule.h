@@ -18,12 +18,18 @@ class FROGGAME_API UTargetingReticule : public UWidgetComponent
 
 public:
 	UTargetingReticule();
-	FTimerDelegate TimerDel;
 	FTimerHandle TimerHandle;
 
+	UPROPERTY()
+	class UImage* Reticule;
+	UPROPERTY()
+	class UCanvasPanelSlot* ReticuleSlot;
 	UFUNCTION()
 	void HideReticule();
-	void DrawReticule(FVector Position, float LifeTime);
+	void DrawReticule(FVector Position, float LifeTime, float Size = 70.f);
 protected:
 	void BeginPlay() override;
+
+private:
+	bool bUpdatedSlot{false};
 };

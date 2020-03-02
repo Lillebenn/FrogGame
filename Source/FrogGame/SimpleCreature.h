@@ -21,7 +21,8 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Mesh)
 	UStaticMeshComponent* CreatureMesh;
-
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	class UTonguePivot* TongueTarget;
 	UPROPERTY(BlueprintReadOnly)
 	class UFloatingPawnMovement* MovementComponent;
 
@@ -53,7 +54,7 @@ public:
 
 	void DisableActor_Implementation() override;
 
-	USceneComponent* GetTargetComponent_Implementation() override;
+	UTonguePivot* GetTargetComponent_Implementation() override;
 
 	void OnDisabled_Implementation() override;
 

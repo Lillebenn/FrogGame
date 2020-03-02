@@ -8,6 +8,7 @@
 #include "GameFramework/Controller.h"
 #include "TargetingReticule.h"
 #include "FrogGameInstance.h"
+#include "TonguePivot.h"
 
 
 // Sets default values
@@ -18,7 +19,8 @@ ASimpleCreature::ASimpleCreature()
 
 	CreatureMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Creature Mesh"));
 	RootComponent = CreatureMesh;
-
+		TongueTarget = CreateDefaultSubobject<UTonguePivot>(TEXT("Tongue Pivot Object"));
+	TongueTarget->SetupAttachment(RootComponent);
 	Reticule = CreateDefaultSubobject<UTargetingReticule>(TEXT("Targeting Reticule"));
 	Reticule->SetupAttachment(RootComponent);
 
@@ -79,9 +81,9 @@ UStaticMeshComponent* ASimpleCreature::GetMesh()
 	return CreatureMesh;
 }
 
-USceneComponent* ASimpleCreature::GetTargetComponent_Implementation()
+UTonguePivot* ASimpleCreature::GetTargetComponent_Implementation()
 {
-	return CreatureMesh;
+	return TongueTarget;
 }
 
 void ASimpleCreature::OnDisabled_Implementation()

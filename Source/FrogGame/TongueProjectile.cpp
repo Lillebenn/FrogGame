@@ -6,6 +6,7 @@
 #include "CableComponent.h"
 #include "Engine.h"
 #include "Edible.h"
+#include "TonguePivot.h"
 
 // Sets default values
 ATongueProjectile::ATongueProjectile()
@@ -102,7 +103,7 @@ void ATongueProjectile::SeekTarget(const float DeltaTime)
 {
 	if (Target)
 	{
-		USceneComponent* TargetComponent{IEdible::Execute_GetTargetComponent(Target)};
+		UTonguePivot* TargetComponent{IEdible::Execute_GetTargetComponent(Target)};
 		if (TargetComponent)
 		{
 			VInterpTo(IEdible::Execute_GetTargetComponent(Target)->GetComponentLocation(), TongueSeekSpeed, DeltaTime);

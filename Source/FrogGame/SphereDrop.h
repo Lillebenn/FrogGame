@@ -19,22 +19,22 @@ public:
 	ASphereDrop();
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Edible)
 	FEdibleInfo EdibleInfo;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Character)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Swirl Settings")
 	float InitialRadius{50.f};
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Character)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Swirl Settings")
 	float MinRadius{10.f};
 	float CurrentRadius;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Character)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Swirl Settings")
 	float LinearUpSpeed{10.f};
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Character)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Swirl Settings")
 	float InitialZPosition{-30.f};
 	// Relative to the player character, starting from the middle.
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Character)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Swirl Settings")
 	float MaxZPosition{30.f};
 	float LinearUpPosition;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Character)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Swirl Settings")
 	float LinearInSpeed{10.f};
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Character)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Swirl Settings")
 	float AngularSpeed{10.f};
 	float RadianDelta{0.f};
 
