@@ -103,12 +103,19 @@ void AAdvCreature::ActorSaveDataSaved_Implementation()
 
 void AAdvCreature::CalculateBoundingSize()
 {
-	const FVector RoughSize = GetMesh()->Bounds.GetBox().GetSize();
-	const FVector AbsoluteSize{RoughSize.GetAbsMin()};
-	// Get the average axis value of the bounding box
-	EdibleInfo.Size = (AbsoluteSize.X + AbsoluteSize.Y + AbsoluteSize.Z) / 6;
-	if(!EdibleInfo.bAutomaticSizeTier)
+	if(GetMesh())
 	{
-		EdibleInfo.SizeTier = IEdible::CalculateSizeTier(EdibleInfo.Size);
+		const FVector RoughSize = GetMesh()->Bounds.GetBox().GetSize();
+		const FVector AbsoluteSize{RoughSize.GetAbsMin()};
+		// Get the average axis value of the bounding box
+		EdibleInfo.Size = (AbsoluteSize.X + AbsoluteSize.Y + AbsoluteSize.Z) / 6;
+		if(!EdibleInfo.bAutomaticSizeTier)
+		{
+			EdibleInfo.SizeTier = IEdible::CalculateSizeTier(EdibleInfo.Size);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s is missing a mesh!"), *GetName());
 	}
 }

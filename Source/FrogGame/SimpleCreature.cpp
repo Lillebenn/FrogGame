@@ -126,6 +126,10 @@ void ASimpleCreature::CalculateBoundingSize()
 			// Get the average axis value of the bounding box - Note: Since we're taking the bounding box size we divide the size twice to account for the extra box size.
 			EdibleInfo.Size = (AbsoluteSize.X + AbsoluteSize.Y + AbsoluteSize.Z) / 6;
 		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s is missing a mesh!"), *GetName());
+		}
 	}
 	if (!EdibleInfo.bAutomaticSizeTier)
 	{
