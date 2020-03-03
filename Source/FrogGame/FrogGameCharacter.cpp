@@ -378,7 +378,7 @@ void AFrogGameCharacter::DoJump(const float DeltaTime)
 	// C = 0, we want to start at y = 0.
 
 	LastZ = GetActorLocation().Z;
-	XPoint += DeltaTime * JumpSpeed;
+	XPoint += DeltaTime * JumpSpeed; // TODO: add an initial burst of speed
 	const float A{-.143f}, B{2.f};
 	const float ZPoint{A * FMath::Square(XPoint) + B * XPoint}; // Y in the graph is Z in-game.
 	FVector JumpPoint{XPoint, XPoint, 0};
@@ -392,8 +392,6 @@ void AFrogGameCharacter::DoJump(const float DeltaTime)
 		XPoint = 0.f;
 		GetCharacterMovement()->SetMovementMode(MOVE_Falling);
 	}
-
-	// TODO: Look at the jump functionality in UE4
 }
 
 void AFrogGameCharacter::OnCapsuleOverlap(UPrimitiveComponent* OverlappedComponent,
