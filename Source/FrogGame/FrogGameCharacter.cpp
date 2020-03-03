@@ -28,6 +28,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	GetCapsuleComponent()->InitCapsuleSize(13.f, 13.0f);
 	FVector2D Capsule;
 	GetCapsuleComponent()->GetUnscaledCapsuleSize(Capsule.X, Capsule.Y);
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnCapsuleOverlap);
 	NeutralModeSettings.CapsuleSize = Capsule;
 	PowerModeSettings.CapsuleSize = FVector2D(42.f, 96.0f);
 
@@ -166,9 +167,9 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 			DeactivatePowerMode();
 		}
 	}
-	if (bIsCharging)
+	if (bIsJumping)
 	{
-		ChargeJump(DeltaTime);
+		DoJump(DeltaTime);
 	}
 	if (bScalingUp)
 	{
@@ -360,6 +361,48 @@ void AFrogGameCharacter::MoveRight(float Value)
 		// add movement in that direction
 		AddMovementInput(Direction, Value);
 	}
+}
+
+void AFrogGameCharacter::Jump()
+{
+	Super::Jump();
+	bIsJumping = true;
+	GetCharacterMovement()->SetMovementMode(MOVE_None);
+}
+
+void AFrogGameCharacter::DoJump(const float DeltaTime)
+{
+	// Input = 0 to 1 signifying the frog's point in the jump
+	// X = Input * 14.f
+	// f(0) = 0. X = 0, Y = 0.
+	// C = 0, we want to start at y = 0.
+
+	LastZ = GetActorLocation().Z;
+	XPoint += DeltaTime * JumpSpeed;
+	const float A{-.143f}, B{2.f};
+	const float ZPoint{A * FMath::Square(XPoint) + B * XPoint}; // Y in the graph is Z in-game.
+	FVector JumpPoint{XPoint, XPoint, 0};
+	JumpPoint *= GetActorForwardVector();
+	JumpPoint.Z = ZPoint;
+	UE_LOG(LogTemp, Warning, TEXT("%f"), ZPoint)
+	SetActorLocation(GetActorLocation() + JumpPoint, true);
+	if (LastZ <= GetActorLocation().Z && XPoint >= MaxXPoint)
+	{
+		bIsJumping = false;
+		XPoint = 0.f;
+		GetCharacterMovement()->SetMovementMode(MOVE_Falling);
+	}
+
+	// TODO: Look at the jump functionality in UE4
+}
+
+void AFrogGameCharacter::OnCapsuleOverlap(UPrimitiveComponent* OverlappedComponent,
+                                          AActor* OtherActor,
+                                          UPrimitiveComponent* OtherComp,
+                                          int32 OtherBodyIndex,
+                                          bool bFromSweep,
+                                          const FHitResult& SweepResult)
+{
 }
 
 void AFrogGameCharacter::UpdateCharacterScale(const float DeltaTime)
