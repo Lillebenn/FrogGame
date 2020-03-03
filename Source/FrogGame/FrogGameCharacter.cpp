@@ -28,7 +28,6 @@ AFrogGameCharacter::AFrogGameCharacter()
 	GetCapsuleComponent()->InitCapsuleSize(13.f, 13.0f);
 	FVector2D Capsule;
 	GetCapsuleComponent()->GetUnscaledCapsuleSize(Capsule.X, Capsule.Y);
-	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnCapsuleOverlap);
 	NeutralModeSettings.CapsuleSize = Capsule;
 	PowerModeSettings.CapsuleSize = FVector2D(42.f, 96.0f);
 
@@ -394,14 +393,7 @@ void AFrogGameCharacter::DoJump(const float DeltaTime)
 	}
 }
 
-void AFrogGameCharacter::OnCapsuleOverlap(UPrimitiveComponent* OverlappedComponent,
-                                          AActor* OtherActor,
-                                          UPrimitiveComponent* OtherComp,
-                                          int32 OtherBodyIndex,
-                                          bool bFromSweep,
-                                          const FHitResult& SweepResult)
-{
-}
+
 
 void AFrogGameCharacter::UpdateCharacterScale(const float DeltaTime)
 {
