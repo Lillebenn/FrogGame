@@ -119,7 +119,7 @@ void ASimpleCreature::CalculateBoundingSize()
 {
 	if (CreatureMesh)
 	{
-		if(CreatureMesh->GetStaticMesh())
+		if (CreatureMesh->GetStaticMesh())
 		{
 			const FVector RoughSize = CreatureMesh->GetStaticMesh()->GetBoundingBox().GetSize();
 			const FVector AbsoluteSize{RoughSize.GetAbsMin()};
@@ -127,5 +127,8 @@ void ASimpleCreature::CalculateBoundingSize()
 			EdibleInfo.Size = (AbsoluteSize.X + AbsoluteSize.Y + AbsoluteSize.Z) / 6;
 		}
 	}
-	EdibleInfo.SizeTier = IEdible::CalculateSizeTier(EdibleInfo.Size);
+	if (!EdibleInfo.bAutomaticSizeTier)
+	{
+		EdibleInfo.SizeTier = IEdible::CalculateSizeTier(EdibleInfo.Size);
+	}
 }

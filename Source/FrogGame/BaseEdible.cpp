@@ -74,7 +74,10 @@ void ABaseEdible::CalculateSize()
 			UE_LOG(LogTemp, Error, TEXT("%s is missing a static mesh!"), *GetName())
 		}
 	}
-	EdibleInfo.SizeTier = IEdible::CalculateSizeTier(EdibleInfo.Size);
+	if (!EdibleInfo.bAutomaticSizeTier)
+	{
+		EdibleInfo.SizeTier = IEdible::CalculateSizeTier(EdibleInfo.Size);
+	}
 }
 
 float ABaseEdible::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
