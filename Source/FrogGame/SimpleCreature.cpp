@@ -19,7 +19,7 @@ ASimpleCreature::ASimpleCreature()
 
 	CreatureMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Creature Mesh"));
 	RootComponent = CreatureMesh;
-		TongueTarget = CreateDefaultSubobject<UTonguePivot>(TEXT("Tongue Pivot Object"));
+	TongueTarget = CreateDefaultSubobject<UTonguePivot>(TEXT("Tongue Pivot Object"));
 	TongueTarget->SetupAttachment(RootComponent);
 	Reticule = CreateDefaultSubobject<UTargetingReticule>(TEXT("Targeting Reticule"));
 	Reticule->SetupAttachment(RootComponent);
@@ -41,7 +41,7 @@ void ASimpleCreature::BeginPlay()
 {
 	Super::BeginPlay();
 	//Reticule->InitWidget();
-	//CalculateBoundingSize(); This was causing an error somewhere
+	CalculateBoundingSize(); //This was causing an error somewhere
 	StartTransform = GetTransform();
 	CreatureMesh->SetCollisionObjectType(ECC_GameTraceChannel1);
 }
@@ -119,9 +119,13 @@ void ASimpleCreature::CalculateBoundingSize()
 {
 	if (CreatureMesh)
 	{
-		const FVector RoughSize = CreatureMesh->GetStaticMesh()->GetBoundingBox().GetSize();
-		const FVector AbsoluteSize{RoughSize.GetAbsMin()};
-		// Get the average axis value of the bounding box
-		EdibleInfo.Size = (AbsoluteSize.X + AbsoluteSize.Y + AbsoluteSize.Z) / 3;
+		if(CreatureMesh->GetStaticMesh())
+		{
+			const FVector RoughSize = CreatureMesh->GetStaticMesh()->GetBoundingBox().GetSize();
+			const FVector AbsoluteSize{RoughSize.GetAbsMin()};
+			// Get the average axis value of the bounding box - Note: Since we're taking the bounding box size we divide the size twice to account for the extra box size.
+			EdibleInfo.Size = (AbsoluteSize.X + AbsoluteSize.Y + AbsoluteSize.Z) / 6;
+		}
 	}
+	EdibleInfo.SizeTier = IEdible::CalculateSizeTier(EdibleInfo.Size);
 }

@@ -62,18 +62,19 @@ void ABaseEdible::CalculateSize()
 {
 	if (StaticMesh)
 	{
-		if(StaticMesh->GetStaticMesh())
+		if (StaticMesh->GetStaticMesh())
 		{
 			const FVector RoughSize = StaticMesh->GetStaticMesh()->GetBoundingBox().GetSize();
 			const FVector AbsoluteSize{RoughSize.GetAbsMin()};
 			// Get the average axis value of the bounding box
-			EdibleInfo.Size = (AbsoluteSize.X + AbsoluteSize.Y + AbsoluteSize.Z) / 3;
+			EdibleInfo.Size = (AbsoluteSize.X + AbsoluteSize.Y + AbsoluteSize.Z) / 6;
 		}
 		else
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s is missing a static mesh!"), *GetName())
 		}
 	}
+	EdibleInfo.SizeTier = IEdible::CalculateSizeTier(EdibleInfo.Size);
 }
 
 float ABaseEdible::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
@@ -104,7 +105,7 @@ void ABaseEdible::BeginPlay()
 	Super::BeginPlay();
 	CurrentHealth = Health;
 	CalculateSize();
-	if(Reticule)
+	if (Reticule)
 	{
 		Reticule->InitWidget();
 	}
@@ -112,15 +113,17 @@ void ABaseEdible::BeginPlay()
 
 void ABaseEdible::SpawnSpheres() const
 {
-		if (Drop)
+	if (Drop)
 	{
 		const float SphereSize{EdibleInfo.Size / NumDrops};
 		for (int i{0}; i < 5; i++)
 		{
 			const FVector2D SpawnLocation2D{FMath::RandPointInCircle(125.f)};
-			const FVector SpawnLocation{GetActorLocation().X + SpawnLocation2D.X,GetActorLocation().Y + SpawnLocation2D.Y, GetActorLocation().Z};
+			const FVector SpawnLocation{
+				GetActorLocation().X + SpawnLocation2D.X, GetActorLocation().Y + SpawnLocation2D.Y, GetActorLocation().Z
+			};
 			const FTransform SpawnTransform{SpawnLocation};
-			ASphereDrop* Sphere{GetWorld()->SpawnActorDeferred<ASphereDrop>(Drop,SpawnTransform)};
+			ASphereDrop* Sphere{GetWorld()->SpawnActorDeferred<ASphereDrop>(Drop, SpawnTransform)};
 			Sphere->EdibleInfo = EdibleInfo;
 			Sphere->EdibleInfo.Size = SphereSize;
 			UGameplayStatics::FinishSpawningActor(Sphere, SpawnTransform);

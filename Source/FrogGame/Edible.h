@@ -38,6 +38,6 @@ public:
 	class UTonguePivot* GetTargetComponent();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	class UTargetingReticule* GetTargetingReticule();
-	
+	virtual int CalculateSizeTier(float InSize, int NumTiers = 10);
 	virtual FTransform GetStartTransform();
 };

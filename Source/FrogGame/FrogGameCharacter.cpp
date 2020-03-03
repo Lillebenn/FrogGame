@@ -118,6 +118,7 @@ void AFrogGameCharacter::BeginPlay()
 	TongueSeekSpeed = BaseTongueSeekSpeed;
 	CurrentCableWidth = BaseCableWidth;
 	CurrentJump = BaseJump;
+	SizeTier = 1 + GetActorScale().X;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -454,7 +455,6 @@ void AFrogGameCharacter::Lickitung()
 
 void AFrogGameCharacter::SpawnTongue(AActor* Target)
 {
-
 	ATongueProjectile* TongueCPP{
 		GetWorld()->SpawnActor<ATongueProjectile>(TongueBP,
 		                                          TongueStart->
