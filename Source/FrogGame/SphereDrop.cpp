@@ -13,7 +13,7 @@ ASphereDrop::ASphereDrop()
 	PrimaryActorTick.bCanEverTick = true;
 
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
-	StaticMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	StaticMesh->SetCollisionProfileName(TEXT("SphereDrop"));
 
 	RootComponent = StaticMesh;
 }
