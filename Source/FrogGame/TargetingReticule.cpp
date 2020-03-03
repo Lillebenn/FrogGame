@@ -15,12 +15,10 @@ UTargetingReticule::UTargetingReticule()
 	if (ReticuleClass.Class != nullptr)
 	{
 		SetWidgetClass(ReticuleClass.Class);
+	}else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Missing BP_Reticule reference!"));
 	}
-	// Need to get the user widget first
-	// Then from there I need to get the slot by name Reticule
-	// And then I can change the size etc
-	//ReticuleSlot = Cast<UCanvasPanelSlot>(GetUserWidgetObject()->Slot);
-	//Reticule = Cast<UImage>(ReticuleSlot->Content);
 }
 
 void UTargetingReticule::HideReticule()
@@ -37,10 +35,9 @@ void UTargetingReticule::DrawReticule(FVector Position, float LifeTime, float Si
 	SetHiddenInGame(false);
 	if (!bUpdatedSlot)
 	{
-		if (Reticule)
+		if (ReticuleSlot)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Setting size."))
-			Cast<UCanvasPanelSlot>(Reticule)->SetSize(FVector2D(Size));
+			ReticuleSlot->SetSize(FVector2D(Size));
 			bUpdatedSlot = true;
 		}
 	}
@@ -50,4 +47,10 @@ void UTargetingReticule::BeginPlay()
 {
 	Super::BeginPlay();
 	SetHiddenInGame(true);
+
+	Reticule = Cast<UImage>(GetUserWidgetObject()->GetWidgetFromName(TEXT("Reticule")));
+	if (Reticule)
+	{
+		ReticuleSlot = Cast<UCanvasPanelSlot>(Reticule->Slot);
+	}
 }

@@ -17,8 +17,7 @@ ATongueProjectile::ATongueProjectile()
 	// Create the root SphereComponent to handle the Tongue's collision
 	CollisionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionSphere"));
 	CollisionSphere->SetSphereRadius(16.0f);
-	CollisionSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	CollisionSphere->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Block);
+	CollisionSphere->SetCollisionProfileName(TEXT("Tongue"));
 	CollisionSphere->SetNotifyRigidBodyCollision(true);
 	CollisionSphere->OnComponentHit.AddDynamic(this, &ATongueProjectile::OnComponentHit);
 	// Set the SphereComponent as the root component.
@@ -82,9 +81,11 @@ void ATongueProjectile::OnComponentHit(UPrimitiveComponent* HitComp, AActor* Oth
 	if (OtherActor->Implements<UEdible>())
 	{
 		AttachEdible(OtherActor);
-		
-	}else
+	}
+	else
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Hit event with: %s"), *OtherActor->GetName());
+
 		bShouldReturn = true;
 	}
 }
@@ -106,7 +107,8 @@ void ATongueProjectile::SeekTarget(const float DeltaTime)
 		UTonguePivot* TargetComponent{IEdible::Execute_GetTargetComponent(Target)};
 		if (TargetComponent)
 		{
-			VInterpTo(IEdible::Execute_GetTargetComponent(Target)->GetComponentLocation(), TongueSeekSpeed, DeltaTime);
+			const FVector TargetPos{IEdible::Execute_GetTargetComponent(Target)->GetComponentLocation()};
+			VInterpTo(TargetPos, TongueSeekSpeed, DeltaTime);
 		}
 		else
 		{
@@ -195,6 +197,7 @@ void ATongueProjectile::ActivateTongue(AActor* InTarget)
 	else
 	{
 		Target = InTarget;
+		UE_LOG(LogTemp, Warning, TEXT("Target is: %s"), *Target->GetName())
 	}
 	TongueSeekSpeed = Froggy->TongueSeekSpeed;
 	TongueReturnSpeed = Froggy->TongueReturnSpeed;

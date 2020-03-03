@@ -284,12 +284,13 @@ void AFrogGameCharacter::SpawnTargetingMesh(const TArray<AActor*>& TargetEdibles
 			};
 			TargetToPlayer.Normalize();
 			const int TierDiff{SizeTier - IEdible::Execute_GetInfo(Target).SizeTier};
-			float Size = 70.f;
+			// Temp solution
+			float Size = 75.f;
 			if (TierDiff == 2)
 			{
-				Size = 500.f;
+				Size = 50.f;
 			}
-			else if (TierDiff < 2)
+			else if (TierDiff > 2)
 			{
 				Size = 25.f;
 			}
@@ -310,7 +311,7 @@ void AFrogGameCharacter::ClearCurrentTarget()
 void AFrogGameCharacter::PositionAimBox()
 {
 	BoxCollider->SetWorldLocation(
-		GetActorLocation() + FollowCamera->GetForwardVector() * BoxCollider->GetUnscaledBoxExtent().X);
+		GetActorLocation() + FollowCamera->GetForwardVector() * BoxCollider->GetScaledBoxExtent().X);
 }
 
 void AFrogGameCharacter::TurnAtRate(float Rate)
@@ -424,7 +425,6 @@ void AFrogGameCharacter::Lickitung()
 	{
 		TArray<AActor*> Edibles = Targets;
 		NumTongues = 0;
-		UE_LOG(LogTemp, Warning, TEXT("Num Tongues left: %d, Num Targets: %d"), NumTongues, Edibles.Num());
 		if (Edibles.Num() == 0 && !CurrentTarget)
 		{
 			SpawnTongue(nullptr);
@@ -454,10 +454,7 @@ void AFrogGameCharacter::Lickitung()
 
 void AFrogGameCharacter::SpawnTongue(AActor* Target)
 {
-	if (Target)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Target is: %s"), *Target->GetName())
-	}
+
 	ATongueProjectile* TongueCPP{
 		GetWorld()->SpawnActor<ATongueProjectile>(TongueBP,
 		                                          TongueStart->
@@ -507,7 +504,7 @@ void AFrogGameCharacter::IncreaseScale(const FEdibleInfo SizeInfo)
 	// Increase actor scale by this value. 
 	const float SizeDiff{SizeInfo.Size * SizeInfo.GrowthCoefficient / ScaledRadius};
 	ExtraScaleBank += SizeDiff;
-	UE_LOG(LogTemp, Warning, TEXT("SizeDiff = %f"), SizeDiff)
+	//UE_LOG(LogTemp, Warning, TEXT("SizeDiff = %f"), SizeDiff)
 
 	UpdateCurrentScore(SizeInfo.ScorePoints);
 	UpdatePowerPoints(SizeInfo.PowerPoints);
