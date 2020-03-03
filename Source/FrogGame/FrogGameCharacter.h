@@ -71,9 +71,9 @@ class AFrogGameCharacter : public ACharacter
 	FCharacterSettings NeutralModeSettings;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Character, meta = (AllowPrivateAccess = "true"))
 	FCharacterSettings PowerModeSettings;
-	
+
 	FTimerHandle TimerHandle;
-	
+
 	friend class ATongueProjectile;
 public:
 	AFrogGameCharacter();
@@ -211,8 +211,10 @@ protected:
 	void MoveRight(float Value);
 
 	void Jump() override;
-	void DoJump(const float DeltaTime);
+	void DoJump(float DeltaTime);
+	UPROPERTY(BlueprintReadOnly, Category = Jump)
 	bool bIsJumping{false};
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Jump)
 	float JumpSpeed{30.f};
 	float XPoint{0.f};
 	float MaxXPoint{14.f};
@@ -269,12 +271,12 @@ private:
 	void OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                   int32 OtherBodyIndex);
 	UFUNCTION()
-	void OnCapsuleOverlap(UPrimitiveComponent* OverlappedComponent, 
-                      AActor* OtherActor, 
-                      UPrimitiveComponent* OtherComp, 
-                      int32 OtherBodyIndex, 
-                      bool bFromSweep, 
-                      const FHitResult &SweepResult );
+	void OnCapsuleOverlap(UPrimitiveComponent* OverlappedComponent,
+	                      AActor* OtherActor,
+	                      UPrimitiveComponent* OtherComp,
+	                      int32 OtherBodyIndex,
+	                      bool bFromSweep,
+	                      const FHitResult& SweepResult);
 	void SaveGame();
 
 
