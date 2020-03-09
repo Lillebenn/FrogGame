@@ -175,10 +175,6 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 			DeactivatePowerMode();
 		}
 	}
-	if (bIsJumping)
-	{
-		DoJump(DeltaTime);
-	}
 	if (bScalingUp)
 	{
 		UpdateCharacterScale(DeltaTime);
@@ -368,25 +364,12 @@ void AFrogGameCharacter::MoveRight(float Value)
 	}
 }
 
-void AFrogGameCharacter::Jump()
-{
-	Super::Jump();
-	bIsJumping = true;
-}
+
 void AFrogGameCharacter::Landed(const FHitResult& Hit)
 {
 	GetCharacterMovement()->JumpZVelocity = CurrentJump;
-	GetCharacterMovement()->GravityScale = 3.f;
 }
-void AFrogGameCharacter::DoJump(const float DeltaTime)
-{
-	if (bIsJumping && GetCharacterMovement()->Velocity.Z < 100.f)
-	{
-		GetCharacterMovement()->GravityScale = 3.f;
-		bIsJumping = false;
-	}
 
-}
 
 
 void AFrogGameCharacter::UpdateCharacterScale(const float DeltaTime)
