@@ -44,12 +44,13 @@ AFrogGameCharacter::AFrogGameCharacter()
 	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // ...at this rotation rate
 	GetCharacterMovement()->JumpZVelocity = BaseJump;
+	GetCharacterMovement()->GravityScale = 3.f;
 	GetCharacterMovement()->AirControl = 0.2f;
 
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 500.f;
+	CameraBoom->TargetArmLength = 200.f;
 	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 
 	// Create a follow camera
@@ -58,16 +59,16 @@ AFrogGameCharacter::AFrogGameCharacter()
 	// Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-	BoxCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxTrace"));
-	BoxCollider->SetupAttachment(FollowCamera);
-	BoxCollider->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	BoxCollider->SetCollisionProfileName(TEXT("AutoAim"));
-	BoxCollider->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnBoxTraceEnd);
+	AutoAimVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxTrace"));
+	AutoAimVolume->SetupAttachment(FollowCamera);
+	AutoAimVolume->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	AutoAimVolume->SetCollisionProfileName(TEXT("AutoAim"));
+	AutoAimVolume->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnBoxTraceEnd);
 
 	// We use the arrow component as spawn point for the tongue and attach it to the head bone
 	TongueStart = GetArrowComponent();
 	TongueStart->bEditableWhenInherited = true;
-	TongueStart->SetupAttachment(GetMesh(), FName("Head_joint"));
+	TongueStart->SetupAttachment(GetMesh(), NeutralModeSettings.TongueBoneTarget);
 	static ConstructorHelpers::FClassFinder<ATongueProjectile> TongueProjectileBP(
 		TEXT("/Game/Blueprints/Characters/Main_Character/BP_TongueProjectile"));
 	if (TongueProjectileBP.Class != nullptr)
@@ -96,14 +97,22 @@ void AFrogGameCharacter::BeginPlay()
 	if (TongueBP)
 	{
 		const FVector Viewport{GetWorld()->GetGameViewport()->Viewport->GetSizeXY()};
-		BoxCollider->SetBoxExtent(FVector(TongueBP.GetDefaultObject()->TongueRange / 2.f, Viewport.X / 2.f,
+		AutoAimVolume->SetBoxExtent(FVector(TongueBP.GetDefaultObject()->TongueRange / 2.f, Viewport.X / 2.f,
 		                                  Viewport.Y));
 	}
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("Missing reference to TongueProjectile blueprint!"));
 	}
-	BoxCollider->SetRelativeLocation(FVector(CameraBoom->TargetArmLength + BoxCollider->GetUnscaledBoxExtent().X, 0,
+	if(GetMesh()->SkeletalMesh)
+	{
+		NeutralModeSettings.Mesh = GetMesh()->SkeletalMesh;
+		if(const auto AnimInstance = GetMesh()->GetAnimInstance()->GetClass())
+		{
+			NeutralModeSettings.AnimBP = AnimInstance;
+		}
+	}
+	AutoAimVolume->SetRelativeLocation(FVector(CameraBoom->TargetArmLength + AutoAimVolume->GetUnscaledBoxExtent().X, 0,
 	                                         0));
 	BaseBoomRange = CameraBoom->TargetArmLength / GetActorScale().X;
 	LeftHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
@@ -185,8 +194,8 @@ void AFrogGameCharacter::AutoAim()
 {
 	TArray<AActor*> OverlappingActors;
 	// Necessary to update the auto-aim volume whenever the camera is turned. Might be expensive?
-	BoxCollider->UpdateOverlapsImpl();
-	BoxCollider->GetOverlappingActors(OverlappingActors);
+	AutoAimVolume->UpdateOverlapsImpl();
+	AutoAimVolume->GetOverlappingActors(OverlappingActors);
 	if (bPowerMode)
 	{
 		Targets = OverlappingActors; // Remember to clear this when exiting Power mode
@@ -239,7 +248,7 @@ float AFrogGameCharacter::CalcDistanceScore(AActor* Actor) const
 	const float DistToActor{FVector::Dist(GetActorLocation(), Actor->GetActorLocation())};
 	// We use the box collider forward vector multiplied by twice the extent of the box.
 	const FVector MaxPointInBox{
-		BoxCollider->GetForwardVector() * (BoxCollider->GetUnscaledBoxExtent().X * 2.f)
+		AutoAimVolume->GetForwardVector() * (AutoAimVolume->GetUnscaledBoxExtent().X * 2.f)
 	};
 	const float DistToMaxRange{FVector::Dist(GetActorLocation(), GetActorLocation() + MaxPointInBox)};
 	// How ideal this actor is to become the current target based on distance.
@@ -271,7 +280,7 @@ void AFrogGameCharacter::SpawnTargetingMesh(const TArray<AActor*>& TargetEdibles
 		// Temp
 		//UKismetSystemLibrary::DrawDebugArrow(
 		//	GetWorld(),
-		//	BoxCollider->GetComponentLocation() - BoxCollider->GetForwardVector() * BoxCollider
+		//	AutoAimVolume->GetComponentLocation() - AutoAimVolume->GetForwardVector() * AutoAimVolume
 		//	                                                                        ->GetUnscaledBoxExtent().X,
 		//	Target->GetActorLocation(), 3.f,
 		//	FLinearColor::Red);
@@ -311,8 +320,8 @@ void AFrogGameCharacter::ClearCurrentTarget()
 
 void AFrogGameCharacter::PositionAimBox()
 {
-	BoxCollider->SetWorldLocation(
-		GetActorLocation() + FollowCamera->GetForwardVector() * BoxCollider->GetScaledBoxExtent().X);
+	AutoAimVolume->SetWorldLocation(
+		GetActorLocation() + FollowCamera->GetForwardVector() * AutoAimVolume->GetScaledBoxExtent().X);
 }
 
 void AFrogGameCharacter::TurnAtRate(float Rate)
@@ -327,10 +336,7 @@ void AFrogGameCharacter::LookUpAtRate(float Rate)
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 
-void AFrogGameCharacter::Landed(const FHitResult& Hit)
-{
-	GetCharacterMovement()->JumpZVelocity = CurrentJump;
-}
+
 
 
 void AFrogGameCharacter::MoveForward(float Value)
@@ -366,33 +372,21 @@ void AFrogGameCharacter::Jump()
 {
 	Super::Jump();
 	bIsJumping = true;
-	GetCharacterMovement()->SetMovementMode(MOVE_None);
 }
-
+void AFrogGameCharacter::Landed(const FHitResult& Hit)
+{
+	GetCharacterMovement()->JumpZVelocity = CurrentJump;
+	GetCharacterMovement()->GravityScale = 3.f;
+}
 void AFrogGameCharacter::DoJump(const float DeltaTime)
 {
-	// Input = 0 to 1 signifying the frog's point in the jump
-	// X = Input * 14.f
-	// f(0) = 0. X = 0, Y = 0.
-	// C = 0, we want to start at y = 0.
-
-	LastZ = GetActorLocation().Z;
-	XPoint += DeltaTime * JumpSpeed; // TODO: add an initial burst of speed
-	const float A{-.143f}, B{2.f};
-	const float ZPoint{A * FMath::Square(XPoint) + B * XPoint}; // Y in the graph is Z in-game.
-	FVector JumpPoint{XPoint, XPoint, 0};
-	JumpPoint *= GetActorForwardVector();
-	JumpPoint.Z = ZPoint;
-	UE_LOG(LogTemp, Warning, TEXT("%f"), ZPoint)
-	SetActorLocation(GetActorLocation() + JumpPoint, true);
-	if (LastZ <= GetActorLocation().Z && XPoint >= MaxXPoint)
+	if (bIsJumping && GetCharacterMovement()->Velocity.Z < 100.f)
 	{
+		GetCharacterMovement()->GravityScale = 3.f;
 		bIsJumping = false;
-		XPoint = 0.f;
-		GetCharacterMovement()->SetMovementMode(MOVE_Falling);
 	}
-}
 
+}
 
 
 void AFrogGameCharacter::UpdateCharacterScale(const float DeltaTime)
@@ -427,7 +421,7 @@ void AFrogGameCharacter::UpdateCharacterMovement(const float ScaleDelta)
 {
 	UCharacterMovementComponent* Movement{GetCharacterMovement()};
 	Movement->MaxWalkSpeed += BaseMaxWalkSpeed * ScaleDelta;
-	CurrentJump += BaseJump * (ScaleDelta * 0.2f); // temp to reduce jump height increase
+	CurrentJump += BaseJump * (ScaleDelta * 0.2f); // 0.2f is temporary to reduce jump height increase
 	Movement->JumpZVelocity = CurrentJump;
 	TongueReturnSpeed += BaseTongueReturnSpeed * ScaleDelta;
 	TongueSeekSpeed += BaseTongueSeekSpeed * ScaleDelta;
@@ -442,13 +436,13 @@ void AFrogGameCharacter::UpdateCameraBoom(const float ScaleDelta) const
 
 void AFrogGameCharacter::UpdateAimRange() const
 {
-	FVector Extent{BoxCollider->GetUnscaledBoxExtent()};
+	FVector Extent{AutoAimVolume->GetUnscaledBoxExtent()};
 	Extent.X = (TongueBP.GetDefaultObject()->TongueRange / 2.f) * GetActorScale().X;
-	const float XDiff{Extent.X - BoxCollider->GetUnscaledBoxExtent().X};
-	BoxCollider->SetBoxExtent(Extent);
-	//FVector NewPosition{BoxCollider->GetRelativeLocation()};
+	const float XDiff{Extent.X - AutoAimVolume->GetUnscaledBoxExtent().X};
+	AutoAimVolume->SetBoxExtent(Extent);
+	//FVector NewPosition{AutoAimVolume->GetRelativeLocation()};
 	//NewPosition.X += XDiff;
-	//BoxCollider->SetRelativeLocation(NewPosition);
+	//AutoAimVolume->SetRelativeLocation(NewPosition);
 }
 
 
@@ -642,6 +636,7 @@ void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSetti
 	GetCharacterMovement()->MaxWalkSpeed = CharacterSettings.BaseWalkSpeed * GetActorScale().X;
 	const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
 	TongueStart->AttachToComponent(GetMesh(), InRule, CharacterSettings.TongueBoneTarget);
+	GetCharacterMovement()->GravityScale = CharacterSettings.GravityScale;
 	// Note: Stuff like Cable width and the size of the nodule at the end of the tongue not set right now.
 }
 

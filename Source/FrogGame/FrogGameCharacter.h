@@ -34,8 +34,9 @@ struct FCharacterSettings
 	float BaseWalkSpeed{600.f};
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float BaseJumpZHeight{450.f};
-
+	float BaseJumpZHeight{1000.f};
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float GravityScale{3.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FName TongueBoneTarget{"Head_joint"};
 	// Add other variables here based on what we change between modes.
@@ -60,7 +61,7 @@ class AFrogGameCharacter : public ACharacter
 
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	class UBoxComponent* BoxCollider;
+	class UBoxComponent* AutoAimVolume;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class USphereComponent* RightHandCollision;
@@ -214,11 +215,7 @@ protected:
 	void DoJump(float DeltaTime);
 	UPROPERTY(BlueprintReadOnly, Category = Jump)
 	bool bIsJumping{false};
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Jump)
-	float JumpSpeed{30.f};
-	float XPoint{0.f};
-	float MaxXPoint{14.f};
-	float LastZ{0.f};
+
 	/** 
 	 * Called via input to turn at a given rate. 
 	 * @param Rate	This is a normalized rate, i.e. 1.0 means 100% of desired turn rate
@@ -298,7 +295,7 @@ private:
 
 
 	// Jump stuff
-	float BaseJump{450};
+	float BaseJump{1000.f};
 
 	float CurrentJump;
 	float JumpBonus{450};
