@@ -98,22 +98,22 @@ void AFrogGameCharacter::BeginPlay()
 	{
 		const FVector Viewport{GetWorld()->GetGameViewport()->Viewport->GetSizeXY()};
 		AutoAimVolume->SetBoxExtent(FVector(TongueBP.GetDefaultObject()->TongueRange / 2.f, Viewport.X / 2.f,
-		                                  Viewport.Y));
+		                                    Viewport.Y));
 	}
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("Missing reference to TongueProjectile blueprint!"));
 	}
-	if(GetMesh()->SkeletalMesh)
+	if (GetMesh()->SkeletalMesh)
 	{
 		NeutralModeSettings.Mesh = GetMesh()->SkeletalMesh;
-		if(const auto AnimInstance = GetMesh()->GetAnimInstance()->GetClass())
+		if (const auto AnimInstance = GetMesh()->GetAnimInstance()->GetClass())
 		{
 			NeutralModeSettings.AnimBP = AnimInstance;
 		}
 	}
 	AutoAimVolume->SetRelativeLocation(FVector(CameraBoom->TargetArmLength + AutoAimVolume->GetUnscaledBoxExtent().X, 0,
-	                                         0));
+	                                           0));
 	BaseBoomRange = CameraBoom->TargetArmLength / GetActorScale().X;
 	LeftHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
 	RightHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
@@ -140,6 +140,7 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	check(PlayerInputComponent);
 
 	PlayerInputComponent->BindAction("Eat", IE_Pressed, this, &AFrogGameCharacter::Lickitung);
+	PlayerInputComponent->BindAction("StopChargingEat", IE_Released, this, &AFrogGameCharacter::StopCharging);
 	PlayerInputComponent->BindAction("Punch", IE_Pressed, this, &AFrogGameCharacter::Hitmonchan);
 
 	// This is here for test purposes, will activate when the powerbar is filled up.
@@ -170,6 +171,23 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	PositionAimBox();
 	if (bPowerMode)
 	{
+		if (Targets.Num() > 0)
+		{
+			SpawnTargetingMesh(Targets);
+		}
+		if (!bTargetExists)
+		{
+			AutoAim();
+		}
+		else if (bChargingEat)
+		{
+			EatCharge += DeltaTime;
+			if (EatCharge >= EatChargeTime)
+			{
+				EatCharge = 0.f;
+				bTargetExists = false;
+			}
+		}
 		PowerDrain(DeltaTime);
 		if (CurrentPowerPoints <= 0)
 		{
@@ -180,7 +198,7 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	{
 		UpdateCharacterScale(DeltaTime);
 	}
-	if (!bTongueSpawned)
+	if (!bTongueSpawned && !bPowerMode)
 	{
 		AutoAim();
 	}
@@ -195,11 +213,31 @@ void AFrogGameCharacter::AutoAim()
 	AutoAimVolume->GetOverlappingActors(OverlappingActors);
 	if (bPowerMode)
 	{
-		Targets = OverlappingActors; // Remember to clear this when exiting Power mode
+		float BestTargetScore{0.f};
+		AActor* BestTarget{nullptr};
+		for (AActor* Actor : OverlappingActors)
+		{
+			if (Actor->Implements<UEdible>())
+			{
+				const float TotalScore{GetTotalScore(Actor)};
+				if (TotalScore > BestTargetScore + AimStickiness)
+				{
+					BestTargetScore = TotalScore;
+					BestTarget = Actor;
+				}
+			}
+		}
+		if(BestTarget)
+		{
+			Targets.Add(BestTarget);
+			if (Targets.Num() > 1)
+			{
+				bTargetExists = true;
+			}
+		}
 	}
 	else
 	{
-		const int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
 		for (AActor* Actor : OverlappingActors)
 		{
 			if (Actor == CurrentTarget) // Don't check against itself	
@@ -208,14 +246,7 @@ void AFrogGameCharacter::AutoAim()
 			}
 			if (Actor->Implements<UEdible>())
 			{
-				const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(Actor)};
-				if (SizeInfo.SizeTier > MaxSize) // Object is too big, ignore.
-				{
-					continue;
-				}
-				const float DistanceScore{CalcDistanceScore(Actor)};
-				const float AngleScore{CalcAngleScore(Actor)};
-				const float TotalScore{DistanceScore - AngleScore};
+				const float TotalScore{GetTotalScore(Actor)};
 				if (TotalScore > CurrentTargetScore + AimStickiness)
 				{
 					CurrentTarget = Actor;
@@ -229,14 +260,10 @@ void AFrogGameCharacter::AutoAim()
 				}
 			}
 		}
-	}
-	if (CurrentTarget)
-	{
-		SpawnTargetingMesh(TArray<AActor*>{CurrentTarget});
-	}
-	if (Targets.Num() > 0)
-	{
-		SpawnTargetingMesh(Targets);
+		if (CurrentTarget)
+		{
+			SpawnTargetingMesh(TArray<AActor*>{CurrentTarget});
+		}
 	}
 }
 
@@ -270,8 +297,23 @@ float AFrogGameCharacter::CalcAngleScore(AActor* Actor) const
 	return {FMath::Clamp(AngleRad / MaxAngleRadians, 0.f, MaxAngleScore)};
 }
 
+float AFrogGameCharacter::GetTotalScore(AActor* Actor) const
+{
+	const int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
+	const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(Actor)};
+	if (SizeInfo.SizeTier > MaxSize) // Object is too big, ignore.
+	{
+		return 0.f;
+	}
+	const float DistanceScore{CalcDistanceScore(Actor)};
+	const float AngleScore{CalcAngleScore(Actor)};
+	return {DistanceScore - AngleScore};
+}
+
 void AFrogGameCharacter::SpawnTargetingMesh(const TArray<AActor*>& TargetEdibles) const
 {
+	int Index{0};
+	float Alpha{1.f};
 	for (auto Target : TargetEdibles)
 	{
 		// Temp
@@ -281,7 +323,10 @@ void AFrogGameCharacter::SpawnTargetingMesh(const TArray<AActor*>& TargetEdibles
 		//	                                                                        ->GetUnscaledBoxExtent().X,
 		//	Target->GetActorLocation(), 3.f,
 		//	FLinearColor::Red);
-
+		if (Index == TargetEdibles.Num() - 1 && TargetEdibles.Num() > 1)
+		{
+			Alpha = 0.25f + (0.75f * EatCharge);
+		}
 		auto TargetingReticule{IEdible::Execute_GetTargetingReticule(Target)};
 		if (TargetingReticule)
 		{
@@ -301,10 +346,11 @@ void AFrogGameCharacter::SpawnTargetingMesh(const TArray<AActor*>& TargetEdibles
 			{
 				Size = 25.f;
 			}
-			TargetingReticule->DrawReticule(TargetToPlayer, 0.05f, Size);
+			TargetingReticule->DrawReticule(TargetToPlayer, 0.05f, Size, Alpha);
 			// Normalize the line from A to B, multiply with desired distance from Target
 		}
 	}
+	Index++;
 }
 
 void AFrogGameCharacter::ClearCurrentTarget()
@@ -332,8 +378,6 @@ void AFrogGameCharacter::LookUpAtRate(float Rate)
 	// calculate delta for this frame from the rate information
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
-
-
 
 
 void AFrogGameCharacter::MoveForward(float Value)
@@ -370,7 +414,6 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 {
 	GetCharacterMovement()->JumpZVelocity = CurrentJump;
 }
-
 
 
 void AFrogGameCharacter::UpdateCharacterScale(const float DeltaTime)
@@ -432,16 +475,21 @@ void AFrogGameCharacter::UpdateAimRange() const
 
 void AFrogGameCharacter::Lickitung()
 {
+	if (bPowerMode && !bChargingEat)
+	{
+		bChargingEat = true;
+		return;
+	}
+	if (EatCharge < 1.f && Targets.Num() > 0)
+	{
+		Targets.Pop(); // Remove the last target since the charge wasn't held long enough.
+	}
 	// TODO: When activating this, set the target's collision channel to a custom one that only that object has. 
 	if (!bTongueSpawned)
 	{
-		TArray<AActor*> Edibles = Targets;
 		NumTongues = 0;
-		if (Edibles.Num() == 0 && !CurrentTarget)
-		{
-			SpawnTongue(nullptr);
-		}
-		else if (CurrentTarget)
+
+		if (CurrentTarget)
 		{
 			SpawnTongue(CurrentTarget);
 			// Additionally face the target 
@@ -451,17 +499,32 @@ void AFrogGameCharacter::Lickitung()
 		}
 		else
 		{
-			for (auto Target : Edibles)
+			TArray<AActor*> Edibles = Targets;
+			if (Edibles.Num() == 0 && !CurrentTarget)
 			{
-				if (Target->Implements<UEdible>())
+				SpawnTongue(nullptr);
+			}
+			else
+			{
+				for (auto Target : Edibles)
 				{
-					SpawnTongue(Target);
+					if (Target->Implements<UEdible>())
+					{
+						SpawnTongue(Target);
+					}
 				}
 			}
 		}
 		bTongueSpawned = true;
 	}
-	// If PowerMeter is full & PowerMode is not already active, activate PowerMode here?
+	Targets.Empty();
+	EatCharge = 0.f;
+	bChargingEat = false;
+}
+
+void AFrogGameCharacter::StopCharging()
+{
+	Lickitung();
 }
 
 void AFrogGameCharacter::SpawnTongue(AActor* Target)
@@ -635,9 +698,10 @@ void AFrogGameCharacter::DeactivatePowerMode()
 void AFrogGameCharacter::UpdatePowerPoints(const float Points)
 {
 	CurrentPowerPoints = CurrentPowerPoints + Points;
-	if (CurrentPowerPoints > MaxPowerPoints)
+	if (CurrentPowerPoints >= MaxPowerPoints)
 	{
 		CurrentPowerPoints = MaxPowerPoints;
+		PowerMode();
 	}
 }
 
@@ -658,6 +722,19 @@ void AFrogGameCharacter::OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AAct
 		{
 			ClearCurrentTarget();
 			UE_LOG(LogTemp, Warning, TEXT("Target stopped overlapping."))
+		}
+		if(bPowerMode)
+		{
+			int Index{0};
+			for(auto Target : Targets)
+			{
+				if(Target == OtherActor)
+				{
+					Targets.RemoveAt(Index);
+					return;
+				}
+				Index++;
+			}
 		}
 	}
 }

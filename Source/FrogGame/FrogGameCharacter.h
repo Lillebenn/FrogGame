@@ -187,6 +187,12 @@ public:
 	// Amount of damage the punch will do on each hit.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PowerMode)
 	float PunchDamage{100.f};
+	// How long it will take to charge up and eat more than one object when holding down the button in power mode.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = PowerMode)
+	float EatChargeTime{1.f};
+	float EatCharge{0.f}; // clamp to 0-1
+	bool bChargingEat{false};
+	bool bTargetExists{false};
 	UPROPERTY(VisibleAnywhere, Category = PowerMode)
 	float CurrentPowerPoints;
 	UPROPERTY(EditAnywhere, Category = PowerMode)
@@ -241,11 +247,12 @@ private:
 	 *	An angle exactly as large as the max angle will result in (X / X) * MaxAngleScore = MaxAngleScore.
 	 */
 	float CalcAngleScore(AActor* Actor) const;
-
+	float GetTotalScore(AActor* Actor) const;
 	void SpawnTargetingMesh(const TArray<AActor*>& TargetEdibles) const;
 	void PositionAimBox();
 	/** Uses the tongue to eat something, and then grows **/
 	void Lickitung();
+	void StopCharging();
 	void SpawnTongue(AActor* Target);
 	UPROPERTY()
 	TArray<AActor*> Targets;

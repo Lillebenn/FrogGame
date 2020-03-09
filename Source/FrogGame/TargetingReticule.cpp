@@ -28,7 +28,7 @@ void UTargetingReticule::HideReticule()
 	bUpdatedSlot = false;
 }
 
-void UTargetingReticule::DrawReticule(FVector Position, float LifeTime, float Size)
+void UTargetingReticule::DrawReticule(FVector Position, float LifeTime, float Size, float Alpha)
 {
 	// Set the timer to re-hide the Reticule if we stop receiving calls to this function.
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &UTargetingReticule::HideReticule, LifeTime, false);
@@ -37,7 +37,11 @@ void UTargetingReticule::DrawReticule(FVector Position, float LifeTime, float Si
 	{
 		if (ReticuleSlot)
 		{
+			FLinearColor NewColor{TintColorAndOpacity};
+			NewColor.A = Alpha;
+			SetTintColorAndOpacity(NewColor);
 			ReticuleSlot->SetSize(FVector2D(Size));
+
 			bUpdatedSlot = true;
 		}
 	}

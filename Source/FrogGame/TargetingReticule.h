@@ -26,7 +26,7 @@ public:
 	class UCanvasPanelSlot* ReticuleSlot;
 	UFUNCTION()
 	void HideReticule();
-	void DrawReticule(FVector Position, float LifeTime, float Size = 70.f);
+	void DrawReticule(FVector Position, float LifeTime, float Size = 70.f, float Alpha = 1.f);
 protected:
 	void BeginPlay() override;
 
