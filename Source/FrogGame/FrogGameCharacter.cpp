@@ -128,6 +128,7 @@ void AFrogGameCharacter::BeginPlay()
 	CurrentCableWidth = BaseCableWidth;
 	CurrentJump = BaseJump;
 	SizeTier = 1 + GetActorScale().X;
+	GetCharacterMovement()->GravityScale = NeutralModeSettings.GravityScale;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -403,7 +404,7 @@ void AFrogGameCharacter::UpdateCharacterScale(const float DeltaTime)
 void AFrogGameCharacter::UpdateCharacterMovement(const float ScaleDelta)
 {
 	UCharacterMovementComponent* Movement{GetCharacterMovement()};
-	Movement->MaxWalkSpeed += BaseMaxWalkSpeed * ScaleDelta;
+	Movement->MaxWalkSpeed += BaseMaxWalkSpeed * (ScaleDelta * 0.5f);
 	CurrentJump += BaseJump * (ScaleDelta * 0.2f); // 0.2f is temporary to reduce jump height increase
 	Movement->JumpZVelocity = CurrentJump;
 	TongueReturnSpeed += BaseTongueReturnSpeed * ScaleDelta;
