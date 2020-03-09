@@ -12,13 +12,10 @@ AFlyingSimpleCreature::AFlyingSimpleCreature()
 	NavCollider->InitCapsuleSize(15.f, 80.0f);
 	NavCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	RootComponent = NavCollider;
+	GetMesh()->SetupAttachment(RootComponent);
 }
 
 void AFlyingSimpleCreature::BeginPlay()
 {
 	Super::BeginPlay();
-	if(GetMesh())
-	{
-		GetMesh()->SetRelativeLocation(FVector(0, 0, 50.f));
-	}
 }
