@@ -30,6 +30,12 @@ UTargetingReticule* ABaseEdible::GetTargetingReticule_Implementation()
 	return Reticule;
 }
 
+void ABaseEdible::KillActor()
+{
+	SpawnSpheres();
+	SetLifeSpan(0.001f);
+}
+
 FEdibleInfo ABaseEdible::GetInfo_Implementation() const
 {
 	return EdibleInfo;
@@ -94,9 +100,13 @@ float ABaseEdible::TakeDamage(float DamageAmount, FDamageEvent const& DamageEven
 			CurrentHealth -= ActualDamage;
 			if (CurrentHealth <= 0.f && !IsActorBeingDestroyed())
 			{
-				// TODO: Make it fly back a bit and then die. Maybe have the spheres fall down to the ground before they start moving to the player, too.
-				SetLifeSpan(0.001f);
-				SpawnSpheres();
+				// TODO: Maybe set mass to 100kg once it loses all health, so it flies away only when punched to death
+				FVector ImpulseDirection{Frog->GetActorLocation() - GetActorLocation()};
+				ImpulseDirection.Normalize();
+				const FVector Impulse{ImpulseDirection * 750000.f};
+				StaticMesh->AddImpulse(Impulse);
+				GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ABaseEdible::KillActor, 1.f,
+				                                       false);
 			}
 		}
 	}

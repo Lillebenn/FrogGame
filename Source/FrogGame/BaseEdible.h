@@ -35,6 +35,9 @@ public:
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, SaveGame, Category = Destructible)
 	float CurrentHealth;
+	
+	FTimerHandle TimerHandle;
+	void KillActor();
 
 	UPROPERTY(EditDefaultsOnly, Category = Edible)
 	TSubclassOf<class ASphereDrop> Drop;

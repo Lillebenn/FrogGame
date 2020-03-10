@@ -78,7 +78,6 @@ class AFrogGameCharacter : public ACharacter
 	friend class ATongueProjectile;
 public:
 	AFrogGameCharacter();
-	void InitHandCollider(USphereComponent* Hand, const FName& Socket);
 
 
 	/** Accessor Function for Current Score */
@@ -252,7 +251,6 @@ private:
 	void PositionAimBox();
 	/** Uses the tongue to eat something, and then grows **/
 	void Lickitung();
-	void StopCharging();
 	void SpawnTongue(AActor* Target);
 	UPROPERTY()
 	TArray<AActor*> Targets;

@@ -29,7 +29,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	FVector2D Capsule;
 	GetCapsuleComponent()->GetUnscaledCapsuleSize(Capsule.X, Capsule.Y);
 	NeutralModeSettings.CapsuleSize = Capsule;
-	PowerModeSettings.CapsuleSize = FVector2D(42.f, 96.0f);
+	PowerModeSettings.CapsuleSize = FVector2D(32.f, 75.0f);
 
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
@@ -78,17 +78,32 @@ AFrogGameCharacter::AFrogGameCharacter()
 	// Power mode punch volumes need to be changed once we get the correct mesh
 	// Creates a collision sphere and attaches it to the characters right hand.
 	RightHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("RightHandCollision"));
-	InitHandCollider(RightHandCollision, TEXT("hand_r"));
+	SetHandCollision(RightHandCollision, TEXT("NoCollision"));
+	RightHandCollision->CanCharacterStepUpOn = ECB_No;
+	RightHandCollision->InitSphereRadius(6.f);
+	RightHandCollision->SetRelativeLocation(FVector(0.f,9.f,0.f));
 	// Creates a collision sphere and attaches it to the characters left hand.
 	LeftHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("LeftHandCollision"));
-	InitHandCollider(LeftHandCollision, TEXT("hand_l"));
+	SetHandCollision(LeftHandCollision, TEXT("NoCollision"));
+	LeftHandCollision->CanCharacterStepUpOn = ECB_No;
+	LeftHandCollision->InitSphereRadius(6.f);
+	LeftHandCollision->SetRelativeLocation(FVector(0.f,-9.f,0.f));
+	PowerModeSettings.BaseBoomRange = 500.f;
+	
+	PowerModeSettings.TongueBoneTarget = TEXT("head_j");
 }
 
-void AFrogGameCharacter::InitHandCollider(USphereComponent* Hand, const FName& Socket)
+void AFrogGameCharacter::SetHandCollision(USphereComponent* Collider, FName CollisionProfile)
 {
-	Hand->SetupAttachment(GetMesh(), Socket);
-	SetHandCollision(Hand, TEXT("NoCollision"));
-	Hand->CanCharacterStepUpOn = ECB_No;
+	Collider->SetCollisionProfileName(CollisionProfile);
+	if (CollisionProfile == TEXT("Punch"))
+	{
+		Collider->SetNotifyRigidBodyCollision(true);
+	}
+	else
+	{
+		Collider->SetNotifyRigidBodyCollision(false);
+	}
 }
 
 void AFrogGameCharacter::BeginPlay()
@@ -140,7 +155,6 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	check(PlayerInputComponent);
 
 	PlayerInputComponent->BindAction("Eat", IE_Pressed, this, &AFrogGameCharacter::Lickitung);
-	PlayerInputComponent->BindAction("StopChargingEat", IE_Released, this, &AFrogGameCharacter::StopCharging);
 	PlayerInputComponent->BindAction("Punch", IE_Pressed, this, &AFrogGameCharacter::Hitmonchan);
 
 	// This is here for test purposes, will activate when the powerbar is filled up.
@@ -213,28 +227,7 @@ void AFrogGameCharacter::AutoAim()
 	AutoAimVolume->GetOverlappingActors(OverlappingActors);
 	if (bPowerMode)
 	{
-		float BestTargetScore{0.f};
-		AActor* BestTarget{nullptr};
-		for (AActor* Actor : OverlappingActors)
-		{
-			if (Actor->Implements<UEdible>())
-			{
-				const float TotalScore{GetTotalScore(Actor)};
-				if (TotalScore > BestTargetScore + AimStickiness)
-				{
-					BestTargetScore = TotalScore;
-					BestTarget = Actor;
-				}
-			}
-		}
-		if(BestTarget)
-		{
-			Targets.Add(BestTarget);
-			if (Targets.Num() > 1)
-			{
-				bTargetExists = true;
-			}
-		}
+		Targets = OverlappingActors; // Remember to clear this when exiting Power mode
 	}
 	else
 	{
@@ -260,10 +253,14 @@ void AFrogGameCharacter::AutoAim()
 				}
 			}
 		}
-		if (CurrentTarget)
-		{
-			SpawnTargetingMesh(TArray<AActor*>{CurrentTarget});
-		}
+	}
+	if (CurrentTarget)
+	{
+		SpawnTargetingMesh(TArray<AActor*>{CurrentTarget});
+	}
+	if (Targets.Num() > 0)
+	{
+		SpawnTargetingMesh(Targets);
 	}
 }
 
@@ -312,8 +309,6 @@ float AFrogGameCharacter::GetTotalScore(AActor* Actor) const
 
 void AFrogGameCharacter::SpawnTargetingMesh(const TArray<AActor*>& TargetEdibles) const
 {
-	int Index{0};
-	float Alpha{1.f};
 	for (auto Target : TargetEdibles)
 	{
 		// Temp
@@ -323,10 +318,6 @@ void AFrogGameCharacter::SpawnTargetingMesh(const TArray<AActor*>& TargetEdibles
 		//	                                                                        ->GetUnscaledBoxExtent().X,
 		//	Target->GetActorLocation(), 3.f,
 		//	FLinearColor::Red);
-		if (Index == TargetEdibles.Num() - 1 && TargetEdibles.Num() > 1)
-		{
-			Alpha = 0.25f + (0.75f * EatCharge);
-		}
 		auto TargetingReticule{IEdible::Execute_GetTargetingReticule(Target)};
 		if (TargetingReticule)
 		{
@@ -346,11 +337,10 @@ void AFrogGameCharacter::SpawnTargetingMesh(const TArray<AActor*>& TargetEdibles
 			{
 				Size = 25.f;
 			}
-			TargetingReticule->DrawReticule(TargetToPlayer, 0.05f, Size, Alpha);
+			TargetingReticule->DrawReticule(TargetToPlayer, 0.05f, Size);
 			// Normalize the line from A to B, multiply with desired distance from Target
 		}
 	}
-	Index++;
 }
 
 void AFrogGameCharacter::ClearCurrentTarget()
@@ -475,21 +465,16 @@ void AFrogGameCharacter::UpdateAimRange() const
 
 void AFrogGameCharacter::Lickitung()
 {
-	if (bPowerMode && !bChargingEat)
-	{
-		bChargingEat = true;
-		return;
-	}
-	if (EatCharge < 1.f && Targets.Num() > 0)
-	{
-		Targets.Pop(); // Remove the last target since the charge wasn't held long enough.
-	}
 	// TODO: When activating this, set the target's collision channel to a custom one that only that object has. 
 	if (!bTongueSpawned)
 	{
+		TArray<AActor*> Edibles = Targets;
 		NumTongues = 0;
-
-		if (CurrentTarget)
+		if (Edibles.Num() == 0 && !CurrentTarget)
+		{
+			SpawnTongue(nullptr);
+		}
+		else if (CurrentTarget)
 		{
 			SpawnTongue(CurrentTarget);
 			// Additionally face the target 
@@ -499,33 +484,22 @@ void AFrogGameCharacter::Lickitung()
 		}
 		else
 		{
-			TArray<AActor*> Edibles = Targets;
-			if (Edibles.Num() == 0 && !CurrentTarget)
+			while(Edibles.Num() > 5)
 			{
-				SpawnTongue(nullptr);
+				Edibles.Pop();
 			}
-			else
+			for (auto Target : Edibles)
 			{
-				for (auto Target : Edibles)
+				if (Target->Implements<UEdible>())
 				{
-					if (Target->Implements<UEdible>())
-					{
-						SpawnTongue(Target);
-					}
+					SpawnTongue(Target);
 				}
 			}
 		}
 		bTongueSpawned = true;
 	}
-	Targets.Empty();
-	EatCharge = 0.f;
-	bChargingEat = false;
 }
 
-void AFrogGameCharacter::StopCharging()
-{
-	Lickitung();
-}
 
 void AFrogGameCharacter::SpawnTongue(AActor* Target)
 {
@@ -590,18 +564,6 @@ void AFrogGameCharacter::StartJump()
 	bIsCharging = true;
 }
 
-void AFrogGameCharacter::SetHandCollision(USphereComponent* Collider, FName CollisionProfile)
-{
-	Collider->SetCollisionProfileName(CollisionProfile);
-	if (CollisionProfile == TEXT("Punch"))
-	{
-		Collider->SetNotifyRigidBodyCollision(true);
-	}
-	else
-	{
-		Collider->SetNotifyRigidBodyCollision(false);
-	}
-}
 
 void AFrogGameCharacter::Hitmonchan()
 {
@@ -633,7 +595,7 @@ void AFrogGameCharacter::OnAttackHit(UPrimitiveComponent* HitComp, AActor* Other
 	if (OtherActor != this && OtherComp != nullptr && OtherActor->Implements<UEdible>())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Hit Event with %s!"), *OtherActor->GetName())
-
+		RemoveHandCollision();
 		ABaseEdible* Destructible{Cast<ABaseEdible>(OtherActor)};
 		if (Destructible)
 		{
@@ -667,6 +629,10 @@ void AFrogGameCharacter::PowerMode()
 	bPowerMode = true;
 	CurrentTarget = nullptr;
 	SetPlayerModel(PowerModeSettings);
+	const FAttachmentTransformRules InRule{EAttachmentRule::KeepRelative, false};
+
+	RightHandCollision->AttachToComponent(GetMesh(),InRule,  TEXT("r_wrist_j"));
+	LeftHandCollision->AttachToComponent(GetMesh(),InRule, TEXT("l_wrist_j"));
 	// Change from frog mesh and rig to power-frog mesh & rig here.
 }
 
@@ -684,6 +650,7 @@ void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSetti
 	const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
 	TongueStart->AttachToComponent(GetMesh(), InRule, CharacterSettings.TongueBoneTarget);
 	GetCharacterMovement()->GravityScale = CharacterSettings.GravityScale;
+
 	// Note: Stuff like Cable width and the size of the nodule at the end of the tongue not set right now.
 }
 
@@ -723,12 +690,12 @@ void AFrogGameCharacter::OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AAct
 			ClearCurrentTarget();
 			UE_LOG(LogTemp, Warning, TEXT("Target stopped overlapping."))
 		}
-		if(bPowerMode)
+		if (bPowerMode)
 		{
 			int Index{0};
-			for(auto Target : Targets)
+			for (auto Target : Targets)
 			{
-				if(Target == OtherActor)
+				if (Target == OtherActor)
 				{
 					Targets.RemoveAt(Index);
 					return;
