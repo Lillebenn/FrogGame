@@ -27,6 +27,8 @@ public:
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UTonguePivot* TongueTarget;
+	bool IsDisabled_Implementation() override;
+	bool ShouldDestroy{false};
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Edible)
 	FEdibleInfo EdibleInfo;
 

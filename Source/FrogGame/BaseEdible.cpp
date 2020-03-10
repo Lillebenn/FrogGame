@@ -33,6 +33,7 @@ UTargetingReticule* ABaseEdible::GetTargetingReticule_Implementation()
 void ABaseEdible::KillActor()
 {
 	SpawnSpheres();
+
 	SetLifeSpan(0.001f);
 }
 
@@ -43,6 +44,11 @@ FEdibleInfo ABaseEdible::GetInfo_Implementation() const
 
 void ABaseEdible::DisableActor_Implementation()
 {
+}
+
+bool ABaseEdible::IsDisabled_Implementation()
+{
+	return ShouldDestroy;
 }
 
 UTonguePivot* ABaseEdible::GetTargetComponent_Implementation()
@@ -80,9 +86,20 @@ void ABaseEdible::CalculateSize()
 			UE_LOG(LogTemp, Error, TEXT("%s is missing a static mesh!"), *GetName())
 		}
 	}
-	if (!EdibleInfo.bAutomaticSizeTier)
+	if (EdibleInfo.bAutomaticSizeTier)
 	{
 		EdibleInfo.SizeTier = IEdible::CalculateSizeTier(EdibleInfo.Size);
+	}
+}
+
+void ABaseEdible::BeginPlay()
+{
+	Super::BeginPlay();
+	CurrentHealth = Health;
+	CalculateSize();
+	if (Reticule)
+	{
+		Reticule->InitWidget();
 	}
 }
 
@@ -105,6 +122,7 @@ float ABaseEdible::TakeDamage(float DamageAmount, FDamageEvent const& DamageEven
 				ImpulseDirection.Normalize();
 				const FVector Impulse{ImpulseDirection * 750000.f};
 				StaticMesh->AddImpulse(Impulse);
+				ShouldDestroy = true;
 				GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ABaseEdible::KillActor, 1.f,
 				                                       false);
 			}
@@ -113,19 +131,10 @@ float ABaseEdible::TakeDamage(float DamageAmount, FDamageEvent const& DamageEven
 	return ActualDamage;
 }
 
-void ABaseEdible::BeginPlay()
-{
-	Super::BeginPlay();
-	CurrentHealth = Health;
-	CalculateSize();
-	if (Reticule)
-	{
-		Reticule->InitWidget();
-	}
-}
 
 void ABaseEdible::SpawnSpheres() const
 {
+	UE_LOG(LogTemp, Warning, TEXT("Spawning spheres."))
 	if (Drop)
 	{
 		const float SphereSize{EdibleInfo.Size / NumDrops};

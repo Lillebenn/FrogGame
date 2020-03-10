@@ -29,18 +29,36 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AutoAim)
 	class UTargetingReticule* Reticule;
 	class UTargetingReticule* GetTargetingReticule_Implementation() override;
+	bool IsDisabled_Implementation() override;
+	bool ShouldDestroy{false};
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Edible)
 	FEdibleInfo EdibleInfo;
+	UPROPERTY(EditDefaultsOnly, Category = Edible)
+	TSubclassOf<class ASphereDrop> Drop;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Edible)
+	int32 NumDrops{5};
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Destructible)
+	float Health{100.f};
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, SaveGame, Category = Destructible)
+	float CurrentHealth;
+
+	FTimerHandle TimerHandle;
+	void KillActor();
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Movement)
 	int MoveDistance{500};
 
 	UPROPERTY()
 	FTransform StartTransform;
 
+	float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
+	                 AActor* DamageCauser) override;
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
+
+	void SpawnSpheres() const;
 
 public:
 	// Called every frame

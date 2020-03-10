@@ -44,6 +44,8 @@ public:
 	// Interface stuff
 	FEdibleInfo GetInfo_Implementation() const override;
 	void DisableActor_Implementation() override;
+	bool IsDisabled_Implementation() override;
+	bool ShouldDestroy{false};
 	UTonguePivot* GetTargetComponent_Implementation() override;
 	void ActorSaveDataSaved_Implementation() override;
 	void ActorSaveDataLoaded_Implementation() override;

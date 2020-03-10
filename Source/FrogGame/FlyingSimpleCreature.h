@@ -21,4 +21,6 @@ public:
 
 protected:
 	void BeginPlay() override;
+	float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
+	                 AActor* DamageCauser) override;
 };

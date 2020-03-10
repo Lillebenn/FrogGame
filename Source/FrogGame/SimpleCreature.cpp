@@ -9,6 +9,9 @@
 #include "TargetingReticule.h"
 #include "FrogGameInstance.h"
 #include "TonguePivot.h"
+#include "FrogGameCharacter.h"
+#include "Kismet/GameplayStatics.h"
+#include "SphereDrop.h"
 
 
 // Sets default values
@@ -18,7 +21,11 @@ ASimpleCreature::ASimpleCreature()
 	PrimaryActorTick.bCanEverTick = true;
 
 	CreatureMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Creature Mesh"));
+	CreatureMesh->SetCollisionProfileName(TEXT("EdibleProfile"));
+	CreatureMesh->SetNotifyRigidBodyCollision(true);
+
 	RootComponent = CreatureMesh;
+
 	TongueTarget = CreateDefaultSubobject<UTonguePivot>(TEXT("Tongue Pivot Object"));
 	TongueTarget->SetupAttachment(RootComponent);
 	Reticule = CreateDefaultSubobject<UTargetingReticule>(TEXT("Targeting Reticule"));
@@ -35,6 +42,11 @@ UTargetingReticule* ASimpleCreature::GetTargetingReticule_Implementation()
 	return Reticule;
 }
 
+bool ASimpleCreature::IsDisabled_Implementation()
+{
+	return ShouldDestroy;
+}
+
 
 // Called when the game starts or when spawned
 void ASimpleCreature::BeginPlay()
@@ -43,7 +55,6 @@ void ASimpleCreature::BeginPlay()
 	//Reticule->InitWidget();
 	CalculateBoundingSize(); //This was causing an error somewhere
 	StartTransform = GetTransform();
-	CreatureMesh->SetCollisionObjectType(ECC_GameTraceChannel1);
 }
 
 // Called every frame
@@ -131,8 +142,67 @@ void ASimpleCreature::CalculateBoundingSize()
 			UE_LOG(LogTemp, Error, TEXT("%s is missing a mesh!"), *GetName());
 		}
 	}
-	if (!EdibleInfo.bAutomaticSizeTier)
+	if (EdibleInfo.bAutomaticSizeTier)
 	{
 		EdibleInfo.SizeTier = IEdible::CalculateSizeTier(EdibleInfo.Size);
 	}
+}
+
+float ASimpleCreature::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
+                                  AActor* DamageCauser)
+{
+	const float ActualDamage{Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser)};
+	UE_LOG(LogTemp, Warning, TEXT("Taking %f damage."), ActualDamage);
+	if (ActualDamage > 0.f)
+	{
+		AFrogGameCharacter* Frog{Cast<AFrogGameCharacter>(DamageCauser)};
+		// This needs to be more specific to the punches or we could just walk it to death
+		if (Frog)
+		{
+			CurrentHealth -= ActualDamage;
+			if (CurrentHealth <= 0.f && !IsActorBeingDestroyed())
+			{
+				// TODO: Maybe set mass to 100kg once it loses all health, so it flies away only when punched to death
+				FVector ImpulseDirection{Frog->GetActorLocation() - GetActorLocation()};
+				ImpulseDirection.Normalize();
+
+				CreatureMesh->SetCollisionProfileName(TEXT("BlockAllDynamic"));
+				CreatureMesh->SetCollisionObjectType(ECC_GameTraceChannel1);
+				CreatureMesh->SetSimulatePhysics(true);
+
+				const FVector Impulse{ImpulseDirection * 750000.f};
+				CreatureMesh->AddImpulse(Impulse);
+				GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ASimpleCreature::KillActor, 1.f,
+				                                       false);
+			}
+		}
+	}
+	return ActualDamage;
+}
+
+
+void ASimpleCreature::SpawnSpheres() const
+{
+	if (Drop)
+	{
+		const float SphereSize{EdibleInfo.Size / NumDrops};
+		for (int i{0}; i < 5; i++)
+		{
+			const FVector2D SpawnLocation2D{FMath::RandPointInCircle(125.f)};
+			const FVector SpawnLocation{
+				GetActorLocation().X + SpawnLocation2D.X, GetActorLocation().Y + SpawnLocation2D.Y, GetActorLocation().Z
+			};
+			const FTransform SpawnTransform{SpawnLocation};
+			ASphereDrop* Sphere{GetWorld()->SpawnActorDeferred<ASphereDrop>(Drop, SpawnTransform)};
+			Sphere->EdibleInfo = EdibleInfo;
+			Sphere->EdibleInfo.Size = SphereSize;
+			UGameplayStatics::FinishSpawningActor(Sphere, SpawnTransform);
+		}
+	}
+}
+
+void ASimpleCreature::KillActor()
+{
+	SpawnSpheres();
+	SetLifeSpan(0.001f);
 }

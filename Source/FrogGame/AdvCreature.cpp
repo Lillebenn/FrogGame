@@ -48,6 +48,11 @@ void AAdvCreature::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
+bool AAdvCreature::IsDisabled_Implementation()
+{
+	return ShouldDestroy;
+}
+
 
 FEdibleInfo AAdvCreature::GetInfo_Implementation() const
 {

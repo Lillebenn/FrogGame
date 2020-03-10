@@ -18,6 +18,7 @@
 #include "CableComponent.h"
 #include "BaseEdible.h"
 #include "TonguePivot.h"
+#include "SimpleCreature.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AFrogGameCharacter
@@ -81,21 +82,22 @@ AFrogGameCharacter::AFrogGameCharacter()
 	SetHandCollision(RightHandCollision, TEXT("NoCollision"));
 	RightHandCollision->CanCharacterStepUpOn = ECB_No;
 	RightHandCollision->InitSphereRadius(6.f);
-	RightHandCollision->SetRelativeLocation(FVector(0.f,9.f,0.f));
+	RightHandCollision->SetRelativeLocation(FVector(0.f, 9.f, 0.f));
 	// Creates a collision sphere and attaches it to the characters left hand.
 	LeftHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("LeftHandCollision"));
 	SetHandCollision(LeftHandCollision, TEXT("NoCollision"));
 	LeftHandCollision->CanCharacterStepUpOn = ECB_No;
 	LeftHandCollision->InitSphereRadius(6.f);
-	LeftHandCollision->SetRelativeLocation(FVector(0.f,-9.f,0.f));
+	LeftHandCollision->SetRelativeLocation(FVector(0.f, -9.f, 0.f));
 	PowerModeSettings.BaseBoomRange = 500.f;
-	
+
 	PowerModeSettings.TongueBoneTarget = TEXT("head_j");
 }
 
 void AFrogGameCharacter::SetHandCollision(USphereComponent* Collider, FName CollisionProfile)
 {
 	Collider->SetCollisionProfileName(CollisionProfile);
+	Collider->SetCollisionObjectType(ECC_GameTraceChannel3);
 	if (CollisionProfile == TEXT("Punch"))
 	{
 		Collider->SetNotifyRigidBodyCollision(true);
@@ -185,7 +187,7 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	PositionAimBox();
 	if (bPowerMode)
 	{
-		if (Targets.Num() > 0)
+		/*if (Targets.Num() > 0)
 		{
 			SpawnTargetingMesh(Targets);
 		}
@@ -201,7 +203,7 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 				EatCharge = 0.f;
 				bTargetExists = false;
 			}
-		}
+		}*/
 		PowerDrain(DeltaTime);
 		if (CurrentPowerPoints <= 0)
 		{
@@ -212,7 +214,7 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	{
 		UpdateCharacterScale(DeltaTime);
 	}
-	if (!bTongueSpawned && !bPowerMode)
+	if (!bTongueSpawned)
 	{
 		AutoAim();
 	}
@@ -227,7 +229,19 @@ void AFrogGameCharacter::AutoAim()
 	AutoAimVolume->GetOverlappingActors(OverlappingActors);
 	if (bPowerMode)
 	{
-		Targets = OverlappingActors; // Remember to clear this when exiting Power mode
+		Targets.Empty();
+		for (auto Actor : OverlappingActors)
+		{
+			if (Actor->Implements<UEdible>())
+			{
+				const int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
+				const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(Actor)};
+				if (SizeInfo.SizeTier <= MaxSize)
+				{
+					Targets.Add(Actor);
+				}
+			}
+		}
 	}
 	else
 	{
@@ -240,14 +254,13 @@ void AFrogGameCharacter::AutoAim()
 			if (Actor->Implements<UEdible>())
 			{
 				const float TotalScore{GetTotalScore(Actor)};
+				if(TotalScore == 0.f)
+				{
+					continue;
+				}
 				if (TotalScore > CurrentTargetScore + AimStickiness)
 				{
 					CurrentTarget = Actor;
-					/*UE_LOG(LogTemp, Warning,
-					       TEXT("Current Target is: %s, with a distance score of: %f and angle score of: %f"),
-					       *CurrentTarget->GetName(), DistanceScore, AngleScore)
-					UE_LOG(LogTemp, Warning, TEXT("Total Score: %f, vs Last Score: %f"), TotalScore,
-					       CurrentTargetScore)*/
 
 					CurrentTargetScore = TotalScore;
 				}
@@ -258,7 +271,7 @@ void AFrogGameCharacter::AutoAim()
 	{
 		SpawnTargetingMesh(TArray<AActor*>{CurrentTarget});
 	}
-	if (Targets.Num() > 0)
+	if (Targets.Num() > 0 && bPowerMode)
 	{
 		SpawnTargetingMesh(Targets);
 	}
@@ -454,7 +467,7 @@ void AFrogGameCharacter::UpdateCameraBoom(const float ScaleDelta) const
 void AFrogGameCharacter::UpdateAimRange() const
 {
 	FVector Extent{AutoAimVolume->GetUnscaledBoxExtent()};
-	Extent.X = (TongueBP.GetDefaultObject()->TongueRange / 2.f) * GetActorScale().X;
+	Extent.X = (TongueBP.GetDefaultObject()->TongueRange / 2.f) * (GetActorScale().X * 0.5f);
 	const float XDiff{Extent.X - AutoAimVolume->GetUnscaledBoxExtent().X};
 	AutoAimVolume->SetBoxExtent(Extent);
 	//FVector NewPosition{AutoAimVolume->GetRelativeLocation()};
@@ -484,14 +497,19 @@ void AFrogGameCharacter::Lickitung()
 		}
 		else
 		{
-			while(Edibles.Num() > 5)
+			while (Edibles.Num() > 5)
 			{
 				Edibles.Pop();
 			}
 			for (auto Target : Edibles)
 			{
+
 				if (Target->Implements<UEdible>())
 				{
+					if(IEdible::Execute_IsDisabled(Target))
+					{
+						continue;
+					}
 					SpawnTongue(Target);
 				}
 			}
@@ -550,7 +568,8 @@ void AFrogGameCharacter::IncreaseScale(const FEdibleInfo SizeInfo)
 	// Compare this to the averaged bounding box size of the object being eaten and factor in the growth coefficient.
 	// If SizeInfo.Size = 10 and ScaledRadius = 50 then we get a value of 10/50 = 0.2 or 20%.
 	// Increase actor scale by this value. 
-	const float SizeDiff{SizeInfo.Size * SizeInfo.GrowthCoefficient / ScaledRadius};
+	float SizeDiff{SizeInfo.Size * SizeInfo.GrowthCoefficient / ScaledRadius};
+	SizeDiff = FMath::Clamp(SizeDiff, 0.f, 0.1f);
 	ExtraScaleBank += SizeDiff;
 	//UE_LOG(LogTemp, Warning, TEXT("SizeDiff = %f"), SizeDiff)
 
@@ -596,12 +615,18 @@ void AFrogGameCharacter::OnAttackHit(UPrimitiveComponent* HitComp, AActor* Other
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Hit Event with %s!"), *OtherActor->GetName())
 		RemoveHandCollision();
-		ABaseEdible* Destructible{Cast<ABaseEdible>(OtherActor)};
-		if (Destructible)
+		if (ABaseEdible* Destructible{Cast<ABaseEdible>(OtherActor)})
 		{
 			TSubclassOf<UDamageType> const ValidDamageTypeClass = TSubclassOf<UDamageType>(UDamageType::StaticClass());
 			const FDamageEvent DamageEvent(ValidDamageTypeClass);
 			Destructible->TakeDamage(PunchDamage, DamageEvent, GetController(), this);
+		}
+		else if (ASimpleCreature* SCreature{Cast<ASimpleCreature>(OtherActor)})
+			// doesn't work, might need to switch to overlap based stuff
+		{
+			TSubclassOf<UDamageType> const ValidDamageTypeClass = TSubclassOf<UDamageType>(UDamageType::StaticClass());
+			const FDamageEvent DamageEvent(ValidDamageTypeClass);
+			SCreature->TakeDamage(PunchDamage, DamageEvent, GetController(), this);
 		}
 	}
 }
@@ -631,8 +656,8 @@ void AFrogGameCharacter::PowerMode()
 	SetPlayerModel(PowerModeSettings);
 	const FAttachmentTransformRules InRule{EAttachmentRule::KeepRelative, false};
 
-	RightHandCollision->AttachToComponent(GetMesh(),InRule,  TEXT("r_wrist_j"));
-	LeftHandCollision->AttachToComponent(GetMesh(),InRule, TEXT("l_wrist_j"));
+	RightHandCollision->AttachToComponent(GetMesh(), InRule, TEXT("r_wrist_j"));
+	LeftHandCollision->AttachToComponent(GetMesh(), InRule, TEXT("l_wrist_j"));
 	// Change from frog mesh and rig to power-frog mesh & rig here.
 }
 

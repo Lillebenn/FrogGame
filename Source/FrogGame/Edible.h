@@ -31,7 +31,8 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	void DisableActor();
-
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
+	bool IsDisabled();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	void OnDisabled();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
