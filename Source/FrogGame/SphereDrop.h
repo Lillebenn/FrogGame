@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "EdibleInfo.h"
+
 #include "SphereDrop.generated.h"
 
 UCLASS()
@@ -14,11 +14,12 @@ class FROGGAME_API ASphereDrop : public AActor
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UStaticMeshComponent* StaticMesh;
+
 public:
 	// Sets default values for this actor's properties
 	ASphereDrop();
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Edible)
-	FEdibleInfo EdibleInfo;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	class UEdibleComponent* EdibleComponent;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Swirl Settings")
 	float InitialRadius{50.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Swirl Settings")
@@ -41,13 +42,13 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
-	void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	void EndPlay(EEndPlayReason::Type EndPlayReason) override;
 
 	UPROPERTY()
 	class AFrogGameCharacter* Frog;
 private:
-	void MoveToPlayer(const float DeltaTime);
-	void Swirl(const float DeltaTime);
+	void MoveToPlayer(float DeltaTime);
+	void Swirl(float DeltaTime);
 	bool bShouldSwirl{false};
 	float FindRadialDistance() const;
 
@@ -56,4 +57,4 @@ private:
 public:
 	// Called every frame
 	void Tick(float DeltaTime) override;
-}; 
+};

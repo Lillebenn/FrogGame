@@ -6,11 +6,10 @@
 #include "Engine/StaticMesh.h"
 #include "GameFramework/FloatingPawnMovement.h"
 #include "GameFramework/Controller.h"
-#include "TargetingReticule.h"
 #include "FrogGameInstance.h"
-#include "TonguePivot.h"
 #include "FrogGameCharacter.h"
 #include "Kismet/GameplayStatics.h"
+#include "EdibleComponent.h"
 #include "SphereDrop.h"
 
 
@@ -25,11 +24,7 @@ ASimpleCreature::ASimpleCreature()
 	CreatureMesh->SetNotifyRigidBodyCollision(true);
 
 	RootComponent = CreatureMesh;
-
-	TongueTarget = CreateDefaultSubobject<UTonguePivot>(TEXT("Tongue Pivot Object"));
-	TongueTarget->SetupAttachment(RootComponent);
-	Reticule = CreateDefaultSubobject<UTargetingReticule>(TEXT("Targeting Reticule"));
-	Reticule->SetupAttachment(RootComponent);
+	EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
 
 	MovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComponent"));
 
@@ -37,10 +32,6 @@ ASimpleCreature::ASimpleCreature()
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
-UTargetingReticule* ASimpleCreature::GetTargetingReticule_Implementation()
-{
-	return Reticule;
-}
 
 bool ASimpleCreature::IsDisabled_Implementation()
 {
@@ -70,11 +61,6 @@ void ASimpleCreature::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 }
 
 
-FEdibleInfo ASimpleCreature::GetInfo_Implementation() const
-{
-	return EdibleInfo;
-}
-
 void ASimpleCreature::DisableActor_Implementation()
 {
 	// Not 100% sure if this is necessary, but we don't need the AI to keep running after being snatched.
@@ -90,11 +76,6 @@ void ASimpleCreature::DisableActor_Implementation()
 UStaticMeshComponent* ASimpleCreature::GetMesh()
 {
 	return CreatureMesh;
-}
-
-UTonguePivot* ASimpleCreature::GetTargetComponent_Implementation()
-{
-	return TongueTarget;
 }
 
 void ASimpleCreature::OnDisabled_Implementation()
@@ -116,10 +97,6 @@ void ASimpleCreature::ActorSaveDataSaved_Implementation()
 {
 }
 
-void ASimpleCreature::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	Super::EndPlay(EndPlayReason);
-}
 
 FTransform ASimpleCreature::GetStartTransform()
 {
@@ -135,16 +112,16 @@ void ASimpleCreature::CalculateBoundingSize()
 			const FVector RoughSize = CreatureMesh->GetStaticMesh()->GetBoundingBox().GetSize();
 			const FVector AbsoluteSize{RoughSize.GetAbsMin()};
 			// Get the average axis value of the bounding box - Note: Since we're taking the bounding box size we divide the size twice to account for the extra box size.
-			EdibleInfo.Size = (AbsoluteSize.X + AbsoluteSize.Y + AbsoluteSize.Z) / 6;
+			EdibleComponent->Size = (AbsoluteSize.X + AbsoluteSize.Y + AbsoluteSize.Z) / 6;
 		}
 		else
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s is missing a mesh!"), *GetName());
 		}
 	}
-	if (EdibleInfo.bAutomaticSizeTier)
+	if (EdibleComponent->bAutomaticSizeTier)
 	{
-		EdibleInfo.SizeTier = IEdible::CalculateSizeTier(EdibleInfo.Size);
+		IEdible::CalculateSizeTier(EdibleComponent);
 	}
 }
 
@@ -159,8 +136,8 @@ float ASimpleCreature::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 		// This needs to be more specific to the punches or we could just walk it to death
 		if (Frog)
 		{
-			CurrentHealth -= ActualDamage;
-			if (CurrentHealth <= 0.f && !IsActorBeingDestroyed())
+			EdibleComponent->CurrentHealth -= ActualDamage;
+			if (EdibleComponent->CurrentHealth <= 0.f && !IsActorBeingDestroyed())
 			{
 				// TODO: Maybe set mass to 100kg once it loses all health, so it flies away only when punched to death
 				FVector ImpulseDirection{Frog->GetActorLocation() - GetActorLocation()};
@@ -183,9 +160,9 @@ float ASimpleCreature::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 
 void ASimpleCreature::SpawnSpheres() const
 {
-	if (Drop)
+	if (EdibleComponent->Drop)
 	{
-		const float SphereSize{EdibleInfo.Size / NumDrops};
+		const float SphereSize{EdibleComponent->GetSphereSize()};
 		for (int i{0}; i < 5; i++)
 		{
 			const FVector2D SpawnLocation2D{FMath::RandPointInCircle(125.f)};
@@ -193,9 +170,9 @@ void ASimpleCreature::SpawnSpheres() const
 				GetActorLocation().X + SpawnLocation2D.X, GetActorLocation().Y + SpawnLocation2D.Y, GetActorLocation().Z
 			};
 			const FTransform SpawnTransform{SpawnLocation};
-			ASphereDrop* Sphere{GetWorld()->SpawnActorDeferred<ASphereDrop>(Drop, SpawnTransform)};
-			Sphere->EdibleInfo = EdibleInfo;
-			Sphere->EdibleInfo.Size = SphereSize;
+			ASphereDrop* Sphere{GetWorld()->SpawnActorDeferred<ASphereDrop>(EdibleComponent->Drop, SpawnTransform)};
+			Sphere->EdibleComponent = EdibleComponent;
+			Sphere->EdibleComponent->Size = SphereSize;
 			UGameplayStatics::FinishSpawningActor(Sphere, SpawnTransform);
 		}
 	}

@@ -8,16 +8,12 @@
 #include "Components/InputComponent.h"
 #include "Engine.h"
 #include "Engine/EngineTypes.h"
-#include "TargetingReticule.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "TongueProjectile.h"
 #include "FrogGameInstance.h"
 #include "Edible.h"
-#include "CableComponent.h"
 #include "EdibleObject.h"
-#include "TonguePivot.h"
 #include "SimpleCreature.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -69,13 +65,8 @@ AFrogGameCharacter::AFrogGameCharacter()
 	// We use the arrow component as spawn point for the tongue and attach it to the head bone
 	TongueStart = GetArrowComponent();
 	TongueStart->bEditableWhenInherited = true;
-	TongueStart->SetupAttachment(GetMesh(), NeutralModeSettings.TongueBoneTarget);
-	static ConstructorHelpers::FClassFinder<ATongueProjectile> TongueProjectileBP(
-		TEXT("/Game/Blueprints/Characters/Main_Character/BP_TongueProjectile"));
-	if (TongueProjectileBP.Class != nullptr)
-	{
-		TongueBP = TongueProjectileBP.Class;
-	}
+	TongueStart->SetupAttachment(GetMesh(), NeutralModeSettings.HeadSocket);
+
 	// Power mode punch volumes need to be changed once we get the correct mesh
 	// Creates a collision sphere and attaches it to the characters right hand.
 	RightHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("RightHandCollision"));
@@ -90,8 +81,6 @@ AFrogGameCharacter::AFrogGameCharacter()
 	LeftHandCollision->InitSphereRadius(6.f);
 	LeftHandCollision->SetRelativeLocation(FVector(0.f, -9.f, 0.f));
 	PowerModeSettings.BaseBoomRange = 500.f;
-
-	PowerModeSettings.TongueBoneTarget = TEXT("head_j");
 }
 
 void AFrogGameCharacter::SetHandCollision(USphereComponent* Collider, FName CollisionProfile)
@@ -111,16 +100,10 @@ void AFrogGameCharacter::SetHandCollision(USphereComponent* Collider, FName Coll
 void AFrogGameCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	if (TongueBP)
-	{
-		const FVector Viewport{GetWorld()->GetGameViewport()->Viewport->GetSizeXY()};
-		AutoAimVolume->SetBoxExtent(FVector(TongueBP.GetDefaultObject()->TongueRange / 2.f, Viewport.X / 2.f,
-		                                    Viewport.Y));
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("Missing reference to TongueProjectile blueprint!"));
-	}
+
+	const FVector Viewport{GetWorld()->GetGameViewport()->Viewport->GetSizeXY()};
+	AutoAimVolume->SetBoxExtent(FVector(100.f, Viewport.X / 2.f,
+	                                    Viewport.Y));
 	if (GetMesh()->SkeletalMesh)
 	{
 		NeutralModeSettings.Mesh = GetMesh()->SkeletalMesh;
@@ -140,9 +123,6 @@ void AFrogGameCharacter::BeginPlay()
 	CurrentScore = 0.f;
 	CurrentPowerPoints = 0.f;
 
-	TongueReturnSpeed = BaseTongueReturnSpeed;
-	TongueSeekSpeed = BaseTongueSeekSpeed;
-	CurrentCableWidth = BaseCableWidth;
 	CurrentJump = BaseJump;
 	SizeTier = 1 + GetActorScale().X;
 	GetCharacterMovement()->GravityScale = NeutralModeSettings.GravityScale;
@@ -156,7 +136,6 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	// Set up gameplay key bindings
 	check(PlayerInputComponent);
 
-	PlayerInputComponent->BindAction("Eat", IE_Pressed, this, &AFrogGameCharacter::Lickitung);
 	PlayerInputComponent->BindAction("Punch", IE_Pressed, this, &AFrogGameCharacter::Hitmonchan);
 
 	// This is here for test purposes, will activate when the powerbar is filled up.
@@ -187,23 +166,6 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	PositionAimBox();
 	if (bPowerMode)
 	{
-		/*if (Targets.Num() > 0)
-		{
-			SpawnTargetingMesh(Targets);
-		}
-		if (!bTargetExists)
-		{
-			AutoAim();
-		}
-		else if (bChargingEat)
-		{
-			EatCharge += DeltaTime;
-			if (EatCharge >= EatChargeTime)
-			{
-				EatCharge = 0.f;
-				bTargetExists = false;
-			}
-		}*/
 		PowerDrain(DeltaTime);
 		if (CurrentPowerPoints <= 0)
 		{
@@ -236,8 +198,8 @@ void AFrogGameCharacter::AutoAim()
 			if (Actor->Implements<UEdible>())
 			{
 				const int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
-				const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(Actor)};
-				if (SizeInfo.SizeTier <= MaxSize)
+				const UEdibleComponent* SizeInfo{IEdible::Execute_GetInfo(Actor)};
+				if (SizeInfo->SizeTier <= MaxSize)
 				{
 					Targets.Add(Actor);
 				}
@@ -279,14 +241,6 @@ void AFrogGameCharacter::AutoAim()
 			}
 		}
 	}
-	if (CurrentTarget)
-	{
-		SpawnTargetingMesh(TArray<AActor*>{CurrentTarget});
-	}
-	if (Targets.Num() > 0 && bPowerMode)
-	{
-		SpawnTargetingMesh(Targets);
-	}
 }
 
 float AFrogGameCharacter::CalcDistanceScore(AActor* Actor) const
@@ -322,50 +276,14 @@ float AFrogGameCharacter::CalcAngleScore(AActor* Actor) const
 float AFrogGameCharacter::GetTotalScore(AActor* Actor) const
 {
 	const int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
-	const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(Actor)};
-	if (SizeInfo.SizeTier > MaxSize) // Object is too big, ignore.
+	const UEdibleComponent* SizeInfo{IEdible::Execute_GetInfo(Actor)};
+	if (SizeInfo->SizeTier > MaxSize) // Object is too big, ignore.
 	{
 		return 0.f;
 	}
 	const float DistanceScore{CalcDistanceScore(Actor)};
 	const float AngleScore{CalcAngleScore(Actor)};
 	return {DistanceScore - AngleScore};
-}
-
-void AFrogGameCharacter::SpawnTargetingMesh(const TArray<AActor*>& TargetEdibles) const
-{
-	for (auto Target : TargetEdibles)
-	{
-		// Temp
-		//UKismetSystemLibrary::DrawDebugArrow(
-		//	GetWorld(),
-		//	AutoAimVolume->GetComponentLocation() - AutoAimVolume->GetForwardVector() * AutoAimVolume
-		//	                                                                        ->GetUnscaledBoxExtent().X,
-		//	Target->GetActorLocation(), 3.f,
-		//	FLinearColor::Red);
-		auto TargetingReticule{IEdible::Execute_GetTargetingReticule(Target)};
-		if (TargetingReticule)
-		{
-			FVector TargetToPlayer{
-				FollowCamera->GetComponentLocation() - IEdible::Execute_GetTargetComponent(Target)->
-				GetComponentLocation()
-			};
-			TargetToPlayer.Normalize();
-			const int TierDiff{SizeTier - IEdible::Execute_GetInfo(Target).SizeTier};
-			// Temp solution
-			float Size = 75.f;
-			if (TierDiff == 2)
-			{
-				Size = 50.f;
-			}
-			else if (TierDiff > 2)
-			{
-				Size = 25.f;
-			}
-			TargetingReticule->DrawReticule(TargetToPlayer, 0.05f, Size);
-			// Normalize the line from A to B, multiply with desired distance from Target
-		}
-	}
 }
 
 void AFrogGameCharacter::ClearCurrentTarget()
@@ -444,7 +362,6 @@ void AFrogGameCharacter::UpdateCharacterScale(const float DeltaTime)
 		UpdateCharacterMovement(ScaleDelta);
 		UpdateCameraBoom(ScaleDelta);
 		UpdateAimRange();
-		CurrentCableWidth += BaseCableWidth * ScaleDelta;
 
 		if (GetActorScale().X > SizeTier)
 			// Frog starts at size 2, so once it hits a scale factor of 2.0+, it will increase to size 3 etc
@@ -465,8 +382,6 @@ void AFrogGameCharacter::UpdateCharacterMovement(const float ScaleDelta)
 	Movement->MaxWalkSpeed += BaseMaxWalkSpeed * (ScaleDelta * 0.5f);
 	CurrentJump += BaseJump * (ScaleDelta * 0.2f); // 0.2f is temporary to reduce jump height increase
 	Movement->JumpZVelocity = CurrentJump;
-	TongueReturnSpeed += BaseTongueReturnSpeed * ScaleDelta;
-	TongueSeekSpeed += BaseTongueSeekSpeed * ScaleDelta;
 }
 
 void AFrogGameCharacter::UpdateCameraBoom(const float ScaleDelta) const
@@ -479,7 +394,7 @@ void AFrogGameCharacter::UpdateCameraBoom(const float ScaleDelta) const
 void AFrogGameCharacter::UpdateAimRange() const
 {
 	FVector Extent{AutoAimVolume->GetUnscaledBoxExtent()};
-	Extent.X = (TongueBP.GetDefaultObject()->TongueRange / 2.f) * (GetActorScale().X * 0.5f);
+	Extent.X = 100.f * (GetActorScale().X * 0.5f);
 	const float XDiff{Extent.X - AutoAimVolume->GetUnscaledBoxExtent().X};
 	AutoAimVolume->SetBoxExtent(Extent);
 	//FVector NewPosition{AutoAimVolume->GetRelativeLocation()};
@@ -488,81 +403,15 @@ void AFrogGameCharacter::UpdateAimRange() const
 }
 
 
-void AFrogGameCharacter::Lickitung()
+void AFrogGameCharacter::Consume(AActor* OtherActor)
 {
-	// TODO: When activating this, set the target's collision channel to a custom one that only that object has. 
-	if (!bTongueSpawned)
-	{
-		TArray<AActor*> Edibles = Targets;
-		NumTongues = 0;
-		if (Edibles.Num() == 0 && !CurrentTarget)
-		{
-			SpawnTongue(nullptr);
-		}
-		else if (CurrentTarget)
-		{
-			SpawnTongue(CurrentTarget);
-			// Additionally face the target 
-			FRotator FacingDirection{FollowCamera->GetForwardVector().ToOrientationRotator()};
-			FacingDirection.Pitch = GetActorRotation().Pitch;
-			SetActorRotation(FacingDirection);
-		}
-		else
-		{
-			while (Edibles.Num() > 5)
-			{
-				Edibles.Pop();
-			}
-			for (auto Target : Edibles)
-			{
-				if (Target->Implements<UEdible>())
-				{
-					if (IEdible::Execute_IsDisabled(Target))
-					{
-						continue;
-					}
-					SpawnTongue(Target);
-				}
-			}
-		}
-		bTongueSpawned = true;
-	}
-}
-
-
-void AFrogGameCharacter::SpawnTongue(AActor* Target)
-{
-	ATongueProjectile* TongueCPP{
-		GetWorld()->SpawnActor<ATongueProjectile>(TongueBP,
-		                                          TongueStart->
-		                                          GetComponentTransform())
-	};
-	NumTongues++;
-	TongueCPP->ActivateTongue(Target);
-}
-
-void AFrogGameCharacter::Consume(AActor* OtherActor, ATongueProjectile* Tongue)
-{
-	if (Tongue->Cable)
-	{
-		Tongue->Cable->DestroyComponent();
-		Tongue->Destroy();
-		UE_LOG(LogTemp, Warning, TEXT("Destroying Tongue"));
-
-		NumTongues--;
-
-		if (NumTongues == 0)
-		{
-			bTongueSpawned = false;
-		}
-	}
 	if (!OtherActor)
 	{
 		return;
 	}
 	if (OtherActor->Implements<UEdible>())
 	{
-		const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(OtherActor)};
+		const UEdibleComponent* SizeInfo{IEdible::Execute_GetInfo(OtherActor)};
 
 		OtherActor->Destroy();
 
@@ -570,7 +419,7 @@ void AFrogGameCharacter::Consume(AActor* OtherActor, ATongueProjectile* Tongue)
 	}
 }
 
-void AFrogGameCharacter::IncreaseScale(const FEdibleInfo SizeInfo)
+void AFrogGameCharacter::IncreaseScale(const UEdibleComponent* SizeInfo)
 {
 	// just reset the lerp values
 	bScalingUp = true;
@@ -579,13 +428,13 @@ void AFrogGameCharacter::IncreaseScale(const FEdibleInfo SizeInfo)
 	// Compare this to the averaged bounding box size of the object being eaten and factor in the growth coefficient.
 	// If SizeInfo.Size = 10 and ScaledRadius = 50 then we get a value of 10/50 = 0.2 or 20%.
 	// Increase actor scale by this value. 
-	float SizeDiff{SizeInfo.Size * SizeInfo.GrowthCoefficient / ScaledRadius};
+	float SizeDiff{SizeInfo->Size * SizeInfo->GrowthCoefficient / ScaledRadius};
 	SizeDiff = FMath::Clamp(SizeDiff, 0.f, 0.1f);
 	ExtraScaleBank += SizeDiff;
 	//UE_LOG(LogTemp, Warning, TEXT("SizeDiff = %f"), SizeDiff)
 
-	UpdateCurrentScore(SizeInfo.ScorePoints);
-	UpdatePowerPoints(SizeInfo.PowerPoints);
+	UpdateCurrentScore(SizeInfo->ScorePoints);
+	UpdatePowerPoints(SizeInfo->PowerPoints);
 }
 
 // Called in the jump function. For every second the player holds spacebar / bumper it increases the jump charge by 1 to a max of 3.
@@ -684,7 +533,7 @@ void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSetti
 	CameraBoom->TargetArmLength = CharacterSettings.BaseBoomRange * GetActorScale().X;
 	GetCharacterMovement()->MaxWalkSpeed = CharacterSettings.BaseWalkSpeed * GetActorScale().X;
 	const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
-	TongueStart->AttachToComponent(GetMesh(), InRule, CharacterSettings.TongueBoneTarget);
+	TongueStart->AttachToComponent(GetMesh(), InRule, CharacterSettings.HeadSocket);
 	GetCharacterMovement()->GravityScale = CharacterSettings.GravityScale;
 
 	// Note: Stuff like Cable width and the size of the nodule at the end of the tongue not set right now.

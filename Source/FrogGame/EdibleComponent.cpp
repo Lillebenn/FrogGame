@@ -1,10 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "TonguePivot.h"
+#include "EdibleComponent.h"
 
 // Sets default values for this component's properties
-UTonguePivot::UTonguePivot()
+UEdibleComponent::UEdibleComponent()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -15,7 +15,7 @@ UTonguePivot::UTonguePivot()
 
 
 // Called when the game starts
-void UTonguePivot::BeginPlay()
+void UEdibleComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -25,10 +25,15 @@ void UTonguePivot::BeginPlay()
 
 
 // Called every frame
-void UTonguePivot::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UEdibleComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// ...
+}
+
+float UEdibleComponent::GetSphereSize() const
+{
+	return Size/NumDrops;
 }
 

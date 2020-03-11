@@ -5,44 +5,27 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "Edible.h"
-#include "EdibleInfo.h"
 #include "Saveable.h"
-
 #include "SimpleCreature.generated.h"
 
 UCLASS(Abstract)
 class FROGGAME_API ASimpleCreature : public APawn, public IEdible, public ISaveable
 {
 	GENERATED_BODY()
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	class UStaticMeshComponent* CreatureMesh;
 
 public:
 	// Sets default values for this pawn's properties
 	ASimpleCreature();
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Mesh)
-	UStaticMeshComponent* CreatureMesh;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	class UTonguePivot* TongueTarget;
+	class UEdibleComponent* EdibleComponent;
 	UPROPERTY(BlueprintReadOnly)
 	class UFloatingPawnMovement* MovementComponent;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AutoAim)
-	class UTargetingReticule* Reticule;
-	class UTargetingReticule* GetTargetingReticule_Implementation() override;
 	bool IsDisabled_Implementation() override;
 	bool ShouldDestroy{false};
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Edible)
-	FEdibleInfo EdibleInfo;
-	UPROPERTY(EditDefaultsOnly, Category = Edible)
-	TSubclassOf<class ASphereDrop> Drop;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Edible)
-	int32 NumDrops{5};
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Destructible)
-	float Health{100.f};
-
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, SaveGame, Category = Destructible)
-	float CurrentHealth;
 
 	FTimerHandle TimerHandle;
 	void KillActor();
@@ -68,18 +51,16 @@ public:
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	UStaticMeshComponent* GetMesh();
-	FEdibleInfo GetInfo_Implementation() const override;
+
 
 	void DisableActor_Implementation() override;
 
-	UTonguePivot* GetTargetComponent_Implementation() override;
 
 	void OnDisabled_Implementation() override;
 
 	void ActorSaveDataLoaded_Implementation() override;
 	void ActorSaveDataSaved_Implementation() override;
 
-	void EndPlay(EEndPlayReason::Type EndPlayReason) override;
 
 	FTransform GetStartTransform() override;
 private:

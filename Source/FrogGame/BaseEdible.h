@@ -3,16 +3,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EdibleInfo.generated.h"
+#include "EdibleInfo.h"
+#include "BaseEdible.generated.h"
 
 /**
- * Struct for holding information about an edible object. 
+ * 
  */
 USTRUCT(BlueprintType)
-struct FEdibleInfo
+struct FBaseEdible
 {
 	GENERATED_BODY()
-	
 
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Edible)
+	FEdibleInfo EdibleInfo;
 };

@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "DestructibleActor.h"
 #include "Edible.h"
 #include "Saveable.h"
 #include "EdibleObject.generated.h"
@@ -18,30 +17,21 @@ class FROGGAME_API AEdibleObject : public AActor, public IEdible, public ISaveab
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UStaticMeshComponent* StaticMesh;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class UTonguePivot* TongueTarget;
+
 
 public:
 	AEdibleObject();
 	void Tick(float DeltaTime) override;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AutoAim)
-	class UTargetingReticule* Reticule;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Edible)
-	int32 NumDrops{5};
-		UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Edible)
-	FEdibleInfo EdibleInfo;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Destructible)
-	float Health{100.f};
-
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, SaveGame, Category = Destructible)
-	float CurrentHealth;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	class UEdibleComponent* EdibleComponent;
+	UPROPERTY(EditDefaultsOnly, Category = Edible)
+	TSubclassOf<class ASphereDrop> Drop;
 
 	FTimerHandle TimerHandle;
 	void KillActor();
 
-	UPROPERTY(EditDefaultsOnly, Category = Edible)
-	TSubclassOf<class ASphereDrop> Drop;
+
 	// Interface stuff
 	void DisableActor_Implementation() override;
 	bool IsDisabled_Implementation() override;

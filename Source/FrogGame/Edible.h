@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "EdibleInfo.h"
+#include "EdibleComponent.h"
 #include "Edible.generated.h"
 
 // This class does not need to be modified.
@@ -28,18 +28,16 @@ public:
 	 * Returns the Edible Info of the object.
 	 */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
-	FEdibleInfo GetInfo() const;
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
-	class UTargetingReticule* GetTargetingReticule();
+	UEdibleComponent* GetInfo() const;
+
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	void DisableActor();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	bool IsDisabled();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	void OnDisabled();
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
-	class UTonguePivot* GetTargetComponent();
 
-	virtual int CalculateSizeTier(float InSize, int NumTiers = 10);
+
+	virtual void CalculateSizeTier(UEdibleComponent* EdibleComponent, int NumTiers = 10);
 	virtual FTransform GetStartTransform();
 };
