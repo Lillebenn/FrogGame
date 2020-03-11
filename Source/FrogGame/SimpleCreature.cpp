@@ -78,6 +78,11 @@ UStaticMeshComponent* ASimpleCreature::GetMesh()
 	return CreatureMesh;
 }
 
+UEdibleComponent* ASimpleCreature::GetInfo_Implementation() const
+{
+	return EdibleComponent;
+}
+
 void ASimpleCreature::OnDisabled_Implementation()
 {
 	DisableActor_Implementation();

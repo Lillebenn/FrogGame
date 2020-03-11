@@ -85,6 +85,11 @@ void AEdibleObject::BeginPlay()
 	CalculateSize();
 
 }
+UEdibleComponent* AEdibleObject::GetInfo_Implementation() const
+{
+	return EdibleComponent;
+}
+
 
 float AEdibleObject::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
                               AActor* DamageCauser)
@@ -98,7 +103,7 @@ float AEdibleObject::TakeDamage(float DamageAmount, FDamageEvent const& DamageEv
 		if (Frog)
 		{
 			EdibleComponent->CurrentHealth -= ActualDamage;
-			if (EdibleComponent->CurrentHealth <= 0.f && !IsActorBeingDestroyed())
+			if (EdibleComponent->CurrentHealth <= 0.f && !IsActorBeingDestroyed() && !ShouldDestroy)
 			{
 				// TODO: Maybe set mass to 100kg once it loses all health, so it flies away only when punched to death
 				FVector ImpulseDirection{Frog->GetActorLocation() - GetActorLocation()};

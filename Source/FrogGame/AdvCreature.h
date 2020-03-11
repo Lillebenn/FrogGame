@@ -20,7 +20,7 @@ class FROGGAME_API AAdvCreature : public ACharacter, public IEdible, public ISav
 public:
 	// Sets default values for this character's properties
 	AAdvCreature();
-		UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UEdibleComponent* EdibleComponent;
 	// Called every frame
 	void Tick(float DeltaTime) override;
@@ -34,6 +34,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Edible)
 	FName AttachBoneName{TEXT("None")};
+	UEdibleComponent* GetInfo_Implementation() const override;
 
 	void DisableActor_Implementation() override;
 	void OnDisabled_Implementation() override;

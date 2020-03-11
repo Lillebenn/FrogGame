@@ -31,7 +31,7 @@ struct FCharacterSettings
 	float BaseJumpZHeight{1000.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float GravityScale{3.f};
-		UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FName HeadSocket{"Head_joint"};
 	// Add other variables here based on what we change between modes.
 };
@@ -129,9 +129,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
 
-	UPROPERTY(BlueprintReadWrite)
-	bool bTongueSpawned{false};
-
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Character)
+	TSubclassOf<AActor> SuctionBP;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	uint8 SizeTier{2};
 
@@ -158,13 +157,13 @@ public:
 
 	void Consume(AActor* OtherActor);
 	void IncreaseScale(const UEdibleComponent* SizeInfo);
-	
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = PowerMode)
 	bool bPowerMode{false};
 	// Amount of damage the punch will do on each hit.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PowerMode)
 	float PunchDamage{100.f};
-	
+
 	UPROPERTY(VisibleAnywhere, Category = PowerMode)
 	float CurrentPowerPoints;
 	UPROPERTY(EditAnywhere, Category = PowerMode)
@@ -223,6 +222,8 @@ private:
 
 	void PositionAimBox();
 
+
+	void KirbySuck();
 
 	UPROPERTY()
 	TArray<AActor*> Targets;

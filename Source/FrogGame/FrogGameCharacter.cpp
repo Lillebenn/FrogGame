@@ -104,14 +104,7 @@ void AFrogGameCharacter::BeginPlay()
 	const FVector Viewport{GetWorld()->GetGameViewport()->Viewport->GetSizeXY()};
 	AutoAimVolume->SetBoxExtent(FVector(100.f, Viewport.X / 2.f,
 	                                    Viewport.Y));
-	if (GetMesh()->SkeletalMesh)
-	{
-		NeutralModeSettings.Mesh = GetMesh()->SkeletalMesh;
-		if (const auto AnimInstance = GetMesh()->GetAnimInstance()->GetClass())
-		{
-			NeutralModeSettings.AnimBP = AnimInstance;
-		}
-	}
+
 	AutoAimVolume->SetRelativeLocation(FVector(CameraBoom->TargetArmLength + AutoAimVolume->GetUnscaledBoxExtent().X, 0,
 	                                           0));
 	BaseBoomRange = CameraBoom->TargetArmLength / GetActorScale().X;
@@ -178,10 +171,8 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	{
 		UpdateCharacterScale(DeltaTime);
 	}
-	if (!bTongueSpawned)
-	{
-		AutoAim();
-	}
+
+	AutoAim();
 }
 
 // TODO: Choose target close to box origin AND player
@@ -201,9 +192,12 @@ void AFrogGameCharacter::AutoAim()
 			{
 				const int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
 				const UEdibleComponent* SizeInfo{IEdible::Execute_GetInfo(Actor)};
-				if (SizeInfo->SizeTier <= MaxSize)
+				if(SizeInfo)
 				{
-					Targets.Add(Actor);
+					if (SizeInfo->SizeTier <= MaxSize)
+					{
+						Targets.Add(Actor);
+					}
 				}
 			}
 		}
@@ -279,6 +273,11 @@ float AFrogGameCharacter::GetTotalScore(AActor* Actor) const
 {
 	const int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
 	const UEdibleComponent* SizeInfo{IEdible::Execute_GetInfo(Actor)};
+	if(!SizeInfo)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Missing reference to UEdibleComponent!"));
+		return 0.f;
+	}
 	if (SizeInfo->SizeTier > MaxSize) // Object is too big, ignore.
 	{
 		return 0.f;
@@ -300,6 +299,11 @@ void AFrogGameCharacter::PositionAimBox()
 {
 	AutoAimVolume->SetWorldLocation(
 		GetActorLocation() + FollowCamera->GetForwardVector() * AutoAimVolume->GetScaledBoxExtent().X);
+}
+
+void AFrogGameCharacter::KirbySuck()
+{
+	// for every edible object in the volume, apply a lerp towards the player, and if it gets close enough use Consume.
 }
 
 void AFrogGameCharacter::TurnAtRate(float Rate)

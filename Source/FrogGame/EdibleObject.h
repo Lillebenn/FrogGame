@@ -41,6 +41,7 @@ public:
 
 	FTransform GetStartTransform() override;
 	void CalculateSize();
+		UEdibleComponent* GetInfo_Implementation() const override;
 
 
 	float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,

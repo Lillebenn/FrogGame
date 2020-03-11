@@ -51,7 +51,7 @@ public:
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	UStaticMeshComponent* GetMesh();
-
+	UEdibleComponent* GetInfo_Implementation() const override;
 
 	void DisableActor_Implementation() override;
 

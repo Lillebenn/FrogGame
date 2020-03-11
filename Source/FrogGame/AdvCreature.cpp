@@ -50,6 +50,11 @@ bool AAdvCreature::IsDisabled_Implementation()
 }
 
 
+UEdibleComponent* AAdvCreature::GetInfo_Implementation() const
+{
+	return EdibleComponent;
+}
+
 void AAdvCreature::DisableActor_Implementation()
 {
 	AController* AI{GetController()};
