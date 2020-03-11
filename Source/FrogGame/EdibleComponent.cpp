@@ -47,7 +47,7 @@ void UEdibleComponent::SpawnSpheres() const
 	{
 		AActor* Actor{GetOwner()};
 		const float SphereSize{GetSphereSize()};
-		for (int i{0}; i < 5; i++)
+		for (int i{0}; i < NumDrops; i++)
 		{
 			const FVector2D SpawnLocation2D{FMath::RandPointInCircle(125.f)};
 			const FVector ActorLocation{Actor->GetActorLocation()};

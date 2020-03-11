@@ -81,9 +81,6 @@ void AEdibleObject::BeginPlay()
 	CalculateSize();
 }
 
-
-
-
 float AEdibleObject::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
                                 AActor* DamageCauser)
 {
