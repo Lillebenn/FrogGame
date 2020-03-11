@@ -60,7 +60,6 @@ AFrogGameCharacter::AFrogGameCharacter()
 	AutoAimVolume->SetupAttachment(FollowCamera);
 	AutoAimVolume->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	AutoAimVolume->SetCollisionProfileName(TEXT("AutoAim"));
-	AutoAimVolume->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnBoxTraceEnd);
 
 	// We use the arrow component as spawn point for the tongue and attach it to the head bone
 	TongueStart = GetArrowComponent();
@@ -108,8 +107,11 @@ void AFrogGameCharacter::BeginPlay()
 	AutoAimVolume->SetRelativeLocation(FVector(CameraBoom->TargetArmLength + AutoAimVolume->GetUnscaledBoxExtent().X, 0,
 	                                           0));
 	BaseBoomRange = CameraBoom->TargetArmLength / GetActorScale().X;
-	LeftHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
-	RightHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
+	LeftHandCollision->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnAttackOverlap);
+	RightHandCollision->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnAttackOverlap);
+	AutoAimVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnBoxTraceBegin);
+	AutoAimVolume->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnBoxTraceEnd);
+
 	MaxAngleRadians = FMath::DegreesToRadians(MaxAngle);
 
 	// Setting Hud trackers to 0 at the start.
@@ -192,7 +194,7 @@ void AFrogGameCharacter::AutoAim()
 			{
 				const int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
 				const UEdibleComponent* SizeInfo{IEdible::Execute_GetInfo(Actor)};
-				if(SizeInfo)
+				if (SizeInfo)
 				{
 					if (SizeInfo->SizeTier <= MaxSize)
 					{
@@ -273,7 +275,7 @@ float AFrogGameCharacter::GetTotalScore(AActor* Actor) const
 {
 	const int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
 	const UEdibleComponent* SizeInfo{IEdible::Execute_GetInfo(Actor)};
-	if(!SizeInfo)
+	if (!SizeInfo)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Missing reference to UEdibleComponent!"));
 		return 0.f;
@@ -464,12 +466,14 @@ void AFrogGameCharacter::RemoveHandCollision()
 	SetHandCollision(LeftHandCollision, TEXT("NoCollision"));
 }
 
-void AFrogGameCharacter::OnAttackHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-                                     FVector NormalImpulse, const FHitResult& Hit)
+void AFrogGameCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+                                         UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+                                         const FHitResult& SweepResult)
 {
+	UE_LOG(LogTemp, Warning, TEXT("Hit Event with %s!"), *OtherActor->GetName())
+
 	if (OtherActor != this && OtherComp != nullptr && OtherActor->Implements<UEdible>())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Hit Event with %s!"), *OtherActor->GetName())
 		RemoveHandCollision();
 		UEdibleComponent* EdibleComponent{
 			Cast<UEdibleComponent>(OtherActor->GetComponentByClass(UEdibleComponent::StaticClass()))
@@ -480,6 +484,16 @@ void AFrogGameCharacter::OnAttackHit(UPrimitiveComponent* HitComp, AActor* Other
 			const FDamageEvent DamageEvent(ValidDamageTypeClass);
 			OtherActor->TakeDamage(PunchDamage, DamageEvent, GetController(), this);
 		}
+	}
+}
+
+void AFrogGameCharacter::OnBoxTraceBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+                                         UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+                                         const FHitResult& SweepResult)
+{
+	if (OtherActor->GetComponentByClass(UEdibleComponent::StaticClass()))
+	{
+		Targets.Add(OtherActor);
 	}
 }
 

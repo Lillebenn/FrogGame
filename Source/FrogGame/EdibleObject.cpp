@@ -12,11 +12,9 @@ AEdibleObject::AEdibleObject()
 {
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	StaticMesh->SetCollisionObjectType(ECC_GameTraceChannel1);
-	StaticMesh->SetSimulatePhysics(true);
-		EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
+	EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
 
 	RootComponent = StaticMesh;
-
 }
 
 void AEdibleObject::Tick(float DeltaTime)
@@ -82,8 +80,8 @@ void AEdibleObject::BeginPlay()
 	Super::BeginPlay();
 	EdibleComponent->CurrentHealth = EdibleComponent->Health;
 	CalculateSize();
-
 }
+
 UEdibleComponent* AEdibleObject::GetInfo_Implementation() const
 {
 	return EdibleComponent;
@@ -91,7 +89,7 @@ UEdibleComponent* AEdibleObject::GetInfo_Implementation() const
 
 
 float AEdibleObject::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
-                              AActor* DamageCauser)
+                                AActor* DamageCauser)
 {
 	const float ActualDamage{Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser)};
 	UE_LOG(LogTemp, Warning, TEXT("Taking %f damage."), ActualDamage);
@@ -105,9 +103,10 @@ float AEdibleObject::TakeDamage(float DamageAmount, FDamageEvent const& DamageEv
 			if (EdibleComponent->CurrentHealth <= 0.f && !IsActorBeingDestroyed() && !ShouldDestroy)
 			{
 				// TODO: Maybe set mass to 100kg once it loses all health, so it flies away only when punched to death
-				FVector ImpulseDirection{Frog->GetActorLocation() - GetActorLocation()};
+				FVector ImpulseDirection{GetActorLocation() - Frog->GetActorLocation()};
 				ImpulseDirection.Normalize();
 				const FVector Impulse{ImpulseDirection * 750000.f};
+				StaticMesh->SetSimulatePhysics(true);
 				StaticMesh->AddImpulse(Impulse);
 				ShouldDestroy = true;
 				GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AEdibleObject::KillActor, 1.f,
