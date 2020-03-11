@@ -122,10 +122,12 @@ void AFrogGameCharacter::BeginPlay()
 	// Setting Hud trackers to 0 at the start.
 	CurrentScore = 0.f;
 	CurrentPowerPoints = 0.f;
-
+	BaseJump = NeutralModeSettings.BaseJumpZHeight;
 	CurrentJump = BaseJump;
 	SizeTier = 1 + GetActorScale().X;
+	BaseMaxWalkSpeed = NeutralModeSettings.BaseWalkSpeed;
 	GetCharacterMovement()->GravityScale = NeutralModeSettings.GravityScale;
+	GetCharacterMovement()->MaxWalkSpeed = BaseMaxWalkSpeed;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -380,6 +382,7 @@ void AFrogGameCharacter::UpdateCharacterMovement(const float ScaleDelta)
 {
 	UCharacterMovementComponent* Movement{GetCharacterMovement()};
 	Movement->MaxWalkSpeed += BaseMaxWalkSpeed * (ScaleDelta * 0.5f);
+	Movement->MaxAcceleration = 4096.f * GetActorScale().X;
 	CurrentJump += BaseJump * (ScaleDelta * 0.2f); // 0.2f is temporary to reduce jump height increase
 	Movement->JumpZVelocity = CurrentJump;
 }
@@ -437,13 +440,6 @@ void AFrogGameCharacter::IncreaseScale(const UEdibleComponent* SizeInfo)
 	UpdatePowerPoints(SizeInfo->PowerPoints);
 }
 
-// Called in the jump function. For every second the player holds spacebar / bumper it increases the jump charge by 1 to a max of 3.
-void AFrogGameCharacter::StartJump()
-{
-	bIsCharging = true;
-}
-
-
 void AFrogGameCharacter::Hitmonchan()
 {
 	if (bPowerMode)
@@ -455,10 +451,6 @@ void AFrogGameCharacter::Hitmonchan()
 		SetHandCollision(RightHandCollision, TEXT("Punch"));
 		SetHandCollision(LeftHandCollision, TEXT("Punch"));
 		// Add execution here
-	}
-	else
-	{
-		// Does nothing if player is not in power mode.
 	}
 }
 
@@ -475,37 +467,16 @@ void AFrogGameCharacter::OnAttackHit(UPrimitiveComponent* HitComp, AActor* Other
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Hit Event with %s!"), *OtherActor->GetName())
 		RemoveHandCollision();
-		if (AEdibleObject* Destructible{Cast<AEdibleObject>(OtherActor)})
+		UEdibleComponent* EdibleComponent{
+			Cast<UEdibleComponent>(OtherActor->GetComponentByClass(UEdibleComponent::StaticClass()))
+		};
+		if (EdibleComponent)
 		{
 			TSubclassOf<UDamageType> const ValidDamageTypeClass = TSubclassOf<UDamageType>(UDamageType::StaticClass());
 			const FDamageEvent DamageEvent(ValidDamageTypeClass);
-			Destructible->TakeDamage(PunchDamage, DamageEvent, GetController(), this);
-		}
-		else if (ASimpleCreature* SCreature{Cast<ASimpleCreature>(OtherActor)})
-			// doesn't work, might need to switch to overlap based stuff
-		{
-			TSubclassOf<UDamageType> const ValidDamageTypeClass = TSubclassOf<UDamageType>(UDamageType::StaticClass());
-			const FDamageEvent DamageEvent(ValidDamageTypeClass);
-			SCreature->TakeDamage(PunchDamage, DamageEvent, GetController(), this);
+			OtherActor->TakeDamage(PunchDamage, DamageEvent, GetController(), this);
 		}
 	}
-}
-
-void AFrogGameCharacter::ChargeJump(float DeltaTime)
-{
-	JumpModifier += (DeltaTime * ChargeSpeed); // The modifier determines what percentage of the jump bonus is applied
-}
-
-void AFrogGameCharacter::ExecuteJump()
-{
-	bIsCharging = false;
-	JumpModifier = FMath::Clamp(JumpModifier, 0.f, 1.f);
-	GetCharacterMovement()->JumpZVelocity += (JumpBonus * JumpModifier);
-	//UE_LOG(LogTemp, Warning, TEXT("%f"), GetCharacterMovement()->JumpZVelocity);
-	Jump();
-
-	// Remember to reset it.
-	JumpModifier = 0.f;
 }
 
 void AFrogGameCharacter::PowerMode()
@@ -532,9 +503,10 @@ void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSetti
 	GetMesh()->SetRelativeLocation(Offset);
 	CameraBoom->TargetArmLength = CharacterSettings.BaseBoomRange * GetActorScale().X;
 	GetCharacterMovement()->MaxWalkSpeed = CharacterSettings.BaseWalkSpeed * GetActorScale().X;
+	GetCharacterMovement()->GravityScale = CharacterSettings.GravityScale;
+	GetCharacterMovement()->JumpZVelocity = CharacterSettings.BaseJumpZHeight;
 	const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
 	TongueStart->AttachToComponent(GetMesh(), InRule, CharacterSettings.HeadSocket);
-	GetCharacterMovement()->GravityScale = CharacterSettings.GravityScale;
 
 	// Note: Stuff like Cable width and the size of the nodule at the end of the tongue not set right now.
 }

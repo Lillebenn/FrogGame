@@ -156,7 +156,6 @@ public:
 
 	float CurrentTargetScore{0.f};
 
-	uint32 NumTongues{0};
 	void Consume(AActor* OtherActor);
 	void IncreaseScale(const UEdibleComponent* SizeInfo);
 	
