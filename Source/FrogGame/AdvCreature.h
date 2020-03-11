@@ -34,7 +34,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Edible)
 	FName AttachBoneName{TEXT("None")};
-	UEdibleComponent* GetInfo_Implementation() const override;
 
 	void DisableActor_Implementation() override;
 	void OnDisabled_Implementation() override;
@@ -42,7 +41,6 @@ public:
 
 	void ActorSaveDataSaved_Implementation() override;
 	void CalculateBoundingSize();
-	void SpawnSpheres() const;
 	void ActorSaveDataLoaded_Implementation() override;
 
 	FTransform GetStartTransform() override;

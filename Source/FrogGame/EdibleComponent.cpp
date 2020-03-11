@@ -2,6 +2,9 @@
 
 
 #include "EdibleComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Engine/World.h"
+#include "SphereDrop.h"
 
 // Sets default values for this component's properties
 UEdibleComponent::UEdibleComponent()
@@ -18,14 +21,15 @@ UEdibleComponent::UEdibleComponent()
 void UEdibleComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	CurrentHealth = Health;
 
 	// ...
-	
 }
 
 
 // Called every frame
-void UEdibleComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UEdibleComponent::TickComponent(float DeltaTime, ELevelTick TickType,
+                                     FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
@@ -34,6 +38,27 @@ void UEdibleComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 float UEdibleComponent::GetSphereSize() const
 {
-	return Size/NumDrops;
+	return Size / NumDrops;
 }
 
+void UEdibleComponent::SpawnSpheres() const
+{
+	if (Drop)
+	{
+		AActor* Actor{GetOwner()};
+		const float SphereSize{GetSphereSize()};
+		for (int i{0}; i < 5; i++)
+		{
+			const FVector2D SpawnLocation2D{FMath::RandPointInCircle(125.f)};
+			const FVector ActorLocation{Actor->GetActorLocation()};
+			const FVector SpawnLocation{
+				ActorLocation.X + SpawnLocation2D.X, ActorLocation.Y + SpawnLocation2D.Y, ActorLocation.Z
+			};
+			const FTransform SpawnTransform{SpawnLocation};
+			ASphereDrop* Sphere{Actor->GetWorld()->SpawnActorDeferred<ASphereDrop>(Drop, SpawnTransform)};
+			Sphere->EdibleComponent = DuplicateObject(this, StaticClass());
+			Sphere->EdibleComponent->Size = SphereSize;
+			UGameplayStatics::FinishSpawningActor(Sphere, SpawnTransform);
+		}
+	}
+}

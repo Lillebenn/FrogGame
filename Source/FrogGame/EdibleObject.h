@@ -42,7 +42,6 @@ public:
 
 	FTransform GetStartTransform() override;
 	void CalculateSize();
-		UEdibleComponent* GetInfo_Implementation() const override;
 
 
 	float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
@@ -51,7 +50,4 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
-
-private:
-	void SpawnSpheres() const;
 };

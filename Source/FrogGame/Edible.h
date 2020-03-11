@@ -23,13 +23,6 @@ class FROGGAME_API IEdible
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-
-	/**
-	 * Returns the Edible Info of the object.
-	 */
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
-	UEdibleComponent* GetInfo() const;
-
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	void DisableActor();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)

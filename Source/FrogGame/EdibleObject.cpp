@@ -24,7 +24,7 @@ void AEdibleObject::Tick(float DeltaTime)
 
 void AEdibleObject::KillActor()
 {
-	SpawnSpheres();
+	EdibleComponent->SpawnSpheres();
 
 	SetLifeSpan(0.001f);
 }
@@ -78,14 +78,10 @@ void AEdibleObject::CalculateSize()
 void AEdibleObject::BeginPlay()
 {
 	Super::BeginPlay();
-	EdibleComponent->CurrentHealth = EdibleComponent->Health;
 	CalculateSize();
 }
 
-UEdibleComponent* AEdibleObject::GetInfo_Implementation() const
-{
-	return EdibleComponent;
-}
+
 
 
 float AEdibleObject::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
@@ -117,23 +113,3 @@ float AEdibleObject::TakeDamage(float DamageAmount, FDamageEvent const& DamageEv
 	return ActualDamage;
 }
 
-
-void AEdibleObject::SpawnSpheres() const
-{
-	if (EdibleComponent->Drop)
-	{
-		const float SphereSize{EdibleComponent->GetSphereSize()};
-		for (int i{0}; i < 5; i++)
-		{
-			const FVector2D SpawnLocation2D{FMath::RandPointInCircle(125.f)};
-			const FVector SpawnLocation{
-				GetActorLocation().X + SpawnLocation2D.X, GetActorLocation().Y + SpawnLocation2D.Y, GetActorLocation().Z
-			};
-			const FTransform SpawnTransform{SpawnLocation};
-			ASphereDrop* Sphere{GetWorld()->SpawnActorDeferred<ASphereDrop>(EdibleComponent->Drop, SpawnTransform)};
-			Sphere->EdibleComponent = EdibleComponent;
-			Sphere->EdibleComponent->Size = SphereSize;
-			UGameplayStatics::FinishSpawningActor(Sphere, SpawnTransform);
-		}
-	}
-}

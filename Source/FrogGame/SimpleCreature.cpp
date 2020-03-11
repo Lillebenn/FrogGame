@@ -10,7 +10,6 @@
 #include "FrogGameCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "EdibleComponent.h"
-#include "SphereDrop.h"
 
 
 // Sets default values
@@ -25,7 +24,7 @@ ASimpleCreature::ASimpleCreature()
 
 	RootComponent = CreatureMesh;
 	EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
-
+	EdibleComponent->NumDrops = 0;
 	MovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComponent"));
 
 
@@ -78,10 +77,7 @@ UStaticMeshComponent* ASimpleCreature::GetMesh()
 	return CreatureMesh;
 }
 
-UEdibleComponent* ASimpleCreature::GetInfo_Implementation() const
-{
-	return EdibleComponent;
-}
+
 
 void ASimpleCreature::OnDisabled_Implementation()
 {
@@ -163,28 +159,10 @@ float ASimpleCreature::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 }
 
 
-void ASimpleCreature::SpawnSpheres() const
-{
-	if (EdibleComponent->Drop)
-	{
-		const float SphereSize{EdibleComponent->GetSphereSize()};
-		for (int i{0}; i < 5; i++)
-		{
-			const FVector2D SpawnLocation2D{FMath::RandPointInCircle(125.f)};
-			const FVector SpawnLocation{
-				GetActorLocation().X + SpawnLocation2D.X, GetActorLocation().Y + SpawnLocation2D.Y, GetActorLocation().Z
-			};
-			const FTransform SpawnTransform{SpawnLocation};
-			ASphereDrop* Sphere{GetWorld()->SpawnActorDeferred<ASphereDrop>(EdibleComponent->Drop, SpawnTransform)};
-			Sphere->EdibleComponent = EdibleComponent;
-			Sphere->EdibleComponent->Size = SphereSize;
-			UGameplayStatics::FinishSpawningActor(Sphere, SpawnTransform);
-		}
-	}
-}
+
 
 void ASimpleCreature::KillActor()
 {
-	SpawnSpheres();
+	EdibleComponent->SpawnSpheres();
 	SetLifeSpan(0.001f);
 }

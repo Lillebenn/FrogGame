@@ -193,7 +193,9 @@ void AFrogGameCharacter::AutoAim()
 			if (Actor->Implements<UEdible>())
 			{
 				const int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
-				const UEdibleComponent* SizeInfo{IEdible::Execute_GetInfo(Actor)};
+				const UEdibleComponent* SizeInfo{
+					Cast<UEdibleComponent>(Actor->GetComponentByClass(UEdibleComponent::StaticClass()))
+				};
 				if (SizeInfo)
 				{
 					if (SizeInfo->SizeTier <= MaxSize)
@@ -274,7 +276,9 @@ float AFrogGameCharacter::CalcAngleScore(AActor* Actor) const
 float AFrogGameCharacter::GetTotalScore(AActor* Actor) const
 {
 	const int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
-	const UEdibleComponent* SizeInfo{IEdible::Execute_GetInfo(Actor)};
+	const UEdibleComponent* SizeInfo{
+		Cast<UEdibleComponent>(Actor->GetComponentByClass(UEdibleComponent::StaticClass()))
+	};
 	if (!SizeInfo)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Missing reference to UEdibleComponent!"));
@@ -420,7 +424,10 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 	}
 	if (OtherActor->Implements<UEdible>())
 	{
-		const UEdibleComponent* SizeInfo{IEdible::Execute_GetInfo(OtherActor)};
+		const UEdibleComponent* SizeInfo{
+			Cast<UEdibleComponent>(OtherActor->GetComponentByClass(UEdibleComponent::StaticClass()))
+		};
+
 
 		OtherActor->Destroy();
 

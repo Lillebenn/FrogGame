@@ -41,8 +41,6 @@ protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
 
-	void SpawnSpheres() const;
-
 public:
 	// Called every frame
 	void Tick(float DeltaTime) override;
@@ -51,7 +49,6 @@ public:
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	UStaticMeshComponent* GetMesh();
-	UEdibleComponent* GetInfo_Implementation() const override;
 
 	void DisableActor_Implementation() override;
 

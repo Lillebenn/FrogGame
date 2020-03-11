@@ -50,4 +50,5 @@ public:
 	// Called every frame
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	float GetSphereSize() const;
+	void SpawnSpheres() const;
 };

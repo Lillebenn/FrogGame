@@ -16,7 +16,7 @@ AAdvCreature::AAdvCreature()
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
-
+	EdibleComponent->NumDrops = 0;
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
@@ -47,12 +47,6 @@ void AAdvCreature::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 bool AAdvCreature::IsDisabled_Implementation()
 {
 	return ShouldDestroy;
-}
-
-
-UEdibleComponent* AAdvCreature::GetInfo_Implementation() const
-{
-	return EdibleComponent;
 }
 
 void AAdvCreature::DisableActor_Implementation()
@@ -107,25 +101,5 @@ void AAdvCreature::CalculateBoundingSize()
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s is missing a mesh!"), *GetName());
-	}
-}
-
-void AAdvCreature::SpawnSpheres() const
-{
-	if (EdibleComponent->Drop)
-	{
-		const float SphereSize{EdibleComponent->GetSphereSize()};
-		for (int i{0}; i < 5; i++)
-		{
-			const FVector2D SpawnLocation2D{FMath::RandPointInCircle(125.f)};
-			const FVector SpawnLocation{
-				GetActorLocation().X + SpawnLocation2D.X, GetActorLocation().Y + SpawnLocation2D.Y, GetActorLocation().Z
-			};
-			const FTransform SpawnTransform{SpawnLocation};
-			ASphereDrop* Sphere{GetWorld()->SpawnActorDeferred<ASphereDrop>(EdibleComponent->Drop, SpawnTransform)};
-			Sphere->EdibleComponent = EdibleComponent;
-			Sphere->EdibleComponent->Size = SphereSize;
-			UGameplayStatics::FinishSpawningActor(Sphere, SpawnTransform);
-		}
 	}
 }
