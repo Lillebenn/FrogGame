@@ -3,21 +3,21 @@
 
 #include "Edible.h"
 
-int IEdible::CalculateSizeTier(const float InSize, const int NumTiers)
+void IEdible::CalculateSizeTier(UEdibleComponent* EdibleComponent, const int NumTiers)
 {
 	// This will 100% need to be changed later. Just a temporary fix for automatically giving out size tiers.
 	// In the future, size tiers will likely be separated by more than 10.f as the 
 	float MinVal{0.f}, MaxVal{10.f};
 	for (int i{0}; i < NumTiers; i++)
 	{
-		if (FMath::IsWithin(InSize, MinVal, MaxVal))
+		if (FMath::IsWithin(EdibleComponent->Size, MinVal, MaxVal))
 		{
-			return i;
+			EdibleComponent->SizeTier = i;
 		}
 		MinVal = MaxVal;
 		MaxVal *= 2.5f; // This is probably too exponential.
 	}
-	return 10; // 10 is current max tier I guess.
+	EdibleComponent->SizeTier = 10; // 10 is current max tier I guess.
 }
 
 // Add default functionality here for any IEdible functions that are not pure virtual.
@@ -25,3 +25,4 @@ FTransform IEdible::GetStartTransform()
 {
 	return FTransform();
 }
+

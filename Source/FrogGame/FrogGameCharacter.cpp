@@ -8,16 +8,12 @@
 #include "Components/InputComponent.h"
 #include "Engine.h"
 #include "Engine/EngineTypes.h"
-#include "TargetingReticule.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "TongueProjectile.h"
 #include "FrogGameInstance.h"
 #include "Edible.h"
-#include "CableComponent.h"
-#include "BaseEdible.h"
-#include "TonguePivot.h"
+#include "EdibleObject.h"
 #include "SimpleCreature.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -64,18 +60,12 @@ AFrogGameCharacter::AFrogGameCharacter()
 	AutoAimVolume->SetupAttachment(FollowCamera);
 	AutoAimVolume->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	AutoAimVolume->SetCollisionProfileName(TEXT("AutoAim"));
-	AutoAimVolume->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnBoxTraceEnd);
 
 	// We use the arrow component as spawn point for the tongue and attach it to the head bone
 	TongueStart = GetArrowComponent();
 	TongueStart->bEditableWhenInherited = true;
-	TongueStart->SetupAttachment(GetMesh(), NeutralModeSettings.TongueBoneTarget);
-	static ConstructorHelpers::FClassFinder<ATongueProjectile> TongueProjectileBP(
-		TEXT("/Game/Blueprints/Characters/Main_Character/BP_TongueProjectile"));
-	if (TongueProjectileBP.Class != nullptr)
-	{
-		TongueBP = TongueProjectileBP.Class;
-	}
+	TongueStart->SetupAttachment(GetMesh(), NeutralModeSettings.HeadSocket);
+
 	// Power mode punch volumes need to be changed once we get the correct mesh
 	// Creates a collision sphere and attaches it to the characters right hand.
 	RightHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("RightHandCollision"));
@@ -90,8 +80,6 @@ AFrogGameCharacter::AFrogGameCharacter()
 	LeftHandCollision->InitSphereRadius(6.f);
 	LeftHandCollision->SetRelativeLocation(FVector(0.f, -9.f, 0.f));
 	PowerModeSettings.BaseBoomRange = 500.f;
-
-	PowerModeSettings.TongueBoneTarget = TEXT("head_j");
 }
 
 void AFrogGameCharacter::SetHandCollision(USphereComponent* Collider, FName CollisionProfile)
@@ -111,41 +99,30 @@ void AFrogGameCharacter::SetHandCollision(USphereComponent* Collider, FName Coll
 void AFrogGameCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	if (TongueBP)
-	{
-		const FVector Viewport{GetWorld()->GetGameViewport()->Viewport->GetSizeXY()};
-		AutoAimVolume->SetBoxExtent(FVector(TongueBP.GetDefaultObject()->TongueRange / 2.f, Viewport.X / 2.f,
-		                                    Viewport.Y));
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("Missing reference to TongueProjectile blueprint!"));
-	}
-	if (GetMesh()->SkeletalMesh)
-	{
-		NeutralModeSettings.Mesh = GetMesh()->SkeletalMesh;
-		if (const auto AnimInstance = GetMesh()->GetAnimInstance()->GetClass())
-		{
-			NeutralModeSettings.AnimBP = AnimInstance;
-		}
-	}
+
+	const FVector Viewport{GetWorld()->GetGameViewport()->Viewport->GetSizeXY()};
+	AutoAimVolume->SetBoxExtent(FVector(100.f, Viewport.X / 2.f,
+	                                    Viewport.Y));
+
 	AutoAimVolume->SetRelativeLocation(FVector(CameraBoom->TargetArmLength + AutoAimVolume->GetUnscaledBoxExtent().X, 0,
 	                                           0));
 	BaseBoomRange = CameraBoom->TargetArmLength / GetActorScale().X;
-	LeftHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
-	RightHandCollision->OnComponentHit.AddDynamic(this, &AFrogGameCharacter::OnAttackHit);
+	LeftHandCollision->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnAttackOverlap);
+	RightHandCollision->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnAttackOverlap);
+	AutoAimVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnBoxTraceBegin);
+	AutoAimVolume->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnBoxTraceEnd);
+
 	MaxAngleRadians = FMath::DegreesToRadians(MaxAngle);
 
 	// Setting Hud trackers to 0 at the start.
 	CurrentScore = 0.f;
 	CurrentPowerPoints = 0.f;
-
-	TongueReturnSpeed = BaseTongueReturnSpeed;
-	TongueSeekSpeed = BaseTongueSeekSpeed;
-	CurrentCableWidth = BaseCableWidth;
+	BaseJump = NeutralModeSettings.BaseJumpZHeight;
 	CurrentJump = BaseJump;
 	SizeTier = 1 + GetActorScale().X;
+	BaseMaxWalkSpeed = NeutralModeSettings.BaseWalkSpeed;
 	GetCharacterMovement()->GravityScale = NeutralModeSettings.GravityScale;
+	GetCharacterMovement()->MaxWalkSpeed = BaseMaxWalkSpeed;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -156,7 +133,6 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	// Set up gameplay key bindings
 	check(PlayerInputComponent);
 
-	PlayerInputComponent->BindAction("Eat", IE_Pressed, this, &AFrogGameCharacter::Lickitung);
 	PlayerInputComponent->BindAction("Punch", IE_Pressed, this, &AFrogGameCharacter::Hitmonchan);
 
 	// This is here for test purposes, will activate when the powerbar is filled up.
@@ -187,23 +163,6 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	PositionAimBox();
 	if (bPowerMode)
 	{
-		/*if (Targets.Num() > 0)
-		{
-			SpawnTargetingMesh(Targets);
-		}
-		if (!bTargetExists)
-		{
-			AutoAim();
-		}
-		else if (bChargingEat)
-		{
-			EatCharge += DeltaTime;
-			if (EatCharge >= EatChargeTime)
-			{
-				EatCharge = 0.f;
-				bTargetExists = false;
-			}
-		}*/
 		PowerDrain(DeltaTime);
 		if (CurrentPowerPoints <= 0)
 		{
@@ -214,10 +173,8 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	{
 		UpdateCharacterScale(DeltaTime);
 	}
-	if (!bTongueSpawned)
-	{
-		AutoAim();
-	}
+
+	AutoAim();
 }
 
 // TODO: Choose target close to box origin AND player
@@ -225,6 +182,7 @@ void AFrogGameCharacter::AutoAim()
 {
 	TArray<AActor*> OverlappingActors;
 	// Necessary to update the auto-aim volume whenever the camera is turned. Might be expensive?
+	// Instead of this, do an event for begin overlap and filter out actors that don't implement UEdible?
 	AutoAimVolume->UpdateOverlapsImpl();
 	AutoAimVolume->GetOverlappingActors(OverlappingActors);
 	if (bPowerMode)
@@ -235,10 +193,13 @@ void AFrogGameCharacter::AutoAim()
 			if (Actor->Implements<UEdible>())
 			{
 				const int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
-				const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(Actor)};
-				if (SizeInfo.SizeTier <= MaxSize)
+				const UEdibleComponent* SizeInfo{IEdible::Execute_GetInfo(Actor)};
+				if (SizeInfo)
 				{
-					Targets.Add(Actor);
+					if (SizeInfo->SizeTier <= MaxSize)
+					{
+						Targets.Add(Actor);
+					}
 				}
 			}
 		}
@@ -253,8 +214,19 @@ void AFrogGameCharacter::AutoAim()
 			}
 			if (Actor->Implements<UEdible>())
 			{
+				const ETraceTypeQuery InTypeQuery{UCollisionProfile::Get()->ConvertToTraceType(ECC_Visibility)};
+				const TArray<AActor*> Array;
+				FHitResult Hit;
+				UKismetSystemLibrary::LineTraceSingle(GetWorld(), GetActorLocation(), Actor->GetActorLocation(),
+				                                      InTypeQuery,
+				                                      false, Array, EDrawDebugTrace::None, Hit, true);
+				// this should skip if the hit actor is not the same as InActor - means there's something in-between the player and target
+				if (Hit.GetActor() != Actor)
+				{
+					continue;
+				}
 				const float TotalScore{GetTotalScore(Actor)};
-				if(TotalScore == 0.f)
+				if (TotalScore == 0.f)
 				{
 					continue;
 				}
@@ -266,14 +238,6 @@ void AFrogGameCharacter::AutoAim()
 				}
 			}
 		}
-	}
-	if (CurrentTarget)
-	{
-		SpawnTargetingMesh(TArray<AActor*>{CurrentTarget});
-	}
-	if (Targets.Num() > 0 && bPowerMode)
-	{
-		SpawnTargetingMesh(Targets);
 	}
 }
 
@@ -310,50 +274,19 @@ float AFrogGameCharacter::CalcAngleScore(AActor* Actor) const
 float AFrogGameCharacter::GetTotalScore(AActor* Actor) const
 {
 	const int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
-	const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(Actor)};
-	if (SizeInfo.SizeTier > MaxSize) // Object is too big, ignore.
+	const UEdibleComponent* SizeInfo{IEdible::Execute_GetInfo(Actor)};
+	if (!SizeInfo)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Missing reference to UEdibleComponent!"));
+		return 0.f;
+	}
+	if (SizeInfo->SizeTier > MaxSize) // Object is too big, ignore.
 	{
 		return 0.f;
 	}
 	const float DistanceScore{CalcDistanceScore(Actor)};
 	const float AngleScore{CalcAngleScore(Actor)};
 	return {DistanceScore - AngleScore};
-}
-
-void AFrogGameCharacter::SpawnTargetingMesh(const TArray<AActor*>& TargetEdibles) const
-{
-	for (auto Target : TargetEdibles)
-	{
-		// Temp
-		//UKismetSystemLibrary::DrawDebugArrow(
-		//	GetWorld(),
-		//	AutoAimVolume->GetComponentLocation() - AutoAimVolume->GetForwardVector() * AutoAimVolume
-		//	                                                                        ->GetUnscaledBoxExtent().X,
-		//	Target->GetActorLocation(), 3.f,
-		//	FLinearColor::Red);
-		auto TargetingReticule{IEdible::Execute_GetTargetingReticule(Target)};
-		if (TargetingReticule)
-		{
-			FVector TargetToPlayer{
-				FollowCamera->GetComponentLocation() - IEdible::Execute_GetTargetComponent(Target)->
-				GetComponentLocation()
-			};
-			TargetToPlayer.Normalize();
-			const int TierDiff{SizeTier - IEdible::Execute_GetInfo(Target).SizeTier};
-			// Temp solution
-			float Size = 75.f;
-			if (TierDiff == 2)
-			{
-				Size = 50.f;
-			}
-			else if (TierDiff > 2)
-			{
-				Size = 25.f;
-			}
-			TargetingReticule->DrawReticule(TargetToPlayer, 0.05f, Size);
-			// Normalize the line from A to B, multiply with desired distance from Target
-		}
-	}
 }
 
 void AFrogGameCharacter::ClearCurrentTarget()
@@ -368,6 +301,11 @@ void AFrogGameCharacter::PositionAimBox()
 {
 	AutoAimVolume->SetWorldLocation(
 		GetActorLocation() + FollowCamera->GetForwardVector() * AutoAimVolume->GetScaledBoxExtent().X);
+}
+
+void AFrogGameCharacter::KirbySuck()
+{
+	// for every edible object in the volume, apply a lerp towards the player, and if it gets close enough use Consume.
 }
 
 void AFrogGameCharacter::TurnAtRate(float Rate)
@@ -432,7 +370,6 @@ void AFrogGameCharacter::UpdateCharacterScale(const float DeltaTime)
 		UpdateCharacterMovement(ScaleDelta);
 		UpdateCameraBoom(ScaleDelta);
 		UpdateAimRange();
-		CurrentCableWidth += BaseCableWidth * ScaleDelta;
 
 		if (GetActorScale().X > SizeTier)
 			// Frog starts at size 2, so once it hits a scale factor of 2.0+, it will increase to size 3 etc
@@ -451,10 +388,9 @@ void AFrogGameCharacter::UpdateCharacterMovement(const float ScaleDelta)
 {
 	UCharacterMovementComponent* Movement{GetCharacterMovement()};
 	Movement->MaxWalkSpeed += BaseMaxWalkSpeed * (ScaleDelta * 0.5f);
+	Movement->MaxAcceleration = 4096.f * GetActorScale().X;
 	CurrentJump += BaseJump * (ScaleDelta * 0.2f); // 0.2f is temporary to reduce jump height increase
 	Movement->JumpZVelocity = CurrentJump;
-	TongueReturnSpeed += BaseTongueReturnSpeed * ScaleDelta;
-	TongueSeekSpeed += BaseTongueSeekSpeed * ScaleDelta;
 }
 
 void AFrogGameCharacter::UpdateCameraBoom(const float ScaleDelta) const
@@ -467,7 +403,7 @@ void AFrogGameCharacter::UpdateCameraBoom(const float ScaleDelta) const
 void AFrogGameCharacter::UpdateAimRange() const
 {
 	FVector Extent{AutoAimVolume->GetUnscaledBoxExtent()};
-	Extent.X = (TongueBP.GetDefaultObject()->TongueRange / 2.f) * (GetActorScale().X * 0.5f);
+	Extent.X = 100.f * (GetActorScale().X * 0.5f);
 	const float XDiff{Extent.X - AutoAimVolume->GetUnscaledBoxExtent().X};
 	AutoAimVolume->SetBoxExtent(Extent);
 	//FVector NewPosition{AutoAimVolume->GetRelativeLocation()};
@@ -476,82 +412,15 @@ void AFrogGameCharacter::UpdateAimRange() const
 }
 
 
-void AFrogGameCharacter::Lickitung()
+void AFrogGameCharacter::Consume(AActor* OtherActor)
 {
-	// TODO: When activating this, set the target's collision channel to a custom one that only that object has. 
-	if (!bTongueSpawned)
-	{
-		TArray<AActor*> Edibles = Targets;
-		NumTongues = 0;
-		if (Edibles.Num() == 0 && !CurrentTarget)
-		{
-			SpawnTongue(nullptr);
-		}
-		else if (CurrentTarget)
-		{
-			SpawnTongue(CurrentTarget);
-			// Additionally face the target 
-			FRotator FacingDirection{FollowCamera->GetForwardVector().ToOrientationRotator()};
-			FacingDirection.Pitch = GetActorRotation().Pitch;
-			SetActorRotation(FacingDirection);
-		}
-		else
-		{
-			while (Edibles.Num() > 5)
-			{
-				Edibles.Pop();
-			}
-			for (auto Target : Edibles)
-			{
-
-				if (Target->Implements<UEdible>())
-				{
-					if(IEdible::Execute_IsDisabled(Target))
-					{
-						continue;
-					}
-					SpawnTongue(Target);
-				}
-			}
-		}
-		bTongueSpawned = true;
-	}
-}
-
-
-void AFrogGameCharacter::SpawnTongue(AActor* Target)
-{
-	ATongueProjectile* TongueCPP{
-		GetWorld()->SpawnActor<ATongueProjectile>(TongueBP,
-		                                          TongueStart->
-		                                          GetComponentTransform())
-	};
-	NumTongues++;
-	TongueCPP->ActivateTongue(Target);
-}
-
-void AFrogGameCharacter::Consume(AActor* OtherActor, ATongueProjectile* Tongue)
-{
-	if (Tongue->Cable)
-	{
-		Tongue->Cable->DestroyComponent();
-		Tongue->Destroy();
-		UE_LOG(LogTemp, Warning, TEXT("Destroying Tongue"));
-
-		NumTongues--;
-
-		if (NumTongues == 0)
-		{
-			bTongueSpawned = false;
-		}
-	}
 	if (!OtherActor)
 	{
 		return;
 	}
 	if (OtherActor->Implements<UEdible>())
 	{
-		const FEdibleInfo SizeInfo{IEdible::Execute_GetInfo(OtherActor)};
+		const UEdibleComponent* SizeInfo{IEdible::Execute_GetInfo(OtherActor)};
 
 		OtherActor->Destroy();
 
@@ -559,7 +428,7 @@ void AFrogGameCharacter::Consume(AActor* OtherActor, ATongueProjectile* Tongue)
 	}
 }
 
-void AFrogGameCharacter::IncreaseScale(const FEdibleInfo SizeInfo)
+void AFrogGameCharacter::IncreaseScale(const UEdibleComponent* SizeInfo)
 {
 	// just reset the lerp values
 	bScalingUp = true;
@@ -568,21 +437,14 @@ void AFrogGameCharacter::IncreaseScale(const FEdibleInfo SizeInfo)
 	// Compare this to the averaged bounding box size of the object being eaten and factor in the growth coefficient.
 	// If SizeInfo.Size = 10 and ScaledRadius = 50 then we get a value of 10/50 = 0.2 or 20%.
 	// Increase actor scale by this value. 
-	float SizeDiff{SizeInfo.Size * SizeInfo.GrowthCoefficient / ScaledRadius};
+	float SizeDiff{SizeInfo->Size * SizeInfo->GrowthCoefficient / ScaledRadius};
 	SizeDiff = FMath::Clamp(SizeDiff, 0.f, 0.1f);
 	ExtraScaleBank += SizeDiff;
 	//UE_LOG(LogTemp, Warning, TEXT("SizeDiff = %f"), SizeDiff)
 
-	UpdateCurrentScore(SizeInfo.ScorePoints);
-	UpdatePowerPoints(SizeInfo.PowerPoints);
+	UpdateCurrentScore(SizeInfo->ScorePoints);
+	UpdatePowerPoints(SizeInfo->PowerPoints);
 }
-
-// Called in the jump function. For every second the player holds spacebar / bumper it increases the jump charge by 1 to a max of 3.
-void AFrogGameCharacter::StartJump()
-{
-	bIsCharging = true;
-}
-
 
 void AFrogGameCharacter::Hitmonchan()
 {
@@ -596,10 +458,6 @@ void AFrogGameCharacter::Hitmonchan()
 		SetHandCollision(LeftHandCollision, TEXT("Punch"));
 		// Add execution here
 	}
-	else
-	{
-		// Does nothing if player is not in power mode.
-	}
 }
 
 void AFrogGameCharacter::RemoveHandCollision()
@@ -608,44 +466,35 @@ void AFrogGameCharacter::RemoveHandCollision()
 	SetHandCollision(LeftHandCollision, TEXT("NoCollision"));
 }
 
-void AFrogGameCharacter::OnAttackHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-                                     FVector NormalImpulse, const FHitResult& Hit)
+void AFrogGameCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+                                         UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+                                         const FHitResult& SweepResult)
 {
+	UE_LOG(LogTemp, Warning, TEXT("Hit Event with %s!"), *OtherActor->GetName())
+
 	if (OtherActor != this && OtherComp != nullptr && OtherActor->Implements<UEdible>())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Hit Event with %s!"), *OtherActor->GetName())
 		RemoveHandCollision();
-		if (ABaseEdible* Destructible{Cast<ABaseEdible>(OtherActor)})
+		UEdibleComponent* EdibleComponent{
+			Cast<UEdibleComponent>(OtherActor->GetComponentByClass(UEdibleComponent::StaticClass()))
+		};
+		if (EdibleComponent)
 		{
 			TSubclassOf<UDamageType> const ValidDamageTypeClass = TSubclassOf<UDamageType>(UDamageType::StaticClass());
 			const FDamageEvent DamageEvent(ValidDamageTypeClass);
-			Destructible->TakeDamage(PunchDamage, DamageEvent, GetController(), this);
-		}
-		else if (ASimpleCreature* SCreature{Cast<ASimpleCreature>(OtherActor)})
-			// doesn't work, might need to switch to overlap based stuff
-		{
-			TSubclassOf<UDamageType> const ValidDamageTypeClass = TSubclassOf<UDamageType>(UDamageType::StaticClass());
-			const FDamageEvent DamageEvent(ValidDamageTypeClass);
-			SCreature->TakeDamage(PunchDamage, DamageEvent, GetController(), this);
+			OtherActor->TakeDamage(PunchDamage, DamageEvent, GetController(), this);
 		}
 	}
 }
 
-void AFrogGameCharacter::ChargeJump(float DeltaTime)
+void AFrogGameCharacter::OnBoxTraceBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+                                         UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+                                         const FHitResult& SweepResult)
 {
-	JumpModifier += (DeltaTime * ChargeSpeed); // The modifier determines what percentage of the jump bonus is applied
-}
-
-void AFrogGameCharacter::ExecuteJump()
-{
-	bIsCharging = false;
-	JumpModifier = FMath::Clamp(JumpModifier, 0.f, 1.f);
-	GetCharacterMovement()->JumpZVelocity += (JumpBonus * JumpModifier);
-	//UE_LOG(LogTemp, Warning, TEXT("%f"), GetCharacterMovement()->JumpZVelocity);
-	Jump();
-
-	// Remember to reset it.
-	JumpModifier = 0.f;
+	if (OtherActor->GetComponentByClass(UEdibleComponent::StaticClass()))
+	{
+		Targets.Add(OtherActor);
+	}
 }
 
 void AFrogGameCharacter::PowerMode()
@@ -672,9 +521,10 @@ void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSetti
 	GetMesh()->SetRelativeLocation(Offset);
 	CameraBoom->TargetArmLength = CharacterSettings.BaseBoomRange * GetActorScale().X;
 	GetCharacterMovement()->MaxWalkSpeed = CharacterSettings.BaseWalkSpeed * GetActorScale().X;
-	const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
-	TongueStart->AttachToComponent(GetMesh(), InRule, CharacterSettings.TongueBoneTarget);
 	GetCharacterMovement()->GravityScale = CharacterSettings.GravityScale;
+	GetCharacterMovement()->JumpZVelocity = CharacterSettings.BaseJumpZHeight;
+	const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
+	TongueStart->AttachToComponent(GetMesh(), InRule, CharacterSettings.HeadSocket);
 
 	// Note: Stuff like Cable width and the size of the nodule at the end of the tongue not set right now.
 }

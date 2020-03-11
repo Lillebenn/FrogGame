@@ -32,8 +32,8 @@ float AFlyingSimpleCreature::TakeDamage(float DamageAmount, FDamageEvent const& 
 		// This needs to be more specific to the punches or we could just walk it to death
 		if (Frog)
 		{
-			CurrentHealth -= ActualDamage;
-			if (CurrentHealth <= 0.f && !IsActorBeingDestroyed())
+			EdibleComponent->CurrentHealth -= ActualDamage;
+			if (EdibleComponent->CurrentHealth <= 0.f && !IsActorBeingDestroyed())
 			{
 				// TODO: Maybe set mass to 100kg once it loses all health, so it flies away only when punched to death
 				FVector ImpulseDirection{Frog->GetActorLocation() - GetActorLocation()};

@@ -5,6 +5,7 @@
 #include "Engine/StaticMesh.h"
 #include "FrogGameCharacter.h"
 #include "GameFramework/PlayerController.h"
+#include "EdibleComponent.h"
 
 // Sets default values
 ASphereDrop::ASphereDrop()
@@ -14,7 +15,8 @@ ASphereDrop::ASphereDrop()
 
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	StaticMesh->SetCollisionProfileName(TEXT("SphereDrop"));
-
+	
+	EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
 	RootComponent = StaticMesh;
 }
 
@@ -66,7 +68,7 @@ void ASphereDrop::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	if (Frog)
 	{
-		Frog->IncreaseScale(EdibleInfo);
+		Frog->IncreaseScale(EdibleComponent);
 	}
 	Super::EndPlay(EndPlayReason);
 }

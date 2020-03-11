@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "EdibleInfo.h"
+#include "EdibleComponent.h"
 #include "Edible.generated.h"
 
 // This class does not need to be modified.
@@ -23,11 +23,12 @@ class FROGGAME_API IEdible
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
+
 	/**
 	 * Returns the Edible Info of the object.
 	 */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
-	FEdibleInfo GetInfo() const;
+	UEdibleComponent* GetInfo() const;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	void DisableActor();
@@ -35,10 +36,8 @@ public:
 	bool IsDisabled();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	void OnDisabled();
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
-	class UTonguePivot* GetTargetComponent();
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
-	class UTargetingReticule* GetTargetingReticule();
-	virtual int CalculateSizeTier(float InSize, int NumTiers = 10);
+
+
+	virtual void CalculateSizeTier(UEdibleComponent* EdibleComponent, int NumTiers = 10);
 	virtual FTransform GetStartTransform();
 };

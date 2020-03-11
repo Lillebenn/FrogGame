@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "EdibleInfo.h"
 #include "Edible.h"
 #include "Saveable.h"
 #include "AdvCreature.generated.h"
@@ -17,36 +16,35 @@ class FROGGAME_API AAdvCreature : public ACharacter, public IEdible, public ISav
 {
 	GENERATED_BODY()
 
+
 public:
 	// Sets default values for this character's properties
 	AAdvCreature();
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	class UEdibleComponent* EdibleComponent;
 	// Called every frame
 	void Tick(float DeltaTime) override;
 
 	// Called to bind functionality to input
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	class UTonguePivot* TongueTarget;
+
 	bool IsDisabled_Implementation() override;
 	bool ShouldDestroy{false};
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Edible)
-	FEdibleInfo EdibleInfo;
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Edible)
 	FName AttachBoneName{TEXT("None")};
-
-	FEdibleInfo GetInfo_Implementation() const override;
+	UEdibleComponent* GetInfo_Implementation() const override;
 
 	void DisableActor_Implementation() override;
 	void OnDisabled_Implementation() override;
 
-	UTonguePivot* GetTargetComponent_Implementation() override;
+
 	void ActorSaveDataSaved_Implementation() override;
 	void CalculateBoundingSize();
+	void SpawnSpheres() const;
 	void ActorSaveDataLoaded_Implementation() override;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AutoAim)
-	class UTargetingReticule* Reticule;
-	class UTargetingReticule* GetTargetingReticule_Implementation() override;
+
 	FTransform GetStartTransform() override;
 protected:
 	// Called when the game starts or when spawned

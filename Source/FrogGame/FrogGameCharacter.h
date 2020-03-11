@@ -4,8 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "EdibleInfo.h"
 #include "TimerManager.h"
+#include "EdibleComponent.h"
 #include "FrogGameCharacter.generated.h"
 USTRUCT(BlueprintType)
 struct FCharacterSettings
@@ -25,12 +25,6 @@ struct FCharacterSettings
 	float BaseBoomRange{200.f};
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float BaseTongueCableWidth{4.f};
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float BaseTongueNodeScale{0.5f};
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float BaseWalkSpeed{600.f};
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
@@ -38,7 +32,7 @@ struct FCharacterSettings
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float GravityScale{3.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	FName TongueBoneTarget{"Head_joint"};
+	FName HeadSocket{"Head_joint"};
 	// Add other variables here based on what we change between modes.
 };
 
@@ -75,7 +69,6 @@ class AFrogGameCharacter : public ACharacter
 
 	FTimerHandle TimerHandle;
 
-	friend class ATongueProjectile;
 public:
 	AFrogGameCharacter();
 
@@ -136,9 +129,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
 
-	UPROPERTY(BlueprintReadWrite)
-	bool bTongueSpawned{false};
-
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Character)
+	TSubclassOf<AActor> SuctionBP;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	uint8 SizeTier{2};
 
@@ -162,36 +154,16 @@ public:
 
 
 	float CurrentTargetScore{0.f};
-	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<class ATongueProjectile> TongueBP;
-	uint32 NumTongues{0};
-	void Consume(AActor* OtherActor, ATongueProjectile* Tongue);
-	void IncreaseScale(FEdibleInfo SizeInfo);
-	// Tongue Settings
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Tongue)
-	float BaseTongueReturnSpeed{10000.f};
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Tongue)
-	float BaseTongueSeekSpeed{4500.f};
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Tongue)
-	float BaseCableWidth{4.f};
-	float CurrentCableWidth{0.f};
 
-	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = Tongue)
-	float TongueReturnSpeed;
-	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = Tongue)
-	float TongueSeekSpeed;
+	void Consume(AActor* OtherActor);
+	void IncreaseScale(const UEdibleComponent* SizeInfo);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = PowerMode)
 	bool bPowerMode{false};
 	// Amount of damage the punch will do on each hit.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PowerMode)
 	float PunchDamage{100.f};
-	// How long it will take to charge up and eat more than one object when holding down the button in power mode.
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = PowerMode)
-	float EatChargeTime{1.f};
-	float EatCharge{0.f}; // clamp to 0-1
-	bool bChargingEat{false};
-	bool bTargetExists{false};
+
 	UPROPERTY(VisibleAnywhere, Category = PowerMode)
 	float CurrentPowerPoints;
 	UPROPERTY(EditAnywhere, Category = PowerMode)
@@ -247,11 +219,12 @@ private:
 	 */
 	float CalcAngleScore(AActor* Actor) const;
 	float GetTotalScore(AActor* Actor) const;
-	void SpawnTargetingMesh(const TArray<AActor*>& TargetEdibles) const;
+
 	void PositionAimBox();
-	/** Uses the tongue to eat something, and then grows **/
-	void Lickitung();
-	void SpawnTongue(AActor* Target);
+
+
+	void KirbySuck();
+
 	UPROPERTY()
 	TArray<AActor*> Targets;
 	UPROPERTY()
@@ -261,9 +234,11 @@ private:
 	void Hitmonchan();
 	void RemoveHandCollision();
 	UFUNCTION()
-	void OnAttackHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-	                 FVector NormalImpulse, const FHitResult& Hit);
-
+	void OnAttackOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	                     int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+		UFUNCTION()
+	void OnBoxTraceBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	                     int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 	UFUNCTION()
 	void OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                   int32 OtherBodyIndex);

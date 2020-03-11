@@ -1,24 +1,20 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "EdibleObject.h"
 #include "Engine/StaticMesh.h"
 #include "FrogGameCharacter.h"
 #include "SphereDrop.h"
-#include "TargetingReticule.h"
+#include "EdibleComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "TonguePivot.h"
+
 
 AEdibleObject::AEdibleObject()
 {
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	StaticMesh->SetCollisionObjectType(ECC_GameTraceChannel1);
-	StaticMesh->SetSimulatePhysics(true);
+	EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
+
 	RootComponent = StaticMesh;
-	TongueTarget = CreateDefaultSubobject<UTonguePivot>(TEXT("Tongue Pivot Object"));
-	TongueTarget->SetupAttachment(RootComponent);
-	Reticule = CreateDefaultSubobject<UTargetingReticule>(TEXT("Targeting Reticule"));
-	Reticule->SetupAttachment(RootComponent);
 }
 
 void AEdibleObject::Tick(float DeltaTime)
@@ -66,32 +62,34 @@ void AEdibleObject::CalculateSize()
 			const FVector RoughSize = StaticMesh->GetStaticMesh()->GetBoundingBox().GetSize();
 			const FVector AbsoluteSize{RoughSize.GetAbsMin()};
 			// Get the average axis value of the bounding box
-			EdibleInfo.Size = (AbsoluteSize.X + AbsoluteSize.Y + AbsoluteSize.Z) / 6;
+			EdibleComponent->Size = (AbsoluteSize.X + AbsoluteSize.Y + AbsoluteSize.Z) / 6;
 		}
 		else
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s is missing a static mesh!"), *GetName())
 		}
 	}
-	if (EdibleInfo.bAutomaticSizeTier)
+	if (EdibleComponent->bAutomaticSizeTier)
 	{
-		EdibleInfo.SizeTier = IEdible::CalculateSizeTier(EdibleInfo.Size);
+		IEdible::CalculateSizeTier(EdibleComponent);
 	}
 }
 
 void AEdibleObject::BeginPlay()
 {
 	Super::BeginPlay();
-	CurrentHealth = Health;
+	EdibleComponent->CurrentHealth = EdibleComponent->Health;
 	CalculateSize();
-	if (Reticule)
-	{
-		Reticule->InitWidget();
-	}
 }
 
+UEdibleComponent* AEdibleObject::GetInfo_Implementation() const
+{
+	return EdibleComponent;
+}
+
+
 float AEdibleObject::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
-                              AActor* DamageCauser)
+                                AActor* DamageCauser)
 {
 	const float ActualDamage{Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser)};
 	UE_LOG(LogTemp, Warning, TEXT("Taking %f damage."), ActualDamage);
@@ -101,13 +99,14 @@ float AEdibleObject::TakeDamage(float DamageAmount, FDamageEvent const& DamageEv
 		// This needs to be more specific to the punches or we could just walk it to death
 		if (Frog)
 		{
-			CurrentHealth -= ActualDamage;
-			if (CurrentHealth <= 0.f && !IsActorBeingDestroyed())
+			EdibleComponent->CurrentHealth -= ActualDamage;
+			if (EdibleComponent->CurrentHealth <= 0.f && !IsActorBeingDestroyed() && !ShouldDestroy)
 			{
 				// TODO: Maybe set mass to 100kg once it loses all health, so it flies away only when punched to death
-				FVector ImpulseDirection{Frog->GetActorLocation() - GetActorLocation()};
+				FVector ImpulseDirection{GetActorLocation() - Frog->GetActorLocation()};
 				ImpulseDirection.Normalize();
 				const FVector Impulse{ImpulseDirection * 750000.f};
+				StaticMesh->SetSimulatePhysics(true);
 				StaticMesh->AddImpulse(Impulse);
 				ShouldDestroy = true;
 				GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AEdibleObject::KillActor, 1.f,
@@ -121,10 +120,9 @@ float AEdibleObject::TakeDamage(float DamageAmount, FDamageEvent const& DamageEv
 
 void AEdibleObject::SpawnSpheres() const
 {
-	UE_LOG(LogTemp, Warning, TEXT("Spawning spheres."))
-	if (Drop)
+	if (EdibleComponent->Drop)
 	{
-		const float SphereSize{EdibleInfo.Size / NumDrops};
+		const float SphereSize{EdibleComponent->GetSphereSize()};
 		for (int i{0}; i < 5; i++)
 		{
 			const FVector2D SpawnLocation2D{FMath::RandPointInCircle(125.f)};
@@ -132,9 +130,9 @@ void AEdibleObject::SpawnSpheres() const
 				GetActorLocation().X + SpawnLocation2D.X, GetActorLocation().Y + SpawnLocation2D.Y, GetActorLocation().Z
 			};
 			const FTransform SpawnTransform{SpawnLocation};
-			ASphereDrop* Sphere{GetWorld()->SpawnActorDeferred<ASphereDrop>(Drop, SpawnTransform)};
-			Sphere->EdibleInfo = EdibleInfo;
-			Sphere->EdibleInfo.Size = SphereSize;
+			ASphereDrop* Sphere{GetWorld()->SpawnActorDeferred<ASphereDrop>(EdibleComponent->Drop, SpawnTransform)};
+			Sphere->EdibleComponent = EdibleComponent;
+			Sphere->EdibleComponent->Size = SphereSize;
 			UGameplayStatics::FinishSpawningActor(Sphere, SpawnTransform);
 		}
 	}
