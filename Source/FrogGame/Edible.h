@@ -23,12 +23,14 @@ class FROGGAME_API IEdible
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
+
 	/**
 	 * Returns the Edible Info of the object.
 	 */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	FEdibleInfo GetInfo() const;
-
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
+	class UTargetingReticule* GetTargetingReticule();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	void DisableActor();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
@@ -37,8 +39,7 @@ public:
 	void OnDisabled();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	class UTonguePivot* GetTargetComponent();
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
-	class UTargetingReticule* GetTargetingReticule();
+
 	virtual int CalculateSizeTier(float InSize, int NumTiers = 10);
 	virtual FTransform GetStartTransform();
 };

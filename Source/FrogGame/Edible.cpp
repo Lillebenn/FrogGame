@@ -25,3 +25,4 @@ FTransform IEdible::GetStartTransform()
 {
 	return FTransform();
 }
+

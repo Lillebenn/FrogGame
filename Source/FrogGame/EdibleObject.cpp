@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "BaseEdible.h"
+#include "EdibleObject.h"
 #include "Engine/StaticMesh.h"
 #include "FrogGameCharacter.h"
 #include "SphereDrop.h"
@@ -9,7 +9,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "TonguePivot.h"
 
-ABaseEdible::ABaseEdible()
+AEdibleObject::AEdibleObject()
 {
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	StaticMesh->SetCollisionObjectType(ECC_GameTraceChannel1);
@@ -21,56 +21,43 @@ ABaseEdible::ABaseEdible()
 	Reticule->SetupAttachment(RootComponent);
 }
 
-void ABaseEdible::Tick(float DeltaTime)
+void AEdibleObject::Tick(float DeltaTime)
 {
 }
 
-UTargetingReticule* ABaseEdible::GetTargetingReticule_Implementation()
-{
-	return Reticule;
-}
 
-void ABaseEdible::KillActor()
+void AEdibleObject::KillActor()
 {
 	SpawnSpheres();
 
 	SetLifeSpan(0.001f);
 }
 
-FEdibleInfo ABaseEdible::GetInfo_Implementation() const
-{
-	return EdibleInfo;
-}
 
-void ABaseEdible::DisableActor_Implementation()
+void AEdibleObject::DisableActor_Implementation()
 {
 }
 
-bool ABaseEdible::IsDisabled_Implementation()
+bool AEdibleObject::IsDisabled_Implementation()
 {
 	return ShouldDestroy;
 }
 
-UTonguePivot* ABaseEdible::GetTargetComponent_Implementation()
-{
-	return TongueTarget;
-}
-
 // Custom behaviour when saving or loading
-void ABaseEdible::ActorSaveDataSaved_Implementation()
+void AEdibleObject::ActorSaveDataSaved_Implementation()
 {
 }
 
-void ABaseEdible::ActorSaveDataLoaded_Implementation()
+void AEdibleObject::ActorSaveDataLoaded_Implementation()
 {
 }
 
-FTransform ABaseEdible::GetStartTransform()
+FTransform AEdibleObject::GetStartTransform()
 {
 	return GetTransform();
 }
 
-void ABaseEdible::CalculateSize()
+void AEdibleObject::CalculateSize()
 {
 	if (StaticMesh)
 	{
@@ -92,7 +79,7 @@ void ABaseEdible::CalculateSize()
 	}
 }
 
-void ABaseEdible::BeginPlay()
+void AEdibleObject::BeginPlay()
 {
 	Super::BeginPlay();
 	CurrentHealth = Health;
@@ -103,7 +90,7 @@ void ABaseEdible::BeginPlay()
 	}
 }
 
-float ABaseEdible::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
+float AEdibleObject::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
                               AActor* DamageCauser)
 {
 	const float ActualDamage{Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser)};
@@ -123,7 +110,7 @@ float ABaseEdible::TakeDamage(float DamageAmount, FDamageEvent const& DamageEven
 				const FVector Impulse{ImpulseDirection * 750000.f};
 				StaticMesh->AddImpulse(Impulse);
 				ShouldDestroy = true;
-				GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ABaseEdible::KillActor, 1.f,
+				GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AEdibleObject::KillActor, 1.f,
 				                                       false);
 			}
 		}
@@ -132,7 +119,7 @@ float ABaseEdible::TakeDamage(float DamageAmount, FDamageEvent const& DamageEven
 }
 
 
-void ABaseEdible::SpawnSpheres() const
+void AEdibleObject::SpawnSpheres() const
 {
 	UE_LOG(LogTemp, Warning, TEXT("Spawning spheres."))
 	if (Drop)
