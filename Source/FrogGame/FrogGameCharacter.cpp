@@ -225,6 +225,7 @@ void AFrogGameCharacter::AutoAim()
 {
 	TArray<AActor*> OverlappingActors;
 	// Necessary to update the auto-aim volume whenever the camera is turned. Might be expensive?
+	// Instead of this, do an event for begin overlap and filter out actors that don't implement UEdible?
 	AutoAimVolume->UpdateOverlapsImpl();
 	AutoAimVolume->GetOverlappingActors(OverlappingActors);
 	if (bPowerMode)
@@ -253,8 +254,19 @@ void AFrogGameCharacter::AutoAim()
 			}
 			if (Actor->Implements<UEdible>())
 			{
+				const ETraceTypeQuery InTypeQuery{UCollisionProfile::Get()->ConvertToTraceType(ECC_Visibility)};
+				const TArray<AActor*> Array;
+				FHitResult Hit;
+				UKismetSystemLibrary::LineTraceSingle(GetWorld(), GetActorLocation(), Actor->GetActorLocation(),
+				                                      InTypeQuery,
+				                                      false, Array, EDrawDebugTrace::None, Hit, true);
+				// this should skip if the hit actor is not the same as InActor - means there's something in-between the player and target
+				if (Hit.GetActor() != Actor)
+				{
+					continue;
+				}
 				const float TotalScore{GetTotalScore(Actor)};
-				if(TotalScore == 0.f)
+				if (TotalScore == 0.f)
 				{
 					continue;
 				}
@@ -503,10 +515,9 @@ void AFrogGameCharacter::Lickitung()
 			}
 			for (auto Target : Edibles)
 			{
-
 				if (Target->Implements<UEdible>())
 				{
-					if(IEdible::Execute_IsDisabled(Target))
+					if (IEdible::Execute_IsDisabled(Target))
 					{
 						continue;
 					}
