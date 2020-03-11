@@ -52,6 +52,7 @@ float AAdvCreature::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 			EdibleComponent->CurrentHealth -= ActualDamage;
 			if (EdibleComponent->CurrentHealth <= 0.f && !IsActorBeingDestroyed())
 			{
+				DisableActor();
 				// TODO: Maybe set mass to 2-300kg once it loses all health, so it flies away at a decent rate
 				GetMesh()->SetSimulatePhysics(true);
 				GetMesh()->AddImpulse(EdibleComponent->CalculateImpulseVector(Frog));
@@ -62,7 +63,6 @@ float AAdvCreature::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 	}
 	return ActualDamage;
 }
-
 
 
 // Called to bind functionality to input

@@ -36,7 +36,7 @@ void ASphereDrop::MoveToPlayer(const float DeltaTime)
 	StartPosition = Frog->GetActorLocation() + Direction * InitialRadius;
 	StartPosition.Z = Frog->GetActorLocation().Z + InitialZPosition;
 
-	const FVector NewPosition{FMath::VInterpConstantTo(GetActorLocation(), StartPosition, DeltaTime, 500.f)};
+	const FVector NewPosition{FMath::VInterpConstantTo(GetActorLocation(), StartPosition, DeltaTime, MoveToPlayerSpeed)};
 	SetActorLocation(NewPosition);
 }
 

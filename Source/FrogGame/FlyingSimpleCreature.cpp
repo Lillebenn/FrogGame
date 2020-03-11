@@ -20,8 +20,10 @@ void AFlyingSimpleCreature::BeginPlay()
 {
 	Super::BeginPlay();
 }
-float AFlyingSimpleCreature::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
-                                  AActor* DamageCauser)
+
+float AFlyingSimpleCreature::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
+                                        AController* EventInstigator,
+                                        AActor* DamageCauser)
 {
 	const float ActualDamage{Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser)};
 	UE_LOG(LogTemp, Warning, TEXT("Taking %f damage."), ActualDamage);
@@ -34,12 +36,10 @@ float AFlyingSimpleCreature::TakeDamage(float DamageAmount, FDamageEvent const& 
 			EdibleComponent->CurrentHealth -= ActualDamage;
 			if (EdibleComponent->CurrentHealth <= 0.f && !IsActorBeingDestroyed())
 			{
-				// TODO: Maybe set mass to 100kg once it loses all health, so it flies away only when punched to death
-				FVector ImpulseDirection{Frog->GetActorLocation() - GetActorLocation()};
-				ImpulseDirection.Normalize();
-				const FVector Impulse{ImpulseDirection * 750000.f};
+				DisableActor();
+				// TODO: Maybe set mass to 2-300kg once it loses all health, so it flies away only when punched to death
 				NavCollider->SetCollisionProfileName(TEXT("BlockAllDynamic"));
-				NavCollider->SetCollisionObjectType(ECollisionChannel::ECC_GameTraceChannel1);
+				NavCollider->SetCollisionObjectType(ECC_GameTraceChannel1);
 				NavCollider->SetSimulatePhysics(true);
 				NavCollider->AddImpulse(EdibleComponent->CalculateImpulseVector(Frog));
 				GetWorld()->GetTimerManager().SetTimer(TimerHandle, EdibleComponent, &UEdibleComponent::KillActor, 1.f,

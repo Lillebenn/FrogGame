@@ -16,7 +16,7 @@ public:
 	// Sets default values for this component's properties
 	UEdibleComponent();
 
-	UPROPERTY(EditDefaultsOnly, Category = Edible)
+	UPROPERTY(EditAnywhere, Category = Edible)
 	TSubclassOf<class ASphereDrop> Drop;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Destructible)
 	float Health{100.f};

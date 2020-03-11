@@ -44,9 +44,10 @@ float UEdibleComponent::GetSphereSize() const
 
 void UEdibleComponent::SpawnSpheres() const
 {
+	AActor* Actor{GetOwner()};
+	UE_LOG(LogTemp, Warning, TEXT("Owner is %s"), *Actor->GetName())
 	if (Drop)
 	{
-		AActor* Actor{GetOwner()};
 		const float SphereSize{GetSphereSize()};
 		for (int i{0}; i < NumDrops; i++)
 		{
@@ -68,8 +69,9 @@ FVector UEdibleComponent::CalculateImpulseVector(AFrogGameCharacter* Frog) const
 {
 	FVector ImpulseDirection{GetOwner()->GetActorLocation() - Frog->GetActorLocation()};
 	ImpulseDirection.Normalize();
-	return{ImpulseDirection * FlyAwayForce};
+	return {ImpulseDirection * FlyAwayForce};
 }
+
 void UEdibleComponent::KillActor() const
 {
 	SpawnSpheres();
