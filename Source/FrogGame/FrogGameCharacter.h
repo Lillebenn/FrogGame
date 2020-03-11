@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "EdibleInfo.h"
 #include "TimerManager.h"
 #include "EdibleComponent.h"
 #include "FrogGameCharacter.generated.h"

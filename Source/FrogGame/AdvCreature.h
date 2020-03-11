@@ -4,10 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "EdibleInfo.h"
 #include "Edible.h"
 #include "Saveable.h"
-#include "BaseEdible.h"
 #include "AdvCreature.generated.h"
 
 /**
