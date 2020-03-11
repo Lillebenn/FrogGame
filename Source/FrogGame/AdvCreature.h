@@ -24,7 +24,10 @@ public:
 	class UEdibleComponent* EdibleComponent;
 	// Called every frame
 	void Tick(float DeltaTime) override;
-
+	float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
+	                 AActor* DamageCauser) override;
+	FTimerHandle TimerHandle;
+	void KillActor();
 	// Called to bind functionality to input
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -35,7 +38,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Edible)
 	FName AttachBoneName{TEXT("None")};
 
-	void DisableActor_Implementation() override;
+	void DisableActor();
 	void OnDisabled_Implementation() override;
 
 
@@ -47,6 +50,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
+
 
 private:
 	FTransform StartTransform;

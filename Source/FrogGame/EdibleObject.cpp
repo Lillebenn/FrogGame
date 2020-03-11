@@ -22,18 +22,6 @@ void AEdibleObject::Tick(float DeltaTime)
 }
 
 
-void AEdibleObject::KillActor()
-{
-	EdibleComponent->SpawnSpheres();
-
-	SetLifeSpan(0.001f);
-}
-
-
-void AEdibleObject::DisableActor_Implementation()
-{
-}
-
 bool AEdibleObject::IsDisabled_Implementation()
 {
 	return ShouldDestroy;
@@ -96,17 +84,14 @@ float AEdibleObject::TakeDamage(float DamageAmount, FDamageEvent const& DamageEv
 			if (EdibleComponent->CurrentHealth <= 0.f && !IsActorBeingDestroyed() && !ShouldDestroy)
 			{
 				// TODO: Maybe set mass to 100kg once it loses all health, so it flies away only when punched to death
-				FVector ImpulseDirection{GetActorLocation() - Frog->GetActorLocation()};
-				ImpulseDirection.Normalize();
-				const FVector Impulse{ImpulseDirection * 750000.f};
+
 				StaticMesh->SetSimulatePhysics(true);
-				StaticMesh->AddImpulse(Impulse);
+				StaticMesh->AddImpulse(EdibleComponent->CalculateImpulseVector(Frog));
 				ShouldDestroy = true;
-				GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AEdibleObject::KillActor, 1.f,
+				GetWorld()->GetTimerManager().SetTimer(TimerHandle, EdibleComponent, &UEdibleComponent::KillActor, 1.f,
 				                                       false);
 			}
 		}
 	}
 	return ActualDamage;
 }
-

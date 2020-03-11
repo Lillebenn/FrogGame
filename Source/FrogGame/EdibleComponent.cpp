@@ -5,6 +5,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 #include "SphereDrop.h"
+#include "FrogGameCharacter.h"
 
 // Sets default values for this component's properties
 UEdibleComponent::UEdibleComponent()
@@ -61,4 +62,16 @@ void UEdibleComponent::SpawnSpheres() const
 			UGameplayStatics::FinishSpawningActor(Sphere, SpawnTransform);
 		}
 	}
+}
+
+FVector UEdibleComponent::CalculateImpulseVector(AFrogGameCharacter* Frog) const
+{
+	FVector ImpulseDirection{GetOwner()->GetActorLocation() - Frog->GetActorLocation()};
+	ImpulseDirection.Normalize();
+	return{ImpulseDirection * FlyAwayForce};
+}
+void UEdibleComponent::KillActor() const
+{
+	SpawnSpheres();
+	GetOwner()->SetLifeSpan(0.001f);
 }

@@ -28,7 +28,6 @@ public:
 
 
 	FTimerHandle TimerHandle;
-	void KillActor();
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Movement)
 	int MoveDistance{500};
 
@@ -50,7 +49,7 @@ public:
 
 	UStaticMeshComponent* GetMesh();
 
-	void DisableActor_Implementation() override;
+	void DisableActor();
 
 
 	void OnDisabled_Implementation() override;

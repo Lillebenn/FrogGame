@@ -12,7 +12,6 @@ AFlyingSimpleCreature::AFlyingSimpleCreature()
 	NavCollider = CreateDefaultSubobject<UCapsuleComponent>(TEXT("NavCollider"));
 	NavCollider->InitCapsuleSize(15.f, 80.0f);
 	NavCollider->SetCollisionProfileName(TEXT("EdibleProfile"));
-	NavCollider->SetNotifyRigidBodyCollision(true);
 	RootComponent = NavCollider;
 	GetMesh()->SetupAttachment(RootComponent);
 }
@@ -42,8 +41,8 @@ float AFlyingSimpleCreature::TakeDamage(float DamageAmount, FDamageEvent const& 
 				NavCollider->SetCollisionProfileName(TEXT("BlockAllDynamic"));
 				NavCollider->SetCollisionObjectType(ECollisionChannel::ECC_GameTraceChannel1);
 				NavCollider->SetSimulatePhysics(true);
-				NavCollider->AddImpulse(Impulse);
-				GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ASimpleCreature::KillActor, 1.f,
+				NavCollider->AddImpulse(EdibleComponent->CalculateImpulseVector(Frog));
+				GetWorld()->GetTimerManager().SetTimer(TimerHandle, EdibleComponent, &UEdibleComponent::KillActor, 1.f,
 				                                       false);
 			}
 		}

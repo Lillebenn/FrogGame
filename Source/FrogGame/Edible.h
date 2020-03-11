@@ -24,8 +24,6 @@ class FROGGAME_API IEdible
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
-	void DisableActor();
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	bool IsDisabled();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	void OnDisabled();

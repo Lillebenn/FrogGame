@@ -8,7 +8,6 @@
 #include "GameFramework/Controller.h"
 #include "FrogGameInstance.h"
 #include "FrogGameCharacter.h"
-#include "Kismet/GameplayStatics.h"
 #include "EdibleComponent.h"
 
 
@@ -20,7 +19,6 @@ ASimpleCreature::ASimpleCreature()
 
 	CreatureMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Creature Mesh"));
 	CreatureMesh->SetCollisionProfileName(TEXT("EdibleProfile"));
-	CreatureMesh->SetNotifyRigidBodyCollision(true);
 
 	RootComponent = CreatureMesh;
 	EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
@@ -60,7 +58,7 @@ void ASimpleCreature::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 }
 
 
-void ASimpleCreature::DisableActor_Implementation()
+void ASimpleCreature::DisableActor()
 {
 	// Not 100% sure if this is necessary, but we don't need the AI to keep running after being snatched.
 	AController* AI{GetController()};
@@ -78,10 +76,9 @@ UStaticMeshComponent* ASimpleCreature::GetMesh()
 }
 
 
-
 void ASimpleCreature::OnDisabled_Implementation()
 {
-	DisableActor_Implementation();
+	DisableActor();
 	UFrogGameInstance* FrogInstance{Cast<UFrogGameInstance>(GetWorld()->GetGameInstance())};
 	if (FrogInstance)
 	{
@@ -140,29 +137,13 @@ float ASimpleCreature::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 			EdibleComponent->CurrentHealth -= ActualDamage;
 			if (EdibleComponent->CurrentHealth <= 0.f && !IsActorBeingDestroyed())
 			{
-				// TODO: Maybe set mass to 100kg once it loses all health, so it flies away only when punched to death
-				FVector ImpulseDirection{Frog->GetActorLocation() - GetActorLocation()};
-				ImpulseDirection.Normalize();
-
-				CreatureMesh->SetCollisionProfileName(TEXT("BlockAllDynamic"));
-				CreatureMesh->SetCollisionObjectType(ECC_GameTraceChannel1);
+				// TODO: Maybe set mass to 2-300kg once it loses all health, so it flies away at a decent rate
 				CreatureMesh->SetSimulatePhysics(true);
-
-				const FVector Impulse{ImpulseDirection * 750000.f};
-				CreatureMesh->AddImpulse(Impulse);
-				GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ASimpleCreature::KillActor, 1.f,
+				CreatureMesh->AddImpulse(EdibleComponent->CalculateImpulseVector(Frog));
+				GetWorld()->GetTimerManager().SetTimer(TimerHandle, EdibleComponent, &UEdibleComponent::KillActor, 1.f,
 				                                       false);
 			}
 		}
 	}
 	return ActualDamage;
-}
-
-
-
-
-void ASimpleCreature::KillActor()
-{
-	EdibleComponent->SpawnSpheres();
-	SetLifeSpan(0.001f);
 }

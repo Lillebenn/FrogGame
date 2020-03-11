@@ -2,13 +2,13 @@
 
 
 #include "AdvCreature.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/Controller.h"
 #include "FrogGameInstance.h"
-#include "Components/SkeletalMeshComponent.h"
+#include "FrogGameCharacter.h"
 #include "EdibleComponent.h"
-#include "Kismet/GameplayStatics.h"
-#include "SphereDrop.h"
+#include "TimerManager.h"
 
 // Sets default values
 AAdvCreature::AAdvCreature()
@@ -38,6 +38,33 @@ void AAdvCreature::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
+float AAdvCreature::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
+                               AActor* DamageCauser)
+{
+	const float ActualDamage{Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser)};
+	UE_LOG(LogTemp, Warning, TEXT("Taking %f damage."), ActualDamage);
+	if (ActualDamage > 0.f)
+	{
+		AFrogGameCharacter* Frog{Cast<AFrogGameCharacter>(DamageCauser)};
+		// This needs to be more specific to the punches or we could just walk it to death
+		if (Frog)
+		{
+			EdibleComponent->CurrentHealth -= ActualDamage;
+			if (EdibleComponent->CurrentHealth <= 0.f && !IsActorBeingDestroyed())
+			{
+				// TODO: Maybe set mass to 2-300kg once it loses all health, so it flies away at a decent rate
+				GetMesh()->SetSimulatePhysics(true);
+				GetMesh()->AddImpulse(EdibleComponent->CalculateImpulseVector(Frog));
+				GetWorld()->GetTimerManager().SetTimer(TimerHandle, EdibleComponent, &UEdibleComponent::KillActor, 1.f,
+				                                       false);
+			}
+		}
+	}
+	return ActualDamage;
+}
+
+
+
 // Called to bind functionality to input
 void AAdvCreature::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -49,7 +76,7 @@ bool AAdvCreature::IsDisabled_Implementation()
 	return ShouldDestroy;
 }
 
-void AAdvCreature::DisableActor_Implementation()
+void AAdvCreature::DisableActor()
 {
 	AController* AI{GetController()};
 	if (AI)
@@ -62,7 +89,7 @@ void AAdvCreature::DisableActor_Implementation()
 
 void AAdvCreature::OnDisabled_Implementation()
 {
-	DisableActor_Implementation();
+	DisableActor();
 	UFrogGameInstance* FrogInstance{Cast<UFrogGameInstance>(GetWorld()->GetGameInstance())};
 	if (FrogInstance)
 	{

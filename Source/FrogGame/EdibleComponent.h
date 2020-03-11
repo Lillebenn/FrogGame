@@ -15,7 +15,7 @@ class FROGGAME_API UEdibleComponent : public UActorComponent
 public:
 	// Sets default values for this component's properties
 	UEdibleComponent();
-	
+
 	UPROPERTY(EditDefaultsOnly, Category = Edible)
 	TSubclassOf<class ASphereDrop> Drop;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Destructible)
@@ -23,6 +23,8 @@ public:
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, SaveGame, Category = Destructible)
 	float CurrentHealth;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Destructible)
+	float FlyAwayForce{750000.f};
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Edible)
 	int32 NumDrops{5};
 	// Actual growth increase from eating this object is retrieved by multiplying by object size with this coefficient.
@@ -51,4 +53,6 @@ public:
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	float GetSphereSize() const;
 	void SpawnSpheres() const;
+	FVector CalculateImpulseVector(class AFrogGameCharacter* Frog) const;
+	void KillActor() const;
 };

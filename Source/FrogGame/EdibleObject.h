@@ -34,7 +34,6 @@ public:
 
 
 	// Interface stuff
-	void DisableActor_Implementation() override;
 	bool IsDisabled_Implementation() override;
 	bool ShouldDestroy{false};
 	void ActorSaveDataSaved_Implementation() override;
