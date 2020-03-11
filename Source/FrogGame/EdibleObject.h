@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
 #include "Edible.h"
 #include "Saveable.h"
 #include "EdibleObject.generated.h"
