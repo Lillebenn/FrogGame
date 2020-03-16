@@ -26,7 +26,7 @@ void ASphereDrop::BeginPlay()
 	Super::BeginPlay();
 
 	Frog = Cast<AFrogGameCharacter>(GetWorld()->GetFirstPlayerController()->GetCharacter());
-	LinearUpPosition = InitialZPosition;
+	SwirlInfo.LinearUpPosition = InitialZPosition;
 }
 
 void ASphereDrop::MoveToPlayer(const float DeltaTime)
@@ -40,29 +40,6 @@ void ASphereDrop::MoveToPlayer(const float DeltaTime)
 	SetActorLocation(NewPosition);
 }
 
-void ASphereDrop::Swirl(const float DeltaTime)
-{
-	if (CurrentRadius <= MinRadius)
-	{
-		Destroy();
-	}
-	if (RadianDelta >= 2.f * PI)
-	{
-		RadianDelta = 0.f;
-	}
-
-	RadianDelta += AngularSpeed * DeltaTime;
-	CurrentRadius -= LinearInSpeed * DeltaTime;
-	if (LinearUpPosition <= MaxZPosition)
-	{
-		LinearUpPosition += LinearUpSpeed * DeltaTime;
-	}
-	const FVector FrogPos{Frog->GetActorLocation()};
-	const float X{FrogPos.X + CurrentRadius * FMath::Cos(RadianDelta)};
-	const float Y{FrogPos.Y + CurrentRadius * FMath::Sin(RadianDelta)};
-	const float Z{FrogPos.Z + LinearUpPosition};
-	SetActorLocation(FVector{X, Y, Z});
-}
 
 void ASphereDrop::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
@@ -82,26 +59,29 @@ void ASphereDrop::Tick(float DeltaTime)
 		if (!bShouldSwirl)
 		{
 			MoveToPlayer(DeltaTime);
-			const float RadialDistance{FindRadialDistance()};
+			const float RadialDistance{FrogFunctionLibrary::FindRadialDistance(GetActorLocation(), Frog->GetActorLocation())};
 			if (RadialDistance <= InitialRadius * InitialRadius)
 			{
-				CurrentRadius = FMath::Sqrt(RadialDistance);
+				SwirlInfo.CurrentRadius = FMath::Sqrt(RadialDistance);
 				const FVector2D FrogXY{GetActorLocation() - Frog->GetActorLocation()};
-				RadianDelta = FMath::Atan2(FrogXY.Y, FrogXY.X);
+				SwirlInfo.RadianDelta = FMath::Atan2(FrogXY.Y, FrogXY.X);
 
 				bShouldSwirl = true;
 			}
 		}
 		else
 		{
-			Swirl(DeltaTime);
+			FVector NewPosition;
+			if(FrogFunctionLibrary::Swirl(DeltaTime, SwirlInfo, Frog->GetActorLocation(), NewPosition))
+			{
+				Destroy();
+			}else
+			{
+				SetActorLocation(NewPosition);
+			}
+			
 		}
 	}
 }
 
-float ASphereDrop::FindRadialDistance() const
-{
-	const FVector2D FrogXY{GetActorLocation() - Frog->GetActorLocation()};
-	const float SquaredRadialDistance{(FrogXY.X * FrogXY.X) + (FrogXY.Y * FrogXY.Y)};
-	return SquaredRadialDistance;
-}
+

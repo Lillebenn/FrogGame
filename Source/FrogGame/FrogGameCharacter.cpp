@@ -59,7 +59,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	AutoAimVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxTrace"));
 	AutoAimVolume->SetupAttachment(FollowCamera);
 	AutoAimVolume->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	AutoAimVolume->SetCollisionProfileName(TEXT("AutoAim"));
+	AutoAimVolume->SetCollisionProfileName(TEXT("FilterOccludedObjects"));
 
 	// We use the arrow component as spawn point for the tongue and attach it to the head bone
 	TongueStart = GetArrowComponent();
@@ -109,8 +109,8 @@ void AFrogGameCharacter::BeginPlay()
 	BaseBoomRange = CameraBoom->TargetArmLength / GetActorScale().X;
 	LeftHandCollision->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnAttackOverlap);
 	RightHandCollision->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnAttackOverlap);
-	AutoAimVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnBoxTraceBegin);
-	AutoAimVolume->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnBoxTraceEnd);
+	AutoAimVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindBeginOverlap);
+	AutoAimVolume->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindEndOverlap);
 
 	MaxAngleRadians = FMath::DegreesToRadians(MaxAngle);
 
@@ -133,7 +133,10 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	// Set up gameplay key bindings
 	check(PlayerInputComponent);
 
-	PlayerInputComponent->BindAction("Punch", IE_Pressed, this, &AFrogGameCharacter::Hitmonchan);
+	PlayerInputComponent->BindAction("Whirlwind", IE_Pressed, this, &AFrogGameCharacter::Whirlwind);
+	PlayerInputComponent->BindAction("Whirlwind", IE_Released, this, &AFrogGameCharacter::EndWhirlwind);
+
+	PlayerInputComponent->BindAction("Punch", IE_Pressed, this, &AFrogGameCharacter::Punch);
 
 	// This is here for test purposes, will activate when the powerbar is filled up.
 	PlayerInputComponent->BindAction("PowerMode", IE_Pressed, this, &AFrogGameCharacter::PowerMode);
@@ -143,7 +146,6 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 
 	PlayerInputComponent->BindAction("TestSave", IE_Pressed, this, &AFrogGameCharacter::SaveGame);
 	PlayerInputComponent->BindAction("TestLoad", IE_Pressed, this, &AFrogGameCharacter::LoadGame);
-	PlayerInputComponent->BindAction("ClearTarget", IE_Pressed, this, &AFrogGameCharacter::ClearCurrentTarget);
 	PlayerInputComponent->BindAxis("MoveForward", this, &AFrogGameCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AFrogGameCharacter::MoveRight);
 
@@ -173,133 +175,71 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	{
 		UpdateCharacterScale(DeltaTime);
 	}
-
-	AutoAim();
+	if (bUsingWhirlwind)
+	{
+		FilterOccludedObjects();
+		DoWhirlwind(DeltaTime);
+	}
 }
 
 // TODO: Choose target close to box origin AND player
-void AFrogGameCharacter::AutoAim()
+void AFrogGameCharacter::FilterOccludedObjects()
 {
-	TArray<AActor*> OverlappingActors;
-	// Necessary to update the auto-aim volume whenever the camera is turned. Might be expensive?
-	// Instead of this, do an event for begin overlap and filter out actors that don't implement UEdible?
-	AutoAimVolume->UpdateOverlapsImpl();
-	AutoAimVolume->GetOverlappingActors(OverlappingActors);
-	if (bPowerMode)
+	TArray<AActor*> TempArray{PotentialTargets};
+	for (AActor* Target : TempArray)
 	{
-		Targets.Empty();
-		for (auto Actor : OverlappingActors)
+		if (Target->Implements<UEdible>())
 		{
-			if (Actor->Implements<UEdible>())
+			const UEdibleComponent* SizeInfo{
+				Cast<UEdibleComponent>(Target->GetComponentByClass(UEdibleComponent::StaticClass()))
+			};
+			if (!SizeInfo)
 			{
-				const int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
-				const UEdibleComponent* SizeInfo{
-					Cast<UEdibleComponent>(Actor->GetComponentByClass(UEdibleComponent::StaticClass()))
-				};
-				if (SizeInfo)
-				{
-					if (SizeInfo->SizeTier <= MaxSize)
-					{
-						Targets.Add(Actor);
-					}
-				}
+				UE_LOG(LogTemp, Warning, TEXT("Missing reference to UEdibleComponent!"));
+				continue;
 			}
-		}
-	}
-	else
-	{
-		for (AActor* Actor : OverlappingActors)
-		{
-			if (Actor == CurrentTarget) // Don't check against itself	
+			const int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
+			if (SizeInfo->SizeTier > MaxSize) // Object is too big, ignore.
 			{
 				continue;
 			}
-			if (Actor->Implements<UEdible>())
-			{
-				const ETraceTypeQuery InTypeQuery{UCollisionProfile::Get()->ConvertToTraceType(ECC_Visibility)};
-				const TArray<AActor*> Array;
-				FHitResult Hit;
-				UKismetSystemLibrary::LineTraceSingle(GetWorld(), GetActorLocation(), Actor->GetActorLocation(),
+			// this needs to happen during tick to filter out actors that shouldn't be sucked in
+			// should drop the actor from the map while keeping it in the targets array for continuous checking until it leaves the area
+			// probably easiest to stop checking a target once it succeeds the check
+			const ETraceTypeQuery InTypeQuery{UCollisionProfile::Get()->ConvertToTraceType(ECC_Visibility)};
+			const TArray<AActor*> Array;
+			FHitResult Hit;
+			bool Success{
+				UKismetSystemLibrary::LineTraceSingle(GetWorld(), GetActorLocation(), Target->GetActorLocation(),
 				                                      InTypeQuery,
-				                                      false, Array, EDrawDebugTrace::None, Hit, true);
-				// this should skip if the hit actor is not the same as InActor - means there's something in-between the player and target
-				if (Hit.GetActor() != Actor)
-				{
-					continue;
-				}
-				const float TotalScore{GetTotalScore(Actor)};
-				if (TotalScore == 0.f)
-				{
-					continue;
-				}
-				if (TotalScore > CurrentTargetScore + AimStickiness)
-				{
-					CurrentTarget = Actor;
+				                                      false, Array, EDrawDebugTrace::None, Hit, true)
+			};
+			if (!Success)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s failed trace."), *Target->GetName())
+			}
+			// if hit actor is the same as target, no occluding actor was found
+			if (Hit.GetActor() == Target)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Added %s to WhirlwindAffectedActors map."), *Target->GetName())
+				auto& SwirlInfo = WhirlwindAffectedActors.Add(Target, DefaultWhirlwindSwirl);
 
-					CurrentTargetScore = TotalScore;
-				}
+				const float RadialDistance{
+					FrogFunctionLibrary::FindRadialDistance(Target->GetActorLocation(), GetActorLocation())
+				};
+				SwirlInfo.CurrentRadius = FMath::Sqrt(RadialDistance);
+				UE_LOG(LogTemp, Warning, TEXT("%f"), SwirlInfo.CurrentRadius)
+
+				const FVector2D FrogXY{Target->GetActorLocation() - GetActorLocation()};
+				SwirlInfo.RadianDelta = FMath::Atan2(FrogXY.Y, FrogXY.X);
+
+				SwirlInfo.LinearUpPosition = 10.f;
+
+				PotentialTargets.Remove(Target);
 			}
 		}
 	}
 }
-
-float AFrogGameCharacter::CalcDistanceScore(AActor* Actor) const
-{
-	const float DistToActor{FVector::Dist(GetActorLocation(), Actor->GetActorLocation())};
-	// We use the box collider forward vector multiplied by twice the extent of the box.
-	const FVector MaxPointInBox{
-		AutoAimVolume->GetForwardVector() * (AutoAimVolume->GetUnscaledBoxExtent().X * 2.f)
-	};
-	const float DistToMaxRange{FVector::Dist(GetActorLocation(), GetActorLocation() + MaxPointInBox)};
-	// How ideal this actor is to become the current target based on distance.
-	return {1.f - FMath::Clamp(DistToActor / DistToMaxRange, 0.f, MaxDistanceScore)};
-}
-
-float AFrogGameCharacter::CalcAngleScore(AActor* Actor) const
-{
-	const FVector V1{FollowCamera->GetForwardVector()};
-	// Get a line from camera to actor
-	FVector V2{(FollowCamera->GetComponentLocation() - Actor->GetActorLocation())};
-	V2.Normalize();
-	float AngleRad{FMath::Acos(FVector::DotProduct(V1, V2))};
-	// We need another dot product to figure out our winding
-	// in case the angle is something like 480 or -900 we normalize it to +-PI
-	if (FVector::DotProduct(FollowCamera->GetRightVector(), V2) < 0.f)
-	{
-		AngleRad = PI * 2.f - AngleRad;
-	}
-	AngleRad = FMath::Abs(FMath::Clamp(AngleRad - PI, -PI, PI));
-
-	return {FMath::Clamp(AngleRad / MaxAngleRadians, 0.f, MaxAngleScore)};
-}
-
-float AFrogGameCharacter::GetTotalScore(AActor* Actor) const
-{
-	const int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
-	const UEdibleComponent* SizeInfo{
-		Cast<UEdibleComponent>(Actor->GetComponentByClass(UEdibleComponent::StaticClass()))
-	};
-	if (!SizeInfo)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Missing reference to UEdibleComponent!"));
-		return 0.f;
-	}
-	if (SizeInfo->SizeTier > MaxSize) // Object is too big, ignore.
-	{
-		return 0.f;
-	}
-	const float DistanceScore{CalcDistanceScore(Actor)};
-	const float AngleScore{CalcAngleScore(Actor)};
-	return {DistanceScore - AngleScore};
-}
-
-void AFrogGameCharacter::ClearCurrentTarget()
-{
-	CurrentTarget = nullptr;
-	Targets.Empty();
-	CurrentTargetScore = 0.0f;
-}
-
 
 void AFrogGameCharacter::PositionAimBox()
 {
@@ -307,57 +247,39 @@ void AFrogGameCharacter::PositionAimBox()
 		GetActorLocation() + FollowCamera->GetForwardVector() * AutoAimVolume->GetScaledBoxExtent().X);
 }
 
-void AFrogGameCharacter::KirbySuck()
+void AFrogGameCharacter::Whirlwind()
 {
-	// for every edible object in the volume, apply a lerp towards the player, and if it gets close enough use Consume.
+	UE_LOG(LogTemp, Warning, TEXT("Using whirlwind!"))
+	bUsingWhirlwind = true;
 }
 
-void AFrogGameCharacter::TurnAtRate(float Rate)
+void AFrogGameCharacter::DoWhirlwind(const float DeltaTime)
 {
-	// calculate delta for this frame from the rate information
-	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
-}
-
-void AFrogGameCharacter::LookUpAtRate(float Rate)
-{
-	// calculate delta for this frame from the rate information
-	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
-}
-
-
-void AFrogGameCharacter::MoveForward(float Value)
-{
-	if ((Controller != nullptr) && (Value != 0.0f))
+	// for every edible object in the volume, apply an interpolated movement towards the player, and if it gets close enough use Consume.
+	// Instead of giving every object its own FSwirlInfo, we can just generate one for each new object that enters the whirlwind,
+	// and place them in a map where each actor has its own FSwirlInfo for easy lookup.
+	// This happens in OnWhirlwindBeginOverlap.
+	for (auto It = WhirlwindAffectedActors.CreateIterator(); It; ++It)
 	{
-		// find out which way is forward
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
+		if (FVector::Dist(It->Key->GetActorLocation(), GetActorLocation()) <= 10.f)
+		{
+			Consume(It->Key);
+			continue;
+		}
+		FVector NewPosition;
+		UE_LOG(LogTemp, Warning, TEXT("%f"), It->Value.CurrentRadius)
+		FrogFunctionLibrary::Swirl(DeltaTime, It->Value, GetActorLocation(),
+		                           NewPosition);
+		UE_LOG(LogTemp, Warning, TEXT("After: %f"), It->Value.CurrentRadius)
 
-		// get forward vector
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		AddMovementInput(Direction, Value);
+		It->Key->SetActorLocation(NewPosition);
 	}
 }
 
-void AFrogGameCharacter::MoveRight(float Value)
+void AFrogGameCharacter::EndWhirlwind()
 {
-	if ((Controller != nullptr) && (Value != 0.0f))
-	{
-		// find out which way is right
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
-
-		// get right vector 
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-		// add movement in that direction
-		AddMovementInput(Direction, Value);
-	}
-}
-
-
-void AFrogGameCharacter::Landed(const FHitResult& Hit)
-{
-	GetCharacterMovement()->JumpZVelocity = CurrentJump;
+	bUsingWhirlwind = false;
+	UE_LOG(LogTemp, Warning, TEXT("Stopped using whirlwind."))
 }
 
 
@@ -427,8 +349,8 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 		const UEdibleComponent* SizeInfo{
 			Cast<UEdibleComponent>(OtherActor->GetComponentByClass(UEdibleComponent::StaticClass()))
 		};
-
-
+		UE_LOG(LogTemp, Warning, TEXT("%s"), *OtherActor->GetName())
+		WhirlwindAffectedActors.Remove(OtherActor);
 		OtherActor->Destroy();
 
 		IncreaseScale(SizeInfo);
@@ -453,7 +375,7 @@ void AFrogGameCharacter::IncreaseScale(const UEdibleComponent* SizeInfo)
 	UpdatePowerPoints(SizeInfo->PowerPoints);
 }
 
-void AFrogGameCharacter::Hitmonchan()
+void AFrogGameCharacter::Punch()
 {
 	if (bPowerMode)
 	{
@@ -494,13 +416,33 @@ void AFrogGameCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComp, AA
 	}
 }
 
-void AFrogGameCharacter::OnBoxTraceBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-                                         UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
-                                         const FHitResult& SweepResult)
+void AFrogGameCharacter::OnWhirlwindBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+                                                 UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+                                                 const FHitResult& SweepResult)
 {
 	if (OtherActor->GetComponentByClass(UEdibleComponent::StaticClass()))
 	{
-		Targets.Add(OtherActor);
+		PotentialTargets.Add(OtherActor);
+	}
+}
+
+void AFrogGameCharacter::OnWhirlwindEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+                                               UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	//UE_LOG(LogTemp, Warning, TEXT("Lost sight of target!"));
+
+	if (OtherActor && (OtherActor != this) && OtherComp)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Target stopped overlapping."))
+		if (WhirlwindAffectedActors.Find(OtherActor))
+		{
+			WhirlwindAffectedActors.Remove(OtherActor);
+		}
+			// in theory this check should never fail, so it shouldn't be necessary, but I'm a little afraid of random bugs
+		else if (PotentialTargets.Find(OtherActor) != INDEX_NONE)
+		{
+			PotentialTargets.Remove(OtherActor); // Not sure if this works as intended
+		}
 	}
 }
 
@@ -508,7 +450,7 @@ void AFrogGameCharacter::PowerMode()
 {
 	CurrentPowerPoints = MaxPowerPoints;
 	bPowerMode = true;
-	CurrentTarget = nullptr;
+	WhirlwindAffectedActors.Empty();
 	SetPlayerModel(PowerModeSettings);
 	const FAttachmentTransformRules InRule{EAttachmentRule::KeepRelative, false};
 
@@ -560,33 +502,6 @@ void AFrogGameCharacter::PowerDrain(const float DeltaTime)
 	UpdatePowerPoints(DrainPoints);
 }
 
-void AFrogGameCharacter::OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-                                       UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	//UE_LOG(LogTemp, Warning, TEXT("Lost sight of target!"));
-
-	if (OtherActor && (OtherActor != this) && OtherComp)
-	{
-		if (OtherActor == CurrentTarget && !bPowerMode)
-		{
-			ClearCurrentTarget();
-			UE_LOG(LogTemp, Warning, TEXT("Target stopped overlapping."))
-		}
-		if (bPowerMode)
-		{
-			int Index{0};
-			for (auto Target : Targets)
-			{
-				if (Target == OtherActor)
-				{
-					Targets.RemoveAt(Index);
-					return;
-				}
-				Index++;
-			}
-		}
-	}
-}
 
 void AFrogGameCharacter::SaveGame()
 {
@@ -597,4 +512,52 @@ void AFrogGameCharacter::SaveGame()
 void AFrogGameCharacter::LoadGame()
 {
 	Cast<UFrogGameInstance>(GetGameInstance())->LoadCheckpoint();
+}
+
+void AFrogGameCharacter::TurnAtRate(float Rate)
+{
+	// calculate delta for this frame from the rate information
+	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
+}
+
+void AFrogGameCharacter::LookUpAtRate(float Rate)
+{
+	// calculate delta for this frame from the rate information
+	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
+}
+
+
+void AFrogGameCharacter::MoveForward(float Value)
+{
+	if ((Controller != nullptr) && (Value != 0.0f))
+	{
+		// find out which way is forward
+		const FRotator Rotation = Controller->GetControlRotation();
+		const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+		// get forward vector
+		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		AddMovementInput(Direction, Value);
+	}
+}
+
+void AFrogGameCharacter::MoveRight(float Value)
+{
+	if ((Controller != nullptr) && (Value != 0.0f))
+	{
+		// find out which way is right
+		const FRotator Rotation = Controller->GetControlRotation();
+		const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+		// get right vector 
+		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		// add movement in that direction
+		AddMovementInput(Direction, Value);
+	}
+}
+
+
+void AFrogGameCharacter::Landed(const FHitResult& Hit)
+{
+	GetCharacterMovement()->JumpZVelocity = CurrentJump;
 }

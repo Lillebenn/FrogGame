@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "TimerManager.h"
 #include "EdibleComponent.h"
+#include "FrogFunctionLibrary.h"
 #include "FrogGameCharacter.generated.h"
 USTRUCT(BlueprintType)
 struct FCharacterSettings
@@ -177,7 +178,8 @@ public:
 	/** The Players current score */
 	UPROPERTY(EditAnywhere, SaveGame, Category = "Score")
 	float CurrentScore;
-
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Whirlwind")
+	FSwirlInfo DefaultWhirlwindSwirl;
 
 protected:
 
@@ -203,7 +205,6 @@ protected:
 	void Landed(const FHitResult& Hit) override;
 	// APawn interface
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	void ClearCurrentTarget();
 	// End of APawn interface
 
 private:
@@ -211,37 +212,34 @@ private:
 	void UpdateCharacterMovement(float ScaleDelta);
 	void UpdateCameraBoom(float ScaleDelta) const;
 	void UpdateAimRange() const;
-	void AutoAim();
-	float CalcDistanceScore(AActor* Actor) const;
-	/**
-	 * 	How ideal this actor is to become the current target based on proximity to the middle of the camera view. A lower value is better.
-	 *	An angle exactly as large as the max angle will result in (X / X) * MaxAngleScore = MaxAngleScore.
-	 */
-	float CalcAngleScore(AActor* Actor) const;
-	float GetTotalScore(AActor* Actor) const;
+	void FilterOccludedObjects();
 
 	void PositionAimBox();
 
 
-	void KirbySuck();
+	void Whirlwind();
+	void DoWhirlwind(float DeltaTime);
+	void EndWhirlwind();
+	bool bUsingWhirlwind{false};
 
 	UPROPERTY()
-	TArray<AActor*> Targets;
+	TMap<AActor*, FSwirlInfo> WhirlwindAffectedActors;
 	UPROPERTY()
-	AActor* CurrentTarget;
+	TArray<AActor*> PotentialTargets;
 
 	/** Uses fist to punch something, can only be used in power mode **/
-	void Hitmonchan();
+	void Punch();
 	void RemoveHandCollision();
 	UFUNCTION()
 	void OnAttackOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                     int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-		UFUNCTION()
-	void OnBoxTraceBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-	                     int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 	UFUNCTION()
-	void OnBoxTraceEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-	                   int32 OtherBodyIndex);
+	void OnWhirlwindBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+	                             UPrimitiveComponent* OtherComp,
+	                             int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	UFUNCTION()
+	void OnWhirlwindEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	                           int32 OtherBodyIndex);
 
 	void SaveGame();
 

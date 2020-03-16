@@ -51,6 +51,7 @@ void AEdibleObject::CalculateSize()
 			const FVector AbsoluteSize{RoughSize.GetAbsMin()};
 			// Get the average axis value of the bounding box
 			EdibleComponent->Size = (AbsoluteSize.X + AbsoluteSize.Y + AbsoluteSize.Z) / 6;
+			
 		}
 		else
 		{
