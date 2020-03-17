@@ -209,7 +209,7 @@ void AFrogGameCharacter::FilterOccludedObjects()
 			const ETraceTypeQuery InTypeQuery{UCollisionProfile::Get()->ConvertToTraceType(ECC_Visibility)};
 			const TArray<AActor*> Array;
 			FHitResult Hit;
-			bool Success{
+			const bool Success{
 				UKismetSystemLibrary::LineTraceSingle(GetWorld(), GetActorLocation(), Target->GetActorLocation(),
 				                                      InTypeQuery,
 				                                      false, Array, EDrawDebugTrace::None, Hit, true)
@@ -233,7 +233,7 @@ void AFrogGameCharacter::FilterOccludedObjects()
 				const FVector2D FrogXY{Target->GetActorLocation() - GetActorLocation()};
 				SwirlInfo.RadianDelta = FMath::Atan2(FrogXY.Y, FrogXY.X);
 
-				SwirlInfo.LinearUpPosition = 10.f;
+				SwirlInfo.LinearUpPosition = -100.f;
 
 				PotentialTargets.Remove(Target);
 			}
@@ -266,12 +266,11 @@ void AFrogGameCharacter::DoWhirlwind(const float DeltaTime)
 			Consume(It->Key);
 			continue;
 		}
-		FVector NewPosition;
-		UE_LOG(LogTemp, Warning, TEXT("%f"), It->Value.CurrentRadius)
-		FrogFunctionLibrary::Swirl(DeltaTime, It->Value, GetActorLocation(),
-		                           NewPosition);
-		UE_LOG(LogTemp, Warning, TEXT("After: %f"), It->Value.CurrentRadius)
-
+		FVector Temp;
+		FVector SwitchedPivot{GetActorLocation().Z, GetActorLocation().X, GetActorLocation().Y};
+		FrogFunctionLibrary::Swirl(DeltaTime, It->Value, SwitchedPivot,
+		                           Temp);
+		FVector NewPosition{Temp.Y, Temp.Z, Temp.X};
 		It->Key->SetActorLocation(NewPosition);
 	}
 }

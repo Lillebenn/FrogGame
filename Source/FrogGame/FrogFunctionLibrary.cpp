@@ -3,7 +3,8 @@
 
 #include "FrogFunctionLibrary.h"
 
-bool FrogFunctionLibrary::Swirl(const float DeltaTime, FSwirlInfo& SwirlInfo, const FVector& PivotPoint, FVector& OutPosition)
+bool FrogFunctionLibrary::Swirl(const float DeltaTime, FSwirlInfo& SwirlInfo, const FVector& PivotPoint,
+                                FVector& OutPosition)
 {
 	if (SwirlInfo.CurrentRadius <= SwirlInfo.MinRadius)
 	{
@@ -25,16 +26,10 @@ bool FrogFunctionLibrary::Swirl(const float DeltaTime, FSwirlInfo& SwirlInfo, co
 	OutPosition.Z = PivotPoint.Z + SwirlInfo.LinearUpPosition;
 	return false;
 }
+
 float FrogFunctionLibrary::FindRadialDistance(const FVector& A, const FVector& B)
 {
 	const FVector2D FrogXY{A - B};
 	const float SquaredRadialDistance{(FrogXY.X * FrogXY.X) + (FrogXY.Y * FrogXY.Y)};
 	return SquaredRadialDistance;
-}
-FrogFunctionLibrary::FrogFunctionLibrary()
-{
-}
-
-FrogFunctionLibrary::~FrogFunctionLibrary()
-{
 }

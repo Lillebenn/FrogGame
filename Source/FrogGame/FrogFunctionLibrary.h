@@ -42,6 +42,6 @@ public:
 	 */
 	static float FindRadialDistance(const FVector& A, const FVector& B);
 private:
-	FrogFunctionLibrary();
-	~FrogFunctionLibrary();
+	FrogFunctionLibrary() = default;
+
 };
