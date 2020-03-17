@@ -233,7 +233,7 @@ void AFrogGameCharacter::FilterOccludedObjects()
 				const FVector2D FrogXY{Target->GetActorLocation() - GetActorLocation()};
 				SwirlInfo.RadianDelta = FMath::Atan2(FrogXY.Y, FrogXY.X);
 
-				SwirlInfo.LinearUpPosition = -100.f;
+				SwirlInfo.LinearUpPosition = Target->GetActorLocation().Y - GetActorLocation().Y;
 
 				PotentialTargets.Remove(Target);
 			}
@@ -267,9 +267,14 @@ void AFrogGameCharacter::DoWhirlwind(const float DeltaTime)
 			continue;
 		}
 		FVector Temp;
+		// To fit this with the swirl function, which assumes a regular XYZ capsule/sphere coordinate
+		// We swap the pivot point's axes to ZXY (X -> Z, Y -> X, Z -> Y) as below
 		FVector SwitchedPivot{GetActorLocation().Z, GetActorLocation().X, GetActorLocation().Y};
+		// Something to keep in mind is that in this case, FSwirlInfo's variables become somewhat misnamed.
 		FrogFunctionLibrary::Swirl(DeltaTime, It->Value, SwitchedPivot,
 		                           Temp);
+		// Switching it back to XYZ is done as below:
+		// X -> Y, Y -> Z, Z -> X -- Not very intuitive but it works.
 		FVector NewPosition{Temp.Y, Temp.Z, Temp.X};
 		It->Key->SetActorLocation(NewPosition);
 	}
