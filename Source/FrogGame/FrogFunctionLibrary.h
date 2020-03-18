@@ -40,7 +40,7 @@ public:
 	/**
 	 * Finds the squared distance between vector A and B according to a capsule coordinate system. Get the square root for a more accurate value.
 	 */
-	static float FindRadialDistance(const FVector& A, const FVector& B);
+	static float SquaredRadialDistance(const FVector& A, const FVector& B);
 private:
 	FrogFunctionLibrary() = default;
 

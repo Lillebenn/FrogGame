@@ -112,8 +112,6 @@ void AFrogGameCharacter::BeginPlay()
 	AutoAimVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindBeginOverlap);
 	AutoAimVolume->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindEndOverlap);
 
-	MaxAngleRadians = FMath::DegreesToRadians(MaxAngle);
-
 	// Setting Hud trackers to 0 at the start.
 	CurrentScore = 0.f;
 	CurrentPowerPoints = 0.f;
@@ -123,6 +121,11 @@ void AFrogGameCharacter::BeginPlay()
 	BaseMaxWalkSpeed = NeutralModeSettings.BaseWalkSpeed;
 	GetCharacterMovement()->GravityScale = NeutralModeSettings.GravityScale;
 	GetCharacterMovement()->MaxWalkSpeed = BaseMaxWalkSpeed;
+
+	// Setup the default whirlwind swirl settings
+	DefaultWhirlwindSwirl.LinearUpSpeed = SuctionSpeed;
+	DefaultWhirlwindSwirl.AngularSpeed = RotationSpeed;
+	DefaultWhirlwindSwirl.LinearInSpeed = InSpeed;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -224,14 +227,11 @@ void AFrogGameCharacter::FilterOccludedObjects()
 				UE_LOG(LogTemp, Warning, TEXT("Added %s to WhirlwindAffectedActors map."), *Target->GetName())
 				auto& SwirlInfo = WhirlwindAffectedActors.Add(Target, DefaultWhirlwindSwirl);
 
-				const float RadialDistance{
-					FrogFunctionLibrary::FindRadialDistance(Target->GetActorLocation(), GetActorLocation())
-				};
-				SwirlInfo.CurrentRadius = FMath::Sqrt(RadialDistance);
-				UE_LOG(LogTemp, Warning, TEXT("%f"), SwirlInfo.CurrentRadius)
 
-				const FVector2D FrogXY{Target->GetActorLocation() - GetActorLocation()};
-				SwirlInfo.RadianDelta = FMath::Atan2(FrogXY.Y, FrogXY.X);
+				const FVector FrogToTarget{Target->GetActorLocation() - GetActorLocation()};
+				SwirlInfo.RadianDelta = FMath::Atan2(FrogToTarget.X, FrogToTarget.Z);
+				SwirlInfo.CurrentRadius = FMath::Sqrt(
+					(FrogToTarget.Z * FrogToTarget.Z) + (FrogToTarget.X * FrogToTarget.X));
 
 				SwirlInfo.LinearUpPosition = Target->GetActorLocation().Y - GetActorLocation().Y;
 
@@ -276,6 +276,7 @@ void AFrogGameCharacter::DoWhirlwind(const float DeltaTime)
 		// Switching it back to XYZ is done as below:
 		// X -> Y, Y -> Z, Z -> X -- Not very intuitive but it works.
 		FVector NewPosition{Temp.Y, Temp.Z, Temp.X};
+
 		It->Key->SetActorLocation(NewPosition);
 	}
 }

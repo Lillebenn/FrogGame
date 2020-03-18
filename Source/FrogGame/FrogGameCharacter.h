@@ -65,7 +65,7 @@ class AFrogGameCharacter : public ACharacter
 	class USphereComponent* LeftHandCollision;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Character, meta = (AllowPrivateAccess = "true"))
 	FCharacterSettings NeutralModeSettings;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Character, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character | PowerMode", meta = (AllowPrivateAccess = "true"))
 	FCharacterSettings PowerModeSettings;
 
 	FTimerHandle TimerHandle;
@@ -75,14 +75,14 @@ public:
 
 
 	/** Accessor Function for Current Score */
-	UFUNCTION(BlueprintCallable, Category = "Score")
+	UFUNCTION(BlueprintCallable, Category = "Character | Score")
 	float GetCurrentScore() const
 	{
 		return CurrentScore;
 	}
 
 	/** Accessor Function for current size tier **/
-	UFUNCTION(BlueprintCallable, Category = "Size")
+	UFUNCTION(BlueprintCallable, Category = "Character | Size")
 	uint8 GetCurrentSizeTier() const
 	{
 		return SizeTier;
@@ -98,13 +98,13 @@ public:
 	/** Updates the players score 
 	* @Param Score This is the amount to increase the players score by. This should only be positive!
 	*/
-	UFUNCTION(BlueprintCallable, Category = "Score")
+	UFUNCTION(BlueprintCallable, Category = "Character | Score")
 	void UpdateCurrentScore(const float Score)
 	{
 		CurrentScore = CurrentScore + Score;
 	}
 
-	UFUNCTION(BlueprintCallable, Category = "PowerMode")
+	UFUNCTION(BlueprintCallable, Category = "Character | PowerMode")
 	float GetCurrentPowerPoints() const
 	{
 		return CurrentPowerPoints;
@@ -118,7 +118,7 @@ public:
 	/**
 	* @Param Points This is the amount to increase the players powerpoints by. This should only be positive on objects!
 	*/
-	UFUNCTION(BlueprintCallable, Category = "PowerMode")
+	UFUNCTION(BlueprintCallable, Category = "Character | PowerMode")
 	void UpdatePowerPoints(float Points);
 
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
@@ -130,57 +130,49 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Character)
-	TSubclassOf<AActor> SuctionBP;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Size")
 	uint8 SizeTier{2};
 
 	// How many size tiers larger the player needs to be compared to the target item in order to eat it.
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = "Character | Size")
 	uint8 EdibleThreshold{1};
-
-	// How much weight the auto-aim should give to the camera view angle.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AutoAim)
-	float MaxAngleScore{1.f};
-	// How much weight the auto-aim should give to the distance between target and player.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AutoAim)
-	float MaxDistanceScore{1.f};
-	// How much better a target an actor needs to be in order to become the new current target. Lower value means it's easier to switch targets by moving or turning the camera.
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AutoAim)
-	float AimStickiness{-0.05f};
-	// Max euclidean angle before the object's angle score will be nullifying. 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AutoAim)
-	float MaxAngle{75.f};
-	float MaxAngleRadians;
-
 
 	float CurrentTargetScore{0.f};
 
 	void Consume(AActor* OtherActor);
 	void IncreaseScale(const UEdibleComponent* SizeInfo);
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = PowerMode)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Character | PowerMode")
 	bool bPowerMode{false};
 	// Amount of damage the punch will do on each hit.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PowerMode)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
 	float PunchDamage{100.f};
-
-	UPROPERTY(VisibleAnywhere, Category = PowerMode)
+	UPROPERTY(VisibleAnywhere, Category = "Character | PowerMode")
 	float CurrentPowerPoints;
-	UPROPERTY(EditAnywhere, Category = PowerMode)
+	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")
 	float MaxPowerPoints{1.f};
 	// How quickly the Power Mode bar drains
-	UPROPERTY(EditAnywhere, Category = PowerMode)
+	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")
 	float DrainSpeed{-0.075f};
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = PowerMode)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
 	bool bIsPunching{false};
-	/** The Players current score */
-	UPROPERTY(EditAnywhere, SaveGame, Category = "Score")
-	float CurrentScore;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Whirlwind")
-	FSwirlInfo DefaultWhirlwindSwirl;
 
+	/** The Players current score */
+	UPROPERTY(EditAnywhere, SaveGame, Category = "Character | Score")
+	float CurrentScore;
+	// Blueprint for the Whirlwind mesh or something idk.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
+	TSubclassOf<AActor> WhirlwindBP;
+	// How quickly the object reaches the player.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
+	float SuctionSpeed{100.f};
+	// How rapidly the object rotates around the pivot of the whirlwind.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
+	float RotationSpeed{10.f};
+	// How quickly the object reaches the middle of the whirlwind.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
+	float InSpeed{10.f};
 protected:
 
 	void BeginPlay() override;
@@ -221,7 +213,8 @@ private:
 	void DoWhirlwind(float DeltaTime);
 	void EndWhirlwind();
 	bool bUsingWhirlwind{false};
-
+	UPROPERTY()
+	FSwirlInfo DefaultWhirlwindSwirl;
 	UPROPERTY()
 	TMap<AActor*, FSwirlInfo> WhirlwindAffectedActors;
 	UPROPERTY()
@@ -246,22 +239,15 @@ private:
 
 	void LoadGame();
 
-	/** Lets the frog jump higher by charging a jump **/
-	void StartJump();
 	void SetHandCollision(class USphereComponent* Collider, FName CollisionProfile);
 
-	/** Modifier for jump **/
-	void ChargeJump(float DeltaTime);
-
-	void ExecuteJump();
-
-	/** Changing to Powermode **/
+	/** Changing to PowerMode **/
 	void PowerMode();
 	void SetPlayerModel(const FCharacterSettings& CharacterSettings);
 	void PowerDrain(float DeltaTime);
 	void DeactivatePowerMode();
 
-
+	// Scaling settings
 	float ScaleAlpha{0.0f};
 	bool bScalingUp{false};
 	float ExtraScaleBank{0.f};

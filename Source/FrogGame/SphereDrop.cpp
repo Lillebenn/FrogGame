@@ -59,7 +59,7 @@ void ASphereDrop::Tick(float DeltaTime)
 		if (!bShouldSwirl)
 		{
 			MoveToPlayer(DeltaTime);
-			const float RadialDistance{FrogFunctionLibrary::FindRadialDistance(GetActorLocation(), Frog->GetActorLocation())};
+			const float RadialDistance{FrogFunctionLibrary::SquaredRadialDistance(GetActorLocation(), Frog->GetActorLocation())};
 			if (RadialDistance <= InitialRadius * InitialRadius)
 			{
 				SwirlInfo.CurrentRadius = FMath::Sqrt(RadialDistance);
