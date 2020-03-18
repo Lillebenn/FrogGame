@@ -15,6 +15,8 @@ struct FSwirlInfo
 	float RadianDelta{0.f};
 	float LinearUpPosition{0.f};
 	float CurrentRadius{0.f};
+	float MaxRadius;
+
 	// How far in towards the pivot it can go.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Swirl Settings")
 	float MinRadius{10.f};
@@ -43,5 +45,4 @@ public:
 	static float SquaredRadialDistance(const FVector& A, const FVector& B);
 private:
 	FrogFunctionLibrary() = default;
-
 };

@@ -43,7 +43,10 @@ AFrogGameCharacter::AFrogGameCharacter()
 	GetCharacterMovement()->JumpZVelocity = BaseJump;
 	GetCharacterMovement()->GravityScale = 3.f;
 	GetCharacterMovement()->AirControl = 0.2f;
-
+	WhirlwindVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxTrace"));
+	WhirlwindVolume->SetupAttachment(RootComponent);
+	WhirlwindVolume->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	WhirlwindVolume->SetCollisionProfileName(TEXT("Whirlwind"));
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
@@ -56,10 +59,6 @@ AFrogGameCharacter::AFrogGameCharacter()
 	// Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-	AutoAimVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxTrace"));
-	AutoAimVolume->SetupAttachment(FollowCamera);
-	AutoAimVolume->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	AutoAimVolume->SetCollisionProfileName(TEXT("FilterOccludedObjects"));
 
 	// We use the arrow component as spawn point for the tongue and attach it to the head bone
 	TongueStart = GetArrowComponent();
@@ -96,21 +95,18 @@ void AFrogGameCharacter::SetHandCollision(USphereComponent* Collider, FName Coll
 	}
 }
 
+
 void AFrogGameCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	const FVector Viewport{GetWorld()->GetGameViewport()->Viewport->GetSizeXY()};
-	AutoAimVolume->SetBoxExtent(FVector(100.f, Viewport.X / 2.f,
-	                                    Viewport.Y));
 
-	AutoAimVolume->SetRelativeLocation(FVector(CameraBoom->TargetArmLength + AutoAimVolume->GetUnscaledBoxExtent().X, 0,
-	                                           0));
+	WhirlwindVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindBeginOverlap);
+	WhirlwindVolume->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindEndOverlap);
 	BaseBoomRange = CameraBoom->TargetArmLength / GetActorScale().X;
 	LeftHandCollision->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnAttackOverlap);
 	RightHandCollision->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnAttackOverlap);
-	AutoAimVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindBeginOverlap);
-	AutoAimVolume->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindEndOverlap);
+
 
 	// Setting Hud trackers to 0 at the start.
 	CurrentScore = 0.f;
@@ -165,7 +161,6 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 void AFrogGameCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	PositionAimBox();
 	if (bPowerMode)
 	{
 		PowerDrain(DeltaTime);
@@ -182,6 +177,10 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	{
 		FilterOccludedObjects();
 		DoWhirlwind(DeltaTime);
+		if (bShouldRotate)
+		{
+			InterpToDesiredRotation(DeltaTime);
+		}
 	}
 }
 
@@ -232,7 +231,7 @@ void AFrogGameCharacter::FilterOccludedObjects()
 				SwirlInfo.RadianDelta = FMath::Atan2(FrogToTarget.X, FrogToTarget.Z);
 				SwirlInfo.CurrentRadius = FMath::Sqrt(
 					(FrogToTarget.Z * FrogToTarget.Z) + (FrogToTarget.X * FrogToTarget.X));
-
+				SwirlInfo.MaxRadius = WhirlwindVolume->GetScaledBoxExtent().Y;
 				SwirlInfo.LinearUpPosition = Target->GetActorLocation().Y - GetActorLocation().Y;
 
 				PotentialTargets.Remove(Target);
@@ -241,11 +240,6 @@ void AFrogGameCharacter::FilterOccludedObjects()
 	}
 }
 
-void AFrogGameCharacter::PositionAimBox()
-{
-	AutoAimVolume->SetWorldLocation(
-		GetActorLocation() + FollowCamera->GetForwardVector() * AutoAimVolume->GetScaledBoxExtent().X);
-}
 
 void AFrogGameCharacter::Whirlwind()
 {
@@ -261,11 +255,27 @@ void AFrogGameCharacter::DoWhirlwind(const float DeltaTime)
 	// This happens in OnWhirlwindBeginOverlap.
 	for (auto It = WhirlwindAffectedActors.CreateIterator(); It; ++It)
 	{
-		if (FVector::Dist(It->Key->GetActorLocation(), GetActorLocation()) <= 10.f)
+		AActor* Actor{It->Key};
+		const float DistToPlayer{FVector::Dist(Actor->GetActorLocation(), GetActorLocation())};
+		if(DistToPlayer <= ShrinkDistance * GetActorScale().X)
 		{
-			Consume(It->Key);
+			if(Actor->GetActorScale().Size() >= 0.1f)
+			{
+				const FVector NewScale{Actor->GetActorScale() - (FVector(0.003f) * GetActorScale().X)};
+				Actor->SetActorScale3D(NewScale);
+			}
+		}
+		if (DistToPlayer <= EatDistance * GetActorScale().X)
+		{
+			Consume(Actor);
 			continue;
 		}
+
+		if (It->Value.CurrentRadius > It->Value.MaxRadius)
+		{
+			It->Value.LinearInSpeed += 1.f;
+		}
+		// Increase InSpeed proportional to distance from player
 		FVector Temp;
 		// To fit this with the swirl function, which assumes a regular XYZ capsule/sphere coordinate
 		// We swap the pivot point's axes to ZXY (X -> Z, Y -> X, Z -> Y) as below
@@ -277,7 +287,22 @@ void AFrogGameCharacter::DoWhirlwind(const float DeltaTime)
 		// X -> Y, Y -> Z, Z -> X -- Not very intuitive but it works.
 		FVector NewPosition{Temp.Y, Temp.Z, Temp.X};
 
-		It->Key->SetActorLocation(NewPosition);
+		Actor->SetActorLocation(NewPosition);
+	}
+	if (GetCharacterMovement()->Velocity == FVector(0, 0, 0))
+	{
+		DesiredRotation = GetActorRotation();
+		DesiredRotation.Yaw = FollowCamera->GetForwardVector().ToOrientationRotator().Yaw;
+		bShouldRotate = true;
+	}
+}
+
+void AFrogGameCharacter::InterpToDesiredRotation(const float DeltaTime)
+{
+	SetActorRotation(FMath::RInterpConstantTo(GetActorRotation(), DesiredRotation, DeltaTime, 400.f));
+	if (DesiredRotation.Equals(GetActorRotation(), 5.f))
+	{
+		bShouldRotate = false;
 	}
 }
 
@@ -300,7 +325,6 @@ void AFrogGameCharacter::UpdateCharacterScale(const float DeltaTime)
 		ExtraScaleBank -= ScaleDelta;
 		UpdateCharacterMovement(ScaleDelta);
 		UpdateCameraBoom(ScaleDelta);
-		UpdateAimRange();
 
 		if (GetActorScale().X > SizeTier)
 			// Frog starts at size 2, so once it hits a scale factor of 2.0+, it will increase to size 3 etc
@@ -328,18 +352,6 @@ void AFrogGameCharacter::UpdateCameraBoom(const float ScaleDelta) const
 {
 	// TODO: Comment this
 	CameraBoom->TargetArmLength += BaseBoomRange * ScaleDelta;
-	UpdateAimRange();
-}
-
-void AFrogGameCharacter::UpdateAimRange() const
-{
-	FVector Extent{AutoAimVolume->GetUnscaledBoxExtent()};
-	Extent.X = 100.f * (GetActorScale().X * 0.5f);
-	const float XDiff{Extent.X - AutoAimVolume->GetUnscaledBoxExtent().X};
-	AutoAimVolume->SetBoxExtent(Extent);
-	//FVector NewPosition{AutoAimVolume->GetRelativeLocation()};
-	//NewPosition.X += XDiff;
-	//AutoAimVolume->SetRelativeLocation(NewPosition);
 }
 
 
@@ -443,7 +455,6 @@ void AFrogGameCharacter::OnWhirlwindEndOverlap(UPrimitiveComponent* OverlappedCo
 		{
 			WhirlwindAffectedActors.Remove(OtherActor);
 		}
-			// in theory this check should never fail, so it shouldn't be necessary, but I'm a little afraid of random bugs
 		else if (PotentialTargets.Find(OtherActor) != INDEX_NONE)
 		{
 			PotentialTargets.Remove(OtherActor); // Not sure if this works as intended

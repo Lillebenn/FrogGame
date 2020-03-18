@@ -56,7 +56,7 @@ class AFrogGameCharacter : public ACharacter
 
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	class UBoxComponent* AutoAimVolume;
+	class UBoxComponent* WhirlwindVolume;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class USphereComponent* RightHandCollision;
@@ -65,7 +65,8 @@ class AFrogGameCharacter : public ACharacter
 	class USphereComponent* LeftHandCollision;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Character, meta = (AllowPrivateAccess = "true"))
 	FCharacterSettings NeutralModeSettings;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character | PowerMode", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character | PowerMode", meta = (AllowPrivateAccess =
+		"true"))
 	FCharacterSettings PowerModeSettings;
 
 	FTimerHandle TimerHandle;
@@ -145,6 +146,8 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Character | PowerMode")
 	bool bPowerMode{false};
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
+	bool bIsPunching{false};
 	// Amount of damage the punch will do on each hit.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
 	float PunchDamage{100.f};
@@ -155,12 +158,17 @@ public:
 	// How quickly the Power Mode bar drains
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")
 	float DrainSpeed{-0.075f};
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
-	bool bIsPunching{false};
+
 
 	/** The Players current score */
 	UPROPERTY(EditAnywhere, SaveGame, Category = "Character | Score")
 	float CurrentScore;
+	// How close object has to be to be eaten (destroyed).
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
+	float EatDistance{50.f};
+	// How close the object has to be before it starts shrinking
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
+	float ShrinkDistance{100.f};
 	// Blueprint for the Whirlwind mesh or something idk.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
 	TSubclassOf<AActor> WhirlwindBP;
@@ -173,6 +181,10 @@ public:
 	// How quickly the object reaches the middle of the whirlwind.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
 	float InSpeed{10.f};
+
+	FRotator DesiredRotation;
+	bool bShouldRotate{false};
+	void InterpToDesiredRotation(float DeltaTime);
 protected:
 
 	void BeginPlay() override;
@@ -203,10 +215,7 @@ private:
 	void UpdateCharacterScale(float ScaleDelta);
 	void UpdateCharacterMovement(float ScaleDelta);
 	void UpdateCameraBoom(float ScaleDelta) const;
-	void UpdateAimRange() const;
 	void FilterOccludedObjects();
-
-	void PositionAimBox();
 
 
 	void Whirlwind();
