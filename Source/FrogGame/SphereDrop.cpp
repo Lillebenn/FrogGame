@@ -27,6 +27,7 @@ void ASphereDrop::BeginPlay()
 
 	Frog = Cast<AFrogGameCharacter>(GetWorld()->GetFirstPlayerController()->GetCharacter());
 	SwirlInfo.LinearUpPosition = InitialZPosition;
+	SwirlInfo.Construct();
 }
 
 void ASphereDrop::MoveToPlayer(const float DeltaTime)

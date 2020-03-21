@@ -216,6 +216,7 @@ private:
 	void UpdateCharacterMovement(float ScaleDelta);
 	void UpdateCameraBoom(float ScaleDelta) const;
 	void FilterOccludedObjects();
+	float CalcMaxRadius(AActor* Actor) const;
 
 
 	void Whirlwind();

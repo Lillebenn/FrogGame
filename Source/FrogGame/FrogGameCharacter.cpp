@@ -119,9 +119,9 @@ void AFrogGameCharacter::BeginPlay()
 	GetCharacterMovement()->MaxWalkSpeed = BaseMaxWalkSpeed;
 
 	// Setup the default whirlwind swirl settings
-	DefaultWhirlwindSwirl.LinearUpSpeed = SuctionSpeed;
-	DefaultWhirlwindSwirl.AngularSpeed = RotationSpeed;
-	DefaultWhirlwindSwirl.LinearInSpeed = InSpeed;
+	DefaultWhirlwindSwirl.DefaultLinearUpSpeed = SuctionSpeed;
+	DefaultWhirlwindSwirl.DefaultAngularSpeed = RotationSpeed;
+	DefaultWhirlwindSwirl.DefaultLinearInSpeed = InSpeed;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -225,13 +225,19 @@ void AFrogGameCharacter::FilterOccludedObjects()
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Added %s to WhirlwindAffectedActors map."), *Target->GetName())
 				auto& SwirlInfo = WhirlwindAffectedActors.Add(Target, DefaultWhirlwindSwirl);
-
+				SwirlInfo.Construct();
 
 				const FVector FrogToTarget{Target->GetActorLocation() - GetActorLocation()};
 				SwirlInfo.RadianDelta = FMath::Atan2(FrogToTarget.X, FrogToTarget.Z);
 				SwirlInfo.CurrentRadius = FMath::Sqrt(
 					(FrogToTarget.Z * FrogToTarget.Z) + (FrogToTarget.X * FrogToTarget.X));
-				SwirlInfo.MaxRadius = WhirlwindVolume->GetScaledBoxExtent().Y;
+				UE_LOG(LogTemp, Warning, TEXT("Current Radius: %f"), SwirlInfo.CurrentRadius)
+				// Max Radius needs to be a factor of distance ahead of the player
+				// So if target is at max range from player, then the factor equals 1
+				// if it's close, then the factor is much less 
+				SwirlInfo.MaxRadius = CalcMaxRadius(Target);
+				UE_LOG(LogTemp, Warning, TEXT("Max Radius: %f"), SwirlInfo.MaxRadius)
+
 				SwirlInfo.LinearUpPosition = Target->GetActorLocation().Y - GetActorLocation().Y;
 
 				PotentialTargets.Remove(Target);
@@ -240,6 +246,15 @@ void AFrogGameCharacter::FilterOccludedObjects()
 	}
 }
 
+float AFrogGameCharacter::CalcMaxRadius(AActor* Actor) const
+{
+	const FVector2D FrogToTarget{Actor->GetActorLocation() - GetActorLocation()}; // ignore the z-value
+	const float Dist{FrogToTarget.Size()};
+	const float MaxDist{WhirlwindVolume->GetScaledBoxExtent().X * 2.f};
+	// Clamp it to 10, or 10% of the scaled box extent in the Y axis. If distance is much less than max distance, we don't want the max radius to become impossibly tiny.
+	const float Ratio{FMath::Clamp(MaxDist / Dist, 1.f, 10.f)};
+	return {WhirlwindVolume->GetScaledBoxExtent().Y * 2.f / Ratio};
+}
 
 void AFrogGameCharacter::Whirlwind()
 {
@@ -257,9 +272,9 @@ void AFrogGameCharacter::DoWhirlwind(const float DeltaTime)
 	{
 		AActor* Actor{It->Key};
 		const float DistToPlayer{FVector::Dist(Actor->GetActorLocation(), GetActorLocation())};
-		if(DistToPlayer <= ShrinkDistance * GetActorScale().X)
+		if (DistToPlayer <= ShrinkDistance * GetActorScale().X)
 		{
-			if(Actor->GetActorScale().Size() >= 0.1f)
+			if (Actor->GetActorScale().Size() >= 0.1f)
 			{
 				const FVector NewScale{Actor->GetActorScale() - (FVector(0.003f) * GetActorScale().X)};
 				Actor->SetActorScale3D(NewScale);
@@ -270,24 +285,18 @@ void AFrogGameCharacter::DoWhirlwind(const float DeltaTime)
 			Consume(Actor);
 			continue;
 		}
-
-		if (It->Value.CurrentRadius > It->Value.MaxRadius)
+		if (It->Value.CurrentRadius >= It->Value.MaxRadius)
 		{
-			It->Value.LinearInSpeed += 1.f;
+			const float RadiusRatio{It->Value.MaxRadius / It->Value.CurrentRadius};
+			// If CR == MR, the result will be DefaultLinearInSpeed / 1.
+			It->Value.LinearInSpeed = It->Value.DefaultLinearInSpeed / RadiusRatio;
 		}
-		// Increase InSpeed proportional to distance from player
-		FVector Temp;
-		// To fit this with the swirl function, which assumes a regular XYZ capsule/sphere coordinate
-		// We swap the pivot point's axes to ZXY (X -> Z, Y -> X, Z -> Y) as below
-		FVector SwitchedPivot{GetActorLocation().Z, GetActorLocation().X, GetActorLocation().Y};
-		// Something to keep in mind is that in this case, FSwirlInfo's variables become somewhat misnamed.
-		FrogFunctionLibrary::Swirl(DeltaTime, It->Value, SwitchedPivot,
-		                           Temp);
-		// Switching it back to XYZ is done as below:
-		// X -> Y, Y -> Z, Z -> X -- Not very intuitive but it works.
-		FVector NewPosition{Temp.Y, Temp.Z, Temp.X};
-
-		Actor->SetActorLocation(NewPosition);
+		FVector OutPosition;
+		// Something to keep in mind -- FSwirlInfo's variables become somewhat misnamed.
+		FrogFunctionLibrary::HorizontalSwirl(DeltaTime, It->Value, GetActorLocation(),
+		                                     OutPosition);
+		It->Value.MaxRadius = CalcMaxRadius(Actor);
+		Actor->SetActorLocation(OutPosition);
 	}
 	if (GetCharacterMovement()->Velocity == FVector(0, 0, 0))
 	{
@@ -451,11 +460,7 @@ void AFrogGameCharacter::OnWhirlwindEndOverlap(UPrimitiveComponent* OverlappedCo
 	if (OtherActor && (OtherActor != this) && OtherComp)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Target stopped overlapping."))
-		if (WhirlwindAffectedActors.Find(OtherActor))
-		{
-			WhirlwindAffectedActors.Remove(OtherActor);
-		}
-		else if (PotentialTargets.Find(OtherActor) != INDEX_NONE)
+		if (PotentialTargets.Find(OtherActor) != INDEX_NONE)
 		{
 			PotentialTargets.Remove(OtherActor); // Not sure if this works as intended
 		}

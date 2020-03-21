@@ -6,10 +6,31 @@
 bool FrogFunctionLibrary::Swirl(const float DeltaTime, FSwirlInfo& SwirlInfo, const FVector& PivotPoint,
                                 FVector& OutPosition)
 {
-	bool Success{false};
+	const bool bMinRadius{UpdateSwirlInfo(DeltaTime, SwirlInfo)};
+
+	OutPosition.X = PivotPoint.X + SwirlInfo.CurrentRadius * FMath::Cos(SwirlInfo.RadianDelta);
+	OutPosition.Y = PivotPoint.Y + SwirlInfo.CurrentRadius * FMath::Sin(SwirlInfo.RadianDelta);
+	OutPosition.Z = PivotPoint.Z + SwirlInfo.LinearUpPosition;
+	return bMinRadius;
+}
+
+bool FrogFunctionLibrary::HorizontalSwirl(const float DeltaTime, FSwirlInfo& SwirlInfo, const FVector& PivotPoint,
+                                          FVector& OutPosition)
+{
+	const bool bMinRadius{UpdateSwirlInfo(DeltaTime, SwirlInfo)};
+
+	OutPosition.X = PivotPoint.X + SwirlInfo.CurrentRadius * FMath::Sin(SwirlInfo.RadianDelta);
+	OutPosition.Y = PivotPoint.Y + SwirlInfo.LinearUpPosition;
+	OutPosition.Z = PivotPoint.Z + SwirlInfo.CurrentRadius * FMath::Cos(SwirlInfo.RadianDelta);
+	return bMinRadius;
+}
+
+bool FrogFunctionLibrary::UpdateSwirlInfo(const float DeltaTime, FSwirlInfo& SwirlInfo)
+{
+	bool bMinRadius{false};
 	if (SwirlInfo.CurrentRadius <= SwirlInfo.MinRadius)
 	{
-		Success = true;
+		bMinRadius = true;
 	}
 	if (SwirlInfo.RadianDelta >= 2.f * PI)
 	{
@@ -27,10 +48,7 @@ bool FrogFunctionLibrary::Swirl(const float DeltaTime, FSwirlInfo& SwirlInfo, co
 	{
 		SwirlInfo.LinearUpPosition += SwirlInfo.LinearUpSpeed * DeltaTime;
 	}
-	OutPosition.X = PivotPoint.X + SwirlInfo.CurrentRadius * FMath::Cos(SwirlInfo.RadianDelta);
-	OutPosition.Y = PivotPoint.Y + SwirlInfo.CurrentRadius * FMath::Sin(SwirlInfo.RadianDelta);
-	OutPosition.Z = PivotPoint.Z + SwirlInfo.LinearUpPosition;
-	return Success;
+	return bMinRadius;
 }
 
 float FrogFunctionLibrary::SquaredRadialDistance(const FVector& A, const FVector& B)
