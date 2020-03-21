@@ -41,33 +41,11 @@ FTransform AEdibleObject::GetStartTransform()
 	return GetTransform();
 }
 
-void AEdibleObject::CalculateSize()
-{
-	if (StaticMesh)
-	{
-		if (StaticMesh->GetStaticMesh())
-		{
-			const FVector RoughSize = StaticMesh->GetStaticMesh()->GetBoundingBox().GetSize();
-			const FVector AbsoluteSize{RoughSize.GetAbsMin()};
-			// Get the average axis value of the bounding box
-			EdibleComponent->Size = (AbsoluteSize.X + AbsoluteSize.Y + AbsoluteSize.Z) / 6;
-			
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s is missing a static mesh!"), *GetName())
-		}
-	}
-	if (EdibleComponent->bAutomaticSizeTier)
-	{
-		IEdible::CalculateSizeTier(EdibleComponent);
-	}
-}
+
 
 void AEdibleObject::BeginPlay()
 {
 	Super::BeginPlay();
-	CalculateSize();
 }
 
 float AEdibleObject::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,

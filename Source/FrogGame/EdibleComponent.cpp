@@ -37,18 +37,12 @@ void UEdibleComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 	// ...
 }
 
-float UEdibleComponent::GetSphereSize() const
-{
-	return Size / NumDrops;
-}
-
 void UEdibleComponent::SpawnSpheres() const
 {
 	AActor* Actor{GetOwner()};
 	UE_LOG(LogTemp, Warning, TEXT("Owner is %s"), *Actor->GetName())
 	if (Drop)
 	{
-		const float SphereSize{GetSphereSize()};
 		for (int i{0}; i < NumDrops; i++)
 		{
 			const FVector2D SpawnLocation2D{FMath::RandPointInCircle(125.f)};
@@ -59,7 +53,6 @@ void UEdibleComponent::SpawnSpheres() const
 			const FTransform SpawnTransform{SpawnLocation};
 			ASphereDrop* Sphere{Actor->GetWorld()->SpawnActorDeferred<ASphereDrop>(Drop, SpawnTransform)};
 			Sphere->EdibleComponent = DuplicateObject(this, StaticClass());
-			Sphere->EdibleComponent->Size = SphereSize;
 			UGameplayStatics::FinishSpawningActor(Sphere, SpawnTransform);
 		}
 	}

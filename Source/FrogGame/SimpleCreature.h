@@ -22,10 +22,18 @@ public:
 	class UEdibleComponent* EdibleComponent;
 	UPROPERTY(BlueprintReadOnly)
 	class UFloatingPawnMovement* MovementComponent;
+	UStaticMeshComponent* GetMesh();
 
+	void DisableActor();
+	void OnDisabled_Implementation() override;
 	bool IsDisabled_Implementation() override;
-	bool ShouldDestroy{false};
 
+	void ActorSaveDataLoaded_Implementation() override;
+	void ActorSaveDataSaved_Implementation() override;
+
+
+	FTransform GetStartTransform() override;
+	bool ShouldDestroy{false};
 
 	FTimerHandle TimerHandle;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Movement)
@@ -46,19 +54,4 @@ public:
 
 	// Called to bind functionality to input
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-	UStaticMeshComponent* GetMesh();
-
-	void DisableActor();
-
-
-	void OnDisabled_Implementation() override;
-
-	void ActorSaveDataLoaded_Implementation() override;
-	void ActorSaveDataSaved_Implementation() override;
-
-
-	FTransform GetStartTransform() override;
-private:
-	void CalculateBoundingSize();
 };

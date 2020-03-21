@@ -30,7 +30,6 @@ public:
 	TSubclassOf<class ASphereDrop> Drop;
 
 	FTimerHandle TimerHandle;
-	void KillActor();
 
 
 	// Interface stuff
@@ -40,8 +39,6 @@ public:
 	void ActorSaveDataLoaded_Implementation() override;
 
 	FTransform GetStartTransform() override;
-	void CalculateSize();
-
 
 	float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
 	                 AActor* DamageCauser) override;

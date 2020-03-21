@@ -27,7 +27,6 @@ public:
 	float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
 	                 AActor* DamageCauser) override;
 	FTimerHandle TimerHandle;
-	void KillActor();
 	// Called to bind functionality to input
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -43,7 +42,6 @@ public:
 
 
 	void ActorSaveDataSaved_Implementation() override;
-	void CalculateBoundingSize();
 	void ActorSaveDataLoaded_Implementation() override;
 
 	FTransform GetStartTransform() override;

@@ -34,7 +34,6 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
-	void EndPlay(EEndPlayReason::Type EndPlayReason) override;
 
 	UPROPERTY()
 	class AFrogGameCharacter* Frog;

@@ -28,8 +28,6 @@ void AAdvCreature::BeginPlay()
 
 	StartTransform = GetTransform();
 	GetCapsuleComponent()->SetCollisionObjectType(ECC_GameTraceChannel1);
-	// For capsules we just use the radius value. Could potentially do a combination/average of the half-height and radius if the creature is particularly tall.
-	CalculateBoundingSize();
 }
 
 // Called every frame
@@ -110,23 +108,4 @@ FTransform AAdvCreature::GetStartTransform()
 
 void AAdvCreature::ActorSaveDataSaved_Implementation()
 {
-}
-
-void AAdvCreature::CalculateBoundingSize()
-{
-	if (GetMesh())
-	{
-		const FVector RoughSize = GetMesh()->Bounds.GetBox().GetSize();
-		const FVector AbsoluteSize{RoughSize.GetAbsMin()};
-		// Get the average axis value of the bounding box
-		EdibleComponent->Size = (AbsoluteSize.X + AbsoluteSize.Y + AbsoluteSize.Z) / 6;
-		if (EdibleComponent->bAutomaticSizeTier)
-		{
-			IEdible::CalculateSizeTier(EdibleComponent);
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s is missing a mesh!"), *GetName());
-	}
 }

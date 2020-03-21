@@ -40,8 +40,6 @@ bool ASimpleCreature::IsDisabled_Implementation()
 void ASimpleCreature::BeginPlay()
 {
 	Super::BeginPlay();
-	//Reticule->InitWidget();
-	CalculateBoundingSize(); //This was causing an error somewhere
 	StartTransform = GetTransform();
 }
 
@@ -99,28 +97,6 @@ void ASimpleCreature::ActorSaveDataSaved_Implementation()
 FTransform ASimpleCreature::GetStartTransform()
 {
 	return StartTransform;
-}
-
-void ASimpleCreature::CalculateBoundingSize()
-{
-	if (CreatureMesh)
-	{
-		if (CreatureMesh->GetStaticMesh())
-		{
-			const FVector RoughSize = CreatureMesh->GetStaticMesh()->GetBoundingBox().GetSize();
-			const FVector AbsoluteSize{RoughSize.GetAbsMin()};
-			// Get the average axis value of the bounding box - Note: Since we're taking the bounding box size we divide the size twice to account for the extra box size.
-			EdibleComponent->Size = (AbsoluteSize.X + AbsoluteSize.Y + AbsoluteSize.Z) / 6;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s is missing a mesh!"), *GetName());
-		}
-	}
-	if (EdibleComponent->bAutomaticSizeTier)
-	{
-		IEdible::CalculateSizeTier(EdibleComponent);
-	}
 }
 
 float ASimpleCreature::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,

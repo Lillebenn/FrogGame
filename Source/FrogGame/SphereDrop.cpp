@@ -42,14 +42,7 @@ void ASphereDrop::MoveToPlayer(const float DeltaTime)
 }
 
 
-void ASphereDrop::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	if (Frog)
-	{
-		Frog->IncreaseScale(EdibleComponent);
-	}
-	Super::EndPlay(EndPlayReason);
-}
+
 
 // Called every frame
 void ASphereDrop::Tick(float DeltaTime)

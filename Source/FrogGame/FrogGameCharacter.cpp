@@ -61,9 +61,9 @@ AFrogGameCharacter::AFrogGameCharacter()
 
 
 	// We use the arrow component as spawn point for the tongue and attach it to the head bone
-	TongueStart = GetArrowComponent();
-	TongueStart->bEditableWhenInherited = true;
-	TongueStart->SetupAttachment(GetMesh(), NeutralModeSettings.HeadSocket);
+	WhirlwindStart = GetArrowComponent();
+	WhirlwindStart->bEditableWhenInherited = true;
+	WhirlwindStart->SetupAttachment(GetMesh(), NeutralModeSettings.HeadSocket);
 
 	// Power mode punch volumes need to be changed once we get the correct mesh
 	// Creates a collision sphere and attaches it to the characters right hand.
@@ -78,7 +78,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	LeftHandCollision->CanCharacterStepUpOn = ECB_No;
 	LeftHandCollision->InitSphereRadius(6.f);
 	LeftHandCollision->SetRelativeLocation(FVector(0.f, -9.f, 0.f));
-	PowerModeSettings.BaseBoomRange = 500.f;
+	PowerModeSettings.BoomRange = 500.f;
 }
 
 void AFrogGameCharacter::SetHandCollision(USphereComponent* Collider, FName CollisionProfile)
@@ -103,20 +103,17 @@ void AFrogGameCharacter::BeginPlay()
 
 	WhirlwindVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindBeginOverlap);
 	WhirlwindVolume->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindEndOverlap);
-	BaseBoomRange = CameraBoom->TargetArmLength / GetActorScale().X;
 	LeftHandCollision->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnAttackOverlap);
 	RightHandCollision->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnAttackOverlap);
-
 
 	// Setting Hud trackers to 0 at the start.
 	CurrentScore = 0.f;
 	CurrentPowerPoints = 0.f;
-	BaseJump = NeutralModeSettings.BaseJumpZHeight;
+	BaseJump = NeutralModeSettings.JumpZHeight;
 	CurrentJump = BaseJump;
-	SizeTier = 1 + GetActorScale().X;
-	BaseMaxWalkSpeed = NeutralModeSettings.BaseWalkSpeed;
+
 	GetCharacterMovement()->GravityScale = NeutralModeSettings.GravityScale;
-	GetCharacterMovement()->MaxWalkSpeed = BaseMaxWalkSpeed;
+	GetCharacterMovement()->MaxWalkSpeed = NeutralModeSettings.MaxWalkSpeed;
 
 	// Setup the default whirlwind swirl settings
 	DefaultWhirlwindSwirl.DefaultLinearUpSpeed = SuctionSpeed;
@@ -169,10 +166,6 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 			DeactivatePowerMode();
 		}
 	}
-	if (bScalingUp)
-	{
-		UpdateCharacterScale(DeltaTime);
-	}
 	if (bUsingWhirlwind)
 	{
 		FilterOccludedObjects();
@@ -184,7 +177,6 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	}
 }
 
-// TODO: Choose target close to box origin AND player
 void AFrogGameCharacter::FilterOccludedObjects()
 {
 	TArray<AActor*> TempArray{PotentialTargets};
@@ -200,14 +192,9 @@ void AFrogGameCharacter::FilterOccludedObjects()
 				UE_LOG(LogTemp, Warning, TEXT("Missing reference to UEdibleComponent!"));
 				continue;
 			}
-			const int MaxSize{SizeTier - EdibleThreshold}; // Highest size tier the player can eat
-			if (SizeInfo->SizeTier > MaxSize) // Object is too big, ignore.
-			{
-				continue;
-			}
 			// this needs to happen during tick to filter out actors that shouldn't be sucked in
-			// should drop the actor from the map while keeping it in the targets array for continuous checking until it leaves the area
 			// probably easiest to stop checking a target once it succeeds the check
+			// TODO: Custom collision channel so we don't filter out targets that are behind smaller objects/suckable objects
 			const ETraceTypeQuery InTypeQuery{UCollisionProfile::Get()->ConvertToTraceType(ECC_Visibility)};
 			const TArray<AActor*> Array;
 			FHitResult Hit;
@@ -250,10 +237,10 @@ float AFrogGameCharacter::CalcMaxRadius(AActor* Actor) const
 {
 	const FVector2D FrogToTarget{Actor->GetActorLocation() - GetActorLocation()}; // ignore the z-value
 	const float Dist{FrogToTarget.Size()};
-	const float MaxDist{WhirlwindVolume->GetScaledBoxExtent().X * 2.f};
-	// Clamp it to 10, or 10% of the scaled box extent in the Y axis. If distance is much less than max distance, we don't want the max radius to become impossibly tiny.
+	const float MaxDist{WhirlwindVolume->GetUnscaledBoxExtent().X * 2.f};
+	// Clamp it to 10, or 10% of the box extent in the Y axis. If distance is much less than max distance, we don't want the max radius to become impossibly tiny.
 	const float Ratio{FMath::Clamp(MaxDist / Dist, 1.f, 10.f)};
-	return {WhirlwindVolume->GetScaledBoxExtent().Y * 2.f / Ratio};
+	return {WhirlwindVolume->GetUnscaledBoxExtent().Y * 2.f / Ratio};
 }
 
 void AFrogGameCharacter::Whirlwind()
@@ -272,15 +259,15 @@ void AFrogGameCharacter::DoWhirlwind(const float DeltaTime)
 	{
 		AActor* Actor{It->Key};
 		const float DistToPlayer{FVector::Dist(Actor->GetActorLocation(), GetActorLocation())};
-		if (DistToPlayer <= ShrinkDistance * GetActorScale().X)
+		if (DistToPlayer <= ShrinkDistance)
 		{
 			if (Actor->GetActorScale().Size() >= 0.1f)
 			{
-				const FVector NewScale{Actor->GetActorScale() - (FVector(0.003f) * GetActorScale().X)};
+				const FVector NewScale{Actor->GetActorScale() - ShrinkSpeed};
 				Actor->SetActorScale3D(NewScale);
 			}
 		}
-		if (DistToPlayer <= EatDistance * GetActorScale().X)
+		if (DistToPlayer <= EatDistance)
 		{
 			Consume(Actor);
 			continue;
@@ -321,49 +308,6 @@ void AFrogGameCharacter::EndWhirlwind()
 	UE_LOG(LogTemp, Warning, TEXT("Stopped using whirlwind."))
 }
 
-
-void AFrogGameCharacter::UpdateCharacterScale(const float DeltaTime)
-{
-	if (ScaleAlpha <= 1.0f)
-	{
-		ScaleAlpha += DeltaTime;
-		const FVector PrevScale{GetActorScale()};
-		const FVector DesiredScale{GetActorScale() + FVector(ExtraScaleBank)};
-		SetActorScale3D(FMath::Lerp(GetActorScale(), DesiredScale, ScaleAlpha));
-		const float ScaleDelta{(GetActorScale() - PrevScale).X};
-		ExtraScaleBank -= ScaleDelta;
-		UpdateCharacterMovement(ScaleDelta);
-		UpdateCameraBoom(ScaleDelta);
-
-		if (GetActorScale().X > SizeTier)
-			// Frog starts at size 2, so once it hits a scale factor of 2.0+, it will increase to size 3 etc
-		{
-			SizeTier++;
-		}
-	}
-	else
-	{
-		ScaleAlpha = 0.f;
-		bScalingUp = false;
-	}
-}
-
-void AFrogGameCharacter::UpdateCharacterMovement(const float ScaleDelta)
-{
-	UCharacterMovementComponent* Movement{GetCharacterMovement()};
-	Movement->MaxWalkSpeed += BaseMaxWalkSpeed * (ScaleDelta * 0.5f);
-	Movement->MaxAcceleration = 4096.f * GetActorScale().X;
-	CurrentJump += BaseJump * (ScaleDelta * 0.2f); // 0.2f is temporary to reduce jump height increase
-	Movement->JumpZVelocity = CurrentJump;
-}
-
-void AFrogGameCharacter::UpdateCameraBoom(const float ScaleDelta) const
-{
-	// TODO: Comment this
-	CameraBoom->TargetArmLength += BaseBoomRange * ScaleDelta;
-}
-
-
 void AFrogGameCharacter::Consume(AActor* OtherActor)
 {
 	if (!OtherActor)
@@ -375,30 +319,12 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 		const UEdibleComponent* SizeInfo{
 			Cast<UEdibleComponent>(OtherActor->GetComponentByClass(UEdibleComponent::StaticClass()))
 		};
-		UE_LOG(LogTemp, Warning, TEXT("%s"), *OtherActor->GetName())
+		UpdateCurrentScore(SizeInfo->ScorePoints);
+		UpdatePowerPoints(SizeInfo->PowerPoints);
+		UE_LOG(LogTemp, Warning, TEXT("Destroying %s"), *OtherActor->GetName())
 		WhirlwindAffectedActors.Remove(OtherActor);
 		OtherActor->Destroy();
-
-		IncreaseScale(SizeInfo);
 	}
-}
-
-void AFrogGameCharacter::IncreaseScale(const UEdibleComponent* SizeInfo)
-{
-	// just reset the lerp values
-	bScalingUp = true;
-	// We use the scaled radius value of the capsule collider to get an approximate size value for the main character.
-	const float ScaledRadius{GetCapsuleComponent()->GetScaledCapsuleRadius()};
-	// Compare this to the averaged bounding box size of the object being eaten and factor in the growth coefficient.
-	// If SizeInfo.Size = 10 and ScaledRadius = 50 then we get a value of 10/50 = 0.2 or 20%.
-	// Increase actor scale by this value. 
-	float SizeDiff{SizeInfo->Size * SizeInfo->GrowthCoefficient / ScaledRadius};
-	SizeDiff = FMath::Clamp(SizeDiff, 0.f, 0.1f);
-	ExtraScaleBank += SizeDiff;
-	//UE_LOG(LogTemp, Warning, TEXT("SizeDiff = %f"), SizeDiff)
-
-	UpdateCurrentScore(SizeInfo->ScorePoints);
-	UpdatePowerPoints(SizeInfo->PowerPoints);
 }
 
 void AFrogGameCharacter::Punch()
@@ -487,16 +413,13 @@ void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSetti
 
 	GetCapsuleComponent()->SetCapsuleSize(CharacterSettings.CapsuleSize.X, CharacterSettings.CapsuleSize.Y);
 	const FVector Offset{0, 0, -CharacterSettings.CapsuleSize.Y};
-	// not sure if this will be correct when more scale is applied.
 	GetMesh()->SetRelativeLocation(Offset);
-	CameraBoom->TargetArmLength = CharacterSettings.BaseBoomRange * GetActorScale().X;
-	GetCharacterMovement()->MaxWalkSpeed = CharacterSettings.BaseWalkSpeed * GetActorScale().X;
-	GetCharacterMovement()->GravityScale = CharacterSettings.GravityScale;
-	GetCharacterMovement()->JumpZVelocity = CharacterSettings.BaseJumpZHeight;
-	const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
-	TongueStart->AttachToComponent(GetMesh(), InRule, CharacterSettings.HeadSocket);
 
-	// Note: Stuff like Cable width and the size of the nodule at the end of the tongue not set right now.
+	GetCharacterMovement()->MaxWalkSpeed = CharacterSettings.MaxWalkSpeed;
+	GetCharacterMovement()->GravityScale = CharacterSettings.GravityScale;
+	GetCharacterMovement()->JumpZVelocity = CharacterSettings.JumpZHeight;
+	const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
+	WhirlwindStart->AttachToComponent(GetMesh(), InRule, CharacterSettings.HeadSocket);
 }
 
 void AFrogGameCharacter::DeactivatePowerMode()
@@ -513,6 +436,7 @@ void AFrogGameCharacter::UpdatePowerPoints(const float Points)
 	if (CurrentPowerPoints >= MaxPowerPoints)
 	{
 		CurrentPowerPoints = MaxPowerPoints;
+		// TODO: Don't force the player into power mode
 		PowerMode();
 	}
 }

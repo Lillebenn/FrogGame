@@ -28,7 +28,5 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	void OnDisabled();
 
-
-	virtual void CalculateSizeTier(UEdibleComponent* EdibleComponent, int NumTiers = 10);
 	virtual FTransform GetStartTransform();
 };

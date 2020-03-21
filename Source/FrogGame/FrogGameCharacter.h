@@ -23,15 +23,15 @@ struct FCharacterSettings
 	FVector2D CapsuleSize{};
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float BaseBoomRange{200.f};
+	float BoomRange{200.f};
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float BaseWalkSpeed{600.f};
-
+	float MaxWalkSpeed{600.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float BaseJumpZHeight{1000.f};
+	float JumpZHeight{1000.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float GravityScale{3.f};
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FName HeadSocket{"Head_joint"};
 	// Add other variables here based on what we change between modes.
@@ -45,15 +45,13 @@ class AFrogGameCharacter : public ACharacter
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
-	float BaseBoomRange{200.f};
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
 
 	// Arrow component that is used to spawn the tongue projectile. 
 	UPROPERTY(VisibleAnywhere, Category = Character, meta = (AllowPrivateAccess = "true"))
-	class UArrowComponent* TongueStart;
-
+	class UArrowComponent* WhirlwindStart;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* WhirlwindVolume;
@@ -82,20 +80,6 @@ public:
 		return CurrentScore;
 	}
 
-	/** Accessor Function for current size tier **/
-	UFUNCTION(BlueprintCallable, Category = "Character | Size")
-	uint8 GetCurrentSizeTier() const
-	{
-		return SizeTier;
-	}
-
-	/** Accessor function for next size tier **/
-	UFUNCTION(BlueprintCallable, Category = "Size")
-	uint8 GetNextSizeTier() const
-	{
-		return SizeTier + 1;
-	}
-
 	/** Updates the players score 
 	* @Param Score This is the amount to increase the players score by. This should only be positive!
 	*/
@@ -113,7 +97,7 @@ public:
 
 	UArrowComponent* GetTongueStart() const
 	{
-		return TongueStart;
+		return WhirlwindStart;
 	}
 
 	/**
@@ -126,14 +110,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseTurnRate;
 
-
 	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
-
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Size")
-	uint8 SizeTier{2};
 
 	// How many size tiers larger the player needs to be compared to the target item in order to eat it.
 	UPROPERTY(EditDefaultsOnly, Category = "Character | Size")
@@ -142,7 +121,6 @@ public:
 	float CurrentTargetScore{0.f};
 
 	void Consume(AActor* OtherActor);
-	void IncreaseScale(const UEdibleComponent* SizeInfo);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Character | PowerMode")
 	bool bPowerMode{false};
@@ -169,6 +147,8 @@ public:
 	// How close the object has to be before it starts shrinking
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
 	float ShrinkDistance{100.f};
+
+	FVector ShrinkSpeed{0.003f};
 	// Blueprint for the Whirlwind mesh or something idk.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
 	TSubclassOf<AActor> WhirlwindBP;
@@ -212,9 +192,7 @@ protected:
 	// End of APawn interface
 
 private:
-	void UpdateCharacterScale(float ScaleDelta);
-	void UpdateCharacterMovement(float ScaleDelta);
-	void UpdateCameraBoom(float ScaleDelta) const;
+
 	void FilterOccludedObjects();
 	float CalcMaxRadius(AActor* Actor) const;
 
@@ -257,12 +235,6 @@ private:
 	void PowerDrain(float DeltaTime);
 	void DeactivatePowerMode();
 
-	// Scaling settings
-	float ScaleAlpha{0.0f};
-	bool bScalingUp{false};
-	float ExtraScaleBank{0.f};
-
-
 	// Jump stuff
 	float BaseJump{1000.f};
 
@@ -273,8 +245,6 @@ private:
 	float ChargeSpeed{1.5f};
 	float JumpModifier{0};
 	bool bIsCharging{false};
-
-	float BaseMaxWalkSpeed{600.f};
 
 public:
 
