@@ -23,17 +23,18 @@ struct FCharacterSettings
 	FVector2D CapsuleSize{};
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float BoomRange{200.f};
+	float BoomZRelativeLocation{0.f};
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float MeshScale{9.f};
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float BoomRange{1800.f};
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float MaxWalkSpeed{600.f};
+	float MaxWalkSpeed{1600.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float JumpZHeight{1000.f};
+	float JumpZHeight{3000.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float GravityScale{3.f};
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	FName HeadSocket{"Head_joint"};
+	float GravityScale{6.f};
 	// Add other variables here based on what we change between modes.
 };
 
@@ -49,14 +50,13 @@ class AFrogGameCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
 
-	// Arrow component that is used to spawn the tongue projectile. 
-	UPROPERTY(VisibleAnywhere, Category = Character, meta = (AllowPrivateAccess = "true"))
-	class UArrowComponent* WhirlwindStart;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* WhirlwindVolume;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+	class UParticleSystemComponent* WhirlwindParticles;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+	class UChildActorComponent* WhirlwindPivot;
+	UPROPERTY (VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class USphereComponent* RightHandCollision;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
@@ -95,11 +95,6 @@ public:
 		return CurrentPowerPoints;
 	}
 
-	UArrowComponent* GetTongueStart() const
-	{
-		return WhirlwindStart;
-	}
-
 	/**
 	* @Param Points This is the amount to increase the players powerpoints by. This should only be positive on objects!
 	*/
@@ -113,10 +108,6 @@ public:
 	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
-
-	// How many size tiers larger the player needs to be compared to the target item in order to eat it.
-	UPROPERTY(EditDefaultsOnly, Category = "Character | Size")
-	uint8 EdibleThreshold{1};
 
 	float CurrentTargetScore{0.f};
 
@@ -143,10 +134,10 @@ public:
 	float CurrentScore;
 	// How close object has to be to be eaten (destroyed).
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
-	float EatDistance{50.f};
+	float EatDistance{200.f};
 	// How close the object has to be before it starts shrinking
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
-	float ShrinkDistance{100.f};
+	float ShrinkDistance{300.f};
 
 	FVector ShrinkSpeed{0.003f};
 	// Blueprint for the Whirlwind mesh or something idk.
@@ -154,13 +145,13 @@ public:
 	TSubclassOf<AActor> WhirlwindBP;
 	// How quickly the object reaches the player.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
-	float SuctionSpeed{100.f};
+	float SuctionSpeed{500.f};
 	// How rapidly the object rotates around the pivot of the whirlwind.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
 	float RotationSpeed{10.f};
 	// How quickly the object reaches the middle of the whirlwind.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
-	float InSpeed{10.f};
+	float InSpeed{30.f};
 
 	FRotator DesiredRotation;
 	bool bShouldRotate{false};

@@ -22,7 +22,7 @@
 AFrogGameCharacter::AFrogGameCharacter()
 {
 	// Set size for collision capsule
-	GetCapsuleComponent()->InitCapsuleSize(13.f, 13.0f);
+	GetCapsuleComponent()->InitCapsuleSize(90.f, 90.0f);
 	FVector2D Capsule;
 	GetCapsuleComponent()->GetUnscaledCapsuleSize(Capsule.X, Capsule.Y);
 	NeutralModeSettings.CapsuleSize = Capsule;
@@ -38,19 +38,27 @@ AFrogGameCharacter::AFrogGameCharacter()
 	bUseControllerRotationRoll = false;
 
 	// Configure character movement
-	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
-	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // ...at this rotation rate
-	GetCharacterMovement()->JumpZVelocity = BaseJump;
-	GetCharacterMovement()->GravityScale = 3.f;
-	GetCharacterMovement()->AirControl = 0.2f;
+	auto Movement{GetCharacterMovement()};
+	Movement->bOrientRotationToMovement = true; // Character moves in the direction of input...	
+	Movement->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // ...at this rotation rate
+	Movement->JumpZVelocity = BaseJump;
+	Movement->GravityScale = 6.f;
+	Movement->AirControl = 0.2f;
+	Movement->MaxAcceleration = 18000.f;
 	WhirlwindVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxTrace"));
 	WhirlwindVolume->SetupAttachment(RootComponent);
 	WhirlwindVolume->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	WhirlwindVolume->SetCollisionProfileName(TEXT("Whirlwind"));
+
+	WhirlwindParticles = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Whirlwind Particle System"));
+	WhirlwindParticles->SetupAttachment(RootComponent);
+	WhirlwindPivot = CreateDefaultSubobject<UChildActorComponent>(TEXT("Whirlwind Pivot"));
+	WhirlwindPivot->bEditableWhenInherited = true;
+	WhirlwindPivot->SetupAttachment(WhirlwindParticles);
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 200.f;
+	CameraBoom->TargetArmLength = 1800.f;
 	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 
 	// Create a follow camera
@@ -58,13 +66,9 @@ AFrogGameCharacter::AFrogGameCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	// Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
-
-
-	// We use the arrow component as spawn point for the tongue and attach it to the head bone
-	WhirlwindStart = GetArrowComponent();
-	WhirlwindStart->bEditableWhenInherited = true;
-	WhirlwindStart->SetupAttachment(GetMesh(), NeutralModeSettings.HeadSocket);
-
+	
+	GetArrowComponent()->bEditableWhenInherited = true;
+	
 	// Power mode punch volumes need to be changed once we get the correct mesh
 	// Creates a collision sphere and attaches it to the characters right hand.
 	RightHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("RightHandCollision"));
@@ -78,7 +82,11 @@ AFrogGameCharacter::AFrogGameCharacter()
 	LeftHandCollision->CanCharacterStepUpOn = ECB_No;
 	LeftHandCollision->InitSphereRadius(6.f);
 	LeftHandCollision->SetRelativeLocation(FVector(0.f, -9.f, 0.f));
-	PowerModeSettings.BoomRange = 500.f;
+	// PowerModeSettings defaults
+	PowerModeSettings.MaxWalkSpeed = 1600.f;
+	PowerModeSettings.JumpZHeight = 2000.f;
+	PowerModeSettings.MeshScale = 3.5f;
+	PowerModeSettings.BoomZRelativeLocation = 350.f;
 }
 
 void AFrogGameCharacter::SetHandCollision(USphereComponent* Collider, FName CollisionProfile)
@@ -166,7 +174,7 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 			DeactivatePowerMode();
 		}
 	}
-	if (bUsingWhirlwind)
+	else if (bUsingWhirlwind)
 	{
 		FilterOccludedObjects();
 		DoWhirlwind(DeltaTime);
@@ -175,6 +183,7 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 			InterpToDesiredRotation(DeltaTime);
 		}
 	}
+
 }
 
 void AFrogGameCharacter::FilterOccludedObjects()
@@ -414,12 +423,11 @@ void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSetti
 	GetCapsuleComponent()->SetCapsuleSize(CharacterSettings.CapsuleSize.X, CharacterSettings.CapsuleSize.Y);
 	const FVector Offset{0, 0, -CharacterSettings.CapsuleSize.Y};
 	GetMesh()->SetRelativeLocation(Offset);
-
+	GetMesh()->SetRelativeScale3D(FVector(CharacterSettings.MeshScale));
+	GetCameraBoom()->SetRelativeLocation(FVector(0.f,0.f,CharacterSettings.BoomZRelativeLocation));
 	GetCharacterMovement()->MaxWalkSpeed = CharacterSettings.MaxWalkSpeed;
 	GetCharacterMovement()->GravityScale = CharacterSettings.GravityScale;
 	GetCharacterMovement()->JumpZVelocity = CharacterSettings.JumpZHeight;
-	const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
-	WhirlwindStart->AttachToComponent(GetMesh(), InRule, CharacterSettings.HeadSocket);
 }
 
 void AFrogGameCharacter::DeactivatePowerMode()
