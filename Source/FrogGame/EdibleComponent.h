@@ -28,7 +28,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Edible)
 	int32 NumDrops{5};
 
-	// Ammount of Points earned towards getting powermode gained when eating this object.
+	// Amount of Points earned towards getting powermode gained when eating this object.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Edible)
 	float PowerPoints{0.1f};
 	// Amount of Score granted for eating this edible.

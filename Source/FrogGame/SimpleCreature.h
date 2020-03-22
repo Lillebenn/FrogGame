@@ -33,21 +33,22 @@ public:
 
 
 	FTransform GetStartTransform() override;
-	bool ShouldDestroy{false};
+	bool bShouldDestroy{false};
 
 	FTimerHandle TimerHandle;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Movement)
 	int MoveDistance{500};
 
-	UPROPERTY()
-	FTransform StartTransform;
+	;
 
 	float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
 	                 AActor* DamageCauser) override;
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
-
+private:
+	UPROPERTY()
+	FTransform StartTransform;
 public:
 	// Called every frame
 	void Tick(float DeltaTime) override;

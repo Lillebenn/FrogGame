@@ -4,8 +4,4 @@
 #include "Edible.h"
 
 // Add default functionality here for any IEdible functions that are not pure virtual.
-FTransform IEdible::GetStartTransform()
-{
-	return FTransform();
-}
 

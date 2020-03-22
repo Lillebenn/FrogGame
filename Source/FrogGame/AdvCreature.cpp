@@ -71,7 +71,7 @@ void AAdvCreature::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 bool AAdvCreature::IsDisabled_Implementation()
 {
-	return ShouldDestroy;
+	return bShouldDestroy;
 }
 
 void AAdvCreature::DisableActor()
@@ -83,6 +83,7 @@ void AAdvCreature::DisableActor()
 		AI->UnPossess();
 		AI->Destroy();
 	}
+	bShouldDestroy = true;
 }
 
 void AAdvCreature::OnDisabled_Implementation()

@@ -28,5 +28,4 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Gameplay)
 	void OnDisabled();
 
-	virtual FTransform GetStartTransform();
 };

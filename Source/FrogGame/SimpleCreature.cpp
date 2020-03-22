@@ -32,7 +32,7 @@ ASimpleCreature::ASimpleCreature()
 
 bool ASimpleCreature::IsDisabled_Implementation()
 {
-	return ShouldDestroy;
+	return bShouldDestroy;
 }
 
 
@@ -66,6 +66,7 @@ void ASimpleCreature::DisableActor()
 		AI->UnPossess();
 		AI->Destroy();
 	}
+	bShouldDestroy = true;
 }
 
 UStaticMeshComponent* ASimpleCreature::GetMesh()

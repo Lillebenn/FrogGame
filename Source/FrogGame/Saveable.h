@@ -26,4 +26,5 @@ public:
 	void ActorSaveDataLoaded();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Saveable Actor")
 	void ActorSaveDataSaved();
+	virtual FTransform GetStartTransform() = 0;
 };

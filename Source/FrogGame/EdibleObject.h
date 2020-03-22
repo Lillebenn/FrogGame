@@ -26,24 +26,19 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UEdibleComponent* EdibleComponent;
-	UPROPERTY(EditDefaultsOnly, Category = Edible)
-	TSubclassOf<class ASphereDrop> Drop;
-
-	FTimerHandle TimerHandle;
-
 
 	// Interface stuff
 	bool IsDisabled_Implementation() override;
-	bool ShouldDestroy{false};
+	bool bShouldDestroy{false};
 	void ActorSaveDataSaved_Implementation() override;
 	void ActorSaveDataLoaded_Implementation() override;
 
 	FTransform GetStartTransform() override;
 
-	float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
-	                 AActor* DamageCauser) override;
 
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
+private:
+	FTransform StartTransform;
 };

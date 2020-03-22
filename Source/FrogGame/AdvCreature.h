@@ -31,7 +31,7 @@ public:
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	bool IsDisabled_Implementation() override;
-	bool ShouldDestroy{false};
+	bool bShouldDestroy{false};
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Edible)
