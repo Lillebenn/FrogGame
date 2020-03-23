@@ -23,15 +23,15 @@ struct FCharacterSettings
 	FVector2D CapsuleSize{};
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float MeshScale{1.f};
+	float MeshScale{0.3f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float BoomRange{1400.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float MaxWalkSpeed{1600.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float JumpZHeight{3000.f};
+	float JumpZHeight{2000.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float GravityScale{6.f};
+	float GravityScale{3.f};
 	// Add other variables here based on what we change between modes.
 };
 
@@ -150,9 +150,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
 	float InSpeed{30.f};
 
-	FRotator DesiredRotation;
-	bool bShouldRotate{false};
-	void InterpToDesiredRotation(float DeltaTime);
 protected:
 
 	void BeginPlay() override;
@@ -227,17 +224,6 @@ private:
 	void SetPlayerModel(const FCharacterSettings& CharacterSettings);
 	void PowerDrain(float DeltaTime);
 	void DeactivatePowerMode();
-
-	// Jump stuff
-	float BaseJump{1000.f};
-
-	float CurrentJump;
-	float JumpBonus{450};
-	// The speed at which the jump charges to max velocity when holding down spacebar.
-	UPROPERTY(EditAnywhere, Category = Jump)
-	float ChargeSpeed{1.5f};
-	float JumpModifier{0};
-	bool bIsCharging{false};
 
 public:
 

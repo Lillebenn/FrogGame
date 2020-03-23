@@ -39,7 +39,8 @@ AFrogGameCharacter::AFrogGameCharacter()
 	auto Movement{GetCharacterMovement()};
 	Movement->bOrientRotationToMovement = true; // Character moves in the direction of input...	
 	Movement->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // ...at this rotation rate
-	Movement->JumpZVelocity = BaseJump;
+	Movement->JumpZVelocity = 3000.f;
+	Movement->MaxWalkSpeed = 1600.f;
 	Movement->GravityScale = 6.f;
 	Movement->AirControl = 0.2f;
 	Movement->MaxAcceleration = 18000.f;
@@ -125,7 +126,6 @@ void AFrogGameCharacter::BeginPlay()
 	// Setting Hud trackers to 0 at the start.
 	CurrentScore = 0.f;
 	CurrentPowerPoints = 0.f;
-	CurrentJump = BaseJump;
 
 	NeutralModeSettings.Mesh = GetMesh()->SkeletalMesh;
 	NeutralModeSettings.AnimBP = GetMesh()->GetAnimInstance()->GetClass();
@@ -135,7 +135,7 @@ void AFrogGameCharacter::BeginPlay()
 	NeutralModeSettings.MeshScale = GetMesh()->GetRelativeScale3D().X;
 	NeutralModeSettings.BoomRange = CameraBoom->TargetArmLength;
 	NeutralModeSettings.MaxWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
-	NeutralModeSettings.JumpZHeight = BaseJump;
+	NeutralModeSettings.JumpZHeight = GetCharacterMovement()->JumpZVelocity;
 	NeutralModeSettings.GravityScale = GetCharacterMovement()->GravityScale;
 
 	// Setup the default whirlwind swirl settings
@@ -493,7 +493,10 @@ void AFrogGameCharacter::MoveForward(float Value)
 		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
-
+		if(Value < 0.f && bUsingWhirlwind)
+		{
+			Value = -0.5f;
+		}
 		// get forward vector
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 		AddMovementInput(Direction, Value);
@@ -518,5 +521,5 @@ void AFrogGameCharacter::MoveRight(float Value)
 
 void AFrogGameCharacter::Landed(const FHitResult& Hit)
 {
-	GetCharacterMovement()->JumpZVelocity = CurrentJump;
+	// use this event to add shockwave etc
 }
