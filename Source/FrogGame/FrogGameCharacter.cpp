@@ -22,7 +22,7 @@
 AFrogGameCharacter::AFrogGameCharacter()
 {
 	// Set size for collision capsule
-	GetCapsuleComponent()->InitCapsuleSize(90.f, 90.0f);
+	GetCapsuleComponent()->InitCapsuleSize(13.f, 13.0f);
 	FVector2D Capsule;
 	GetCapsuleComponent()->GetUnscaledCapsuleSize(Capsule.X, Capsule.Y);
 	NeutralModeSettings.CapsuleSize = Capsule;
