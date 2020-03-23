@@ -23,12 +23,9 @@ struct FCharacterSettings
 	FVector2D CapsuleSize{};
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float BoomZRelativeLocation{0.f};
+	float MeshScale{1.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float MeshScale{9.f};
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float BoomRange{1800.f};
-
+	float BoomRange{1400.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float MaxWalkSpeed{1600.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
@@ -142,7 +139,7 @@ public:
 	FVector ShrinkSpeed{0.003f};
 	// Blueprint for the Whirlwind mesh or something idk.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
-	TSubclassOf<AActor> WhirlwindBP;
+	float WhirlwindWalkSpeed{600.f};
 	// How quickly the object reaches the player.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
 	float SuctionSpeed{500.f};

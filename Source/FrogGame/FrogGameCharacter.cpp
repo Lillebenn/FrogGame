@@ -59,7 +59,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 1800.f;
+	CameraBoom->TargetArmLength = 1400.f;
 	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 
 	// Create a follow camera
@@ -86,8 +86,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	// PowerModeSettings defaults
 	PowerModeSettings.MaxWalkSpeed = 1600.f;
 	PowerModeSettings.JumpZHeight = 2000.f;
-	PowerModeSettings.MeshScale = 3.5f;
-	PowerModeSettings.BoomZRelativeLocation = 350.f;
+	PowerModeSettings.MeshScale = 0.3f;
 }
 
 void AFrogGameCharacter::SetHandCollision(USphereComponent* Collider, FName CollisionProfile)
@@ -179,6 +178,10 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	{
 		FilterOccludedObjects();
 		DoWhirlwind(DeltaTime);
+		FRotator Orientation{FollowCamera->GetForwardVector().ToOrientationRotator()};
+		Orientation.Pitch = 0.f;
+
+		SetActorRotation(Orientation);
 	}
 }
 
@@ -255,6 +258,7 @@ void AFrogGameCharacter::Whirlwind()
 		bUsingWhirlwind = true;
 		WhirlwindParticles->SetVisibility(true);
 		GetCharacterMovement()->bOrientRotationToMovement = false;
+		GetCharacterMovement()->MaxWalkSpeed = WhirlwindWalkSpeed;
 	}
 }
 
@@ -303,7 +307,9 @@ void AFrogGameCharacter::EndWhirlwind()
 	bUsingWhirlwind = false;
 	WhirlwindParticles->SetVisibility(false);
 	GetCharacterMovement()->bOrientRotationToMovement = true;
-
+	GetCharacterMovement()->MaxWalkSpeed = NeutralModeSettings.MaxWalkSpeed;
+	WhirlwindAffectedActors.Empty();
+	
 	UE_LOG(LogTemp, Warning, TEXT("Stopped using whirlwind."))
 }
 
@@ -396,7 +402,7 @@ void AFrogGameCharacter::PowerMode()
 {
 	CurrentPowerPoints = MaxPowerPoints;
 	bPowerMode = true;
-	WhirlwindAffectedActors.Empty();
+	EndWhirlwind();
 	SetPlayerModel(PowerModeSettings);
 	const FAttachmentTransformRules InRule{EAttachmentRule::KeepRelative, false};
 
@@ -414,7 +420,6 @@ void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSetti
 	const FVector Offset{0, 0, -CharacterSettings.CapsuleSize.Y};
 	GetMesh()->SetRelativeLocation(Offset);
 	GetMesh()->SetRelativeScale3D(FVector(CharacterSettings.MeshScale));
-	GetCameraBoom()->SetRelativeLocation(FVector(0.f, 0.f, CharacterSettings.BoomZRelativeLocation));
 	GetCharacterMovement()->MaxWalkSpeed = CharacterSettings.MaxWalkSpeed;
 	GetCharacterMovement()->GravityScale = CharacterSettings.GravityScale;
 	GetCharacterMovement()->JumpZVelocity = CharacterSettings.JumpZHeight;
