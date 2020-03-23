@@ -23,10 +23,8 @@ AFrogGameCharacter::AFrogGameCharacter()
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(13.f, 13.0f);
-	FVector2D Capsule;
-	GetCapsuleComponent()->GetUnscaledCapsuleSize(Capsule.X, Capsule.Y);
-	NeutralModeSettings.CapsuleSize = Capsule;
-	PowerModeSettings.CapsuleSize = FVector2D(32.f, 75.0f);
+
+	PowerModeSettings.CapsuleSize = FVector2D(10.f, 24.0f);
 
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
@@ -75,18 +73,28 @@ AFrogGameCharacter::AFrogGameCharacter()
 	RightHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("RightHandCollision"));
 	SetHandCollision(RightHandCollision, TEXT("NoCollision"));
 	RightHandCollision->CanCharacterStepUpOn = ECB_No;
-	RightHandCollision->InitSphereRadius(6.f);
+	RightHandCollision->InitSphereRadius(60.f);
 	RightHandCollision->SetRelativeLocation(FVector(0.f, 9.f, 0.f));
 	// Creates a collision sphere and attaches it to the characters left hand.
 	LeftHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("LeftHandCollision"));
 	SetHandCollision(LeftHandCollision, TEXT("NoCollision"));
 	LeftHandCollision->CanCharacterStepUpOn = ECB_No;
-	LeftHandCollision->InitSphereRadius(6.f);
+	LeftHandCollision->InitSphereRadius(60.f);
 	LeftHandCollision->SetRelativeLocation(FVector(0.f, -9.f, 0.f));
 	// PowerModeSettings defaults
 	PowerModeSettings.MaxWalkSpeed = 1600.f;
 	PowerModeSettings.JumpZHeight = 2000.f;
 	PowerModeSettings.MeshScale = 0.3f;
+	const ConstructorHelpers::FObjectFinder<USkeletalMesh> SkeletalMesh(TEXT("/Game/Models/Player/Player_Powered/sk_frog2.sk_frog2"));
+	if(SkeletalMesh.Object)
+	{
+		PowerModeSettings.Mesh = SkeletalMesh.Object;
+	}
+	const ConstructorHelpers::FClassFinder<UAnimInstance> AnimInstance(TEXT("/Game/Models/Player/Player_Powered/animBP_PoweredFrog"));
+	if(AnimInstance.Class)
+	{
+		PowerModeSettings.AnimBP = AnimInstance.Class;
+	}
 }
 
 void AFrogGameCharacter::SetHandCollision(USphereComponent* Collider, FName CollisionProfile)
@@ -117,11 +125,18 @@ void AFrogGameCharacter::BeginPlay()
 	// Setting Hud trackers to 0 at the start.
 	CurrentScore = 0.f;
 	CurrentPowerPoints = 0.f;
-	BaseJump = NeutralModeSettings.JumpZHeight;
 	CurrentJump = BaseJump;
 
-	GetCharacterMovement()->GravityScale = NeutralModeSettings.GravityScale;
-	GetCharacterMovement()->MaxWalkSpeed = NeutralModeSettings.MaxWalkSpeed;
+	NeutralModeSettings.Mesh = GetMesh()->SkeletalMesh;
+	NeutralModeSettings.AnimBP = GetMesh()->GetAnimInstance()->GetClass();
+	FVector2D Capsule;
+	GetCapsuleComponent()->GetUnscaledCapsuleSize(Capsule.X, Capsule.Y);
+	NeutralModeSettings.CapsuleSize = Capsule;
+	NeutralModeSettings.MeshScale = GetMesh()->GetRelativeScale3D().X;
+	NeutralModeSettings.BoomRange = CameraBoom->TargetArmLength;
+	NeutralModeSettings.MaxWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
+	NeutralModeSettings.JumpZHeight = BaseJump;
+	NeutralModeSettings.GravityScale = GetCharacterMovement()->GravityScale;
 
 	// Setup the default whirlwind swirl settings
 	DefaultWhirlwindSwirl.DefaultLinearUpSpeed = SuctionSpeed;
@@ -202,7 +217,6 @@ void AFrogGameCharacter::FilterOccludedObjects()
 			}
 			// this needs to happen during tick to filter out actors that shouldn't be sucked in
 			// probably easiest to stop checking a target once it succeeds the check
-			// TODO: Custom collision channel so we don't filter out targets that are behind smaller objects/suckable objects
 			const ETraceTypeQuery InTypeQuery{UCollisionProfile::Get()->ConvertToTraceType(ECC_Visibility)};
 			const TArray<AActor*> Array;
 			FHitResult Hit;
@@ -227,9 +241,7 @@ void AFrogGameCharacter::FilterOccludedObjects()
 				SwirlInfo.RadianDelta = FMath::Atan2(FrogToTarget.X, FrogToTarget.Z);
 				SwirlInfo.CurrentRadius = FMath::Sqrt(
 					(FrogToTarget.Z * FrogToTarget.Z) + (FrogToTarget.X * FrogToTarget.X));
-				// Max Radius needs to be a factor of distance ahead of the player
-				// So if target is at max range from player, then the factor equals 1
-				// if it's close, then the factor is much less 
+
 				SwirlInfo.MaxRadius = CalcMaxRadius(Target);
 
 				SwirlInfo.LinearUpPosition = Target->GetActorLocation().Y - GetActorLocation().Y;
@@ -301,7 +313,6 @@ void AFrogGameCharacter::DoWhirlwind(const float DeltaTime)
 }
 
 
-
 void AFrogGameCharacter::EndWhirlwind()
 {
 	bUsingWhirlwind = false;
@@ -309,7 +320,7 @@ void AFrogGameCharacter::EndWhirlwind()
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->MaxWalkSpeed = NeutralModeSettings.MaxWalkSpeed;
 	WhirlwindAffectedActors.Empty();
-	
+
 	UE_LOG(LogTemp, Warning, TEXT("Stopped using whirlwind."))
 }
 

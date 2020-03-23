@@ -58,7 +58,7 @@ class AFrogGameCharacter : public ACharacter
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class USphereComponent* LeftHandCollision;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Character, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY()
 	FCharacterSettings NeutralModeSettings;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character | PowerMode", meta = (AllowPrivateAccess =
 		"true"))
@@ -182,6 +182,11 @@ protected:
 private:
 
 	void FilterOccludedObjects();
+	/**
+	 * Max Radius needs to be a factor of distance ahead of the player.
+	 * So if target is at max range from player, then the factor equals 1.
+	 * If it's close, then the factor is much smaller.
+	 */
 	float CalcMaxRadius(AActor* Actor) const;
 
 
