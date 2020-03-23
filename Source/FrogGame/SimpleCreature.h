@@ -27,6 +27,7 @@ public:
 	void DisableActor();
 	void OnDisabled_Implementation() override;
 	bool IsDisabled_Implementation() override;
+	void IgnorePawnCollision_Implementation();
 
 	void ActorSaveDataLoaded_Implementation() override;
 	void ActorSaveDataSaved_Implementation() override;

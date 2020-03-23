@@ -52,6 +52,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 
 	WhirlwindParticles = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Whirlwind Particle System"));
 	WhirlwindParticles->SetupAttachment(RootComponent);
+	WhirlwindParticles->SetVisibility(false);
 	WhirlwindPivot = CreateDefaultSubobject<UChildActorComponent>(TEXT("Whirlwind Pivot"));
 	WhirlwindPivot->bEditableWhenInherited = true;
 	WhirlwindPivot->SetupAttachment(WhirlwindParticles);
@@ -66,9 +67,9 @@ AFrogGameCharacter::AFrogGameCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	// Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
-	
+
 	GetArrowComponent()->bEditableWhenInherited = true;
-	
+
 	// Power mode punch volumes need to be changed once we get the correct mesh
 	// Creates a collision sphere and attaches it to the characters right hand.
 	RightHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("RightHandCollision"));
@@ -178,12 +179,7 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	{
 		FilterOccludedObjects();
 		DoWhirlwind(DeltaTime);
-		if (bShouldRotate)
-		{
-			InterpToDesiredRotation(DeltaTime);
-		}
 	}
-
 }
 
 void AFrogGameCharacter::FilterOccludedObjects()
@@ -220,6 +216,7 @@ void AFrogGameCharacter::FilterOccludedObjects()
 			if (Hit.GetActor() == Target)
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Added %s to WhirlwindAffectedActors map."), *Target->GetName())
+				IEdible::Execute_IgnorePawnCollision(Target);
 				auto& SwirlInfo = WhirlwindAffectedActors.Add(Target, DefaultWhirlwindSwirl);
 				SwirlInfo.Construct();
 
@@ -227,12 +224,10 @@ void AFrogGameCharacter::FilterOccludedObjects()
 				SwirlInfo.RadianDelta = FMath::Atan2(FrogToTarget.X, FrogToTarget.Z);
 				SwirlInfo.CurrentRadius = FMath::Sqrt(
 					(FrogToTarget.Z * FrogToTarget.Z) + (FrogToTarget.X * FrogToTarget.X));
-				UE_LOG(LogTemp, Warning, TEXT("Current Radius: %f"), SwirlInfo.CurrentRadius)
 				// Max Radius needs to be a factor of distance ahead of the player
 				// So if target is at max range from player, then the factor equals 1
 				// if it's close, then the factor is much less 
 				SwirlInfo.MaxRadius = CalcMaxRadius(Target);
-				UE_LOG(LogTemp, Warning, TEXT("Max Radius: %f"), SwirlInfo.MaxRadius)
 
 				SwirlInfo.LinearUpPosition = Target->GetActorLocation().Y - GetActorLocation().Y;
 
@@ -254,8 +249,13 @@ float AFrogGameCharacter::CalcMaxRadius(AActor* Actor) const
 
 void AFrogGameCharacter::Whirlwind()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Using whirlwind!"))
-	bUsingWhirlwind = true;
+	if (!bPowerMode)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Using whirlwind!"))
+		bUsingWhirlwind = true;
+		WhirlwindParticles->SetVisibility(true);
+		GetCharacterMovement()->bOrientRotationToMovement = false;
+	}
 }
 
 void AFrogGameCharacter::DoWhirlwind(const float DeltaTime)
@@ -294,26 +294,16 @@ void AFrogGameCharacter::DoWhirlwind(const float DeltaTime)
 		It->Value.MaxRadius = CalcMaxRadius(Actor);
 		Actor->SetActorLocation(OutPosition);
 	}
-	if (GetCharacterMovement()->Velocity == FVector(0, 0, 0))
-	{
-		DesiredRotation = GetActorRotation();
-		DesiredRotation.Yaw = FollowCamera->GetForwardVector().ToOrientationRotator().Yaw;
-		bShouldRotate = true;
-	}
 }
 
-void AFrogGameCharacter::InterpToDesiredRotation(const float DeltaTime)
-{
-	SetActorRotation(FMath::RInterpConstantTo(GetActorRotation(), DesiredRotation, DeltaTime, 400.f));
-	if (DesiredRotation.Equals(GetActorRotation(), 5.f))
-	{
-		bShouldRotate = false;
-	}
-}
+
 
 void AFrogGameCharacter::EndWhirlwind()
 {
 	bUsingWhirlwind = false;
+	WhirlwindParticles->SetVisibility(false);
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+
 	UE_LOG(LogTemp, Warning, TEXT("Stopped using whirlwind."))
 }
 
@@ -424,7 +414,7 @@ void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSetti
 	const FVector Offset{0, 0, -CharacterSettings.CapsuleSize.Y};
 	GetMesh()->SetRelativeLocation(Offset);
 	GetMesh()->SetRelativeScale3D(FVector(CharacterSettings.MeshScale));
-	GetCameraBoom()->SetRelativeLocation(FVector(0.f,0.f,CharacterSettings.BoomZRelativeLocation));
+	GetCameraBoom()->SetRelativeLocation(FVector(0.f, 0.f, CharacterSettings.BoomZRelativeLocation));
 	GetCharacterMovement()->MaxWalkSpeed = CharacterSettings.MaxWalkSpeed;
 	GetCharacterMovement()->GravityScale = CharacterSettings.GravityScale;
 	GetCharacterMovement()->JumpZVelocity = CharacterSettings.JumpZHeight;

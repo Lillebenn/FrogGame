@@ -31,6 +31,7 @@ public:
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	bool IsDisabled_Implementation() override;
+	void IgnorePawnCollision_Implementation() override;
 	bool bShouldDestroy{false};
 
 

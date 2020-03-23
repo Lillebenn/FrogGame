@@ -35,6 +35,11 @@ bool ASimpleCreature::IsDisabled_Implementation()
 	return bShouldDestroy;
 }
 
+void ASimpleCreature::IgnorePawnCollision_Implementation()
+{
+	CreatureMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+	CreatureMesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+}
 
 // Called when the game starts or when spawned
 void ASimpleCreature::BeginPlay()

@@ -26,10 +26,11 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UEdibleComponent* EdibleComponent;
+	bool bShouldDestroy{false};
 
 	// Interface stuff
 	bool IsDisabled_Implementation() override;
-	bool bShouldDestroy{false};
+	void IgnorePawnCollision_Implementation() override;
 	void ActorSaveDataSaved_Implementation() override;
 	void ActorSaveDataLoaded_Implementation() override;
 
