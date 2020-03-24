@@ -16,7 +16,7 @@ class FROGGAME_API ADestructibleObject : public AActor, public ISaveable
 public:
 	// Sets default values for this actor's properties
 	ADestructibleObject();
-	UPROPERTY(EditAnywhere, Category = Edible)
+	UPROPERTY(EditAnywhere, Category = Destructible)
 	TSubclassOf<class ASphereDrop> Drop;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Destructible)
 	float Health{100.f};
@@ -25,7 +25,7 @@ public:
 	float CurrentHealth;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Destructible)
 	float FlyAwayForce{750000.f};
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Edible)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Destructible)
 	int32 NumDrops{5};
 	bool ShouldDestroy{false};
 

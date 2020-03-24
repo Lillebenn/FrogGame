@@ -10,6 +10,8 @@
 // Sets default values
 ADestructibleObject::ADestructibleObject()
 {
+	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
+	StaticMesh->SetCollisionProfileName(TEXT("BlockAll"));
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 }
@@ -18,7 +20,6 @@ ADestructibleObject::ADestructibleObject()
 void ADestructibleObject::BeginPlay()
 {
 	Super::BeginPlay();
-	StaticMesh = Cast<UStaticMeshComponent>(GetComponentByClass(UStaticMeshComponent::StaticClass()));
 	StartTransform = GetTransform();
 }
 
@@ -97,6 +98,7 @@ FTransform ADestructibleObject::GetStartTransform()
 {
 	return StartTransform;
 }
+
 // Custom behaviour when saving or loading
 void ADestructibleObject::ActorSaveDataSaved_Implementation()
 {
