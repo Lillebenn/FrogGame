@@ -91,11 +91,11 @@ AFrogGameCharacter::AFrogGameCharacter()
 	{
 		PowerModeSettings.Mesh = SkeletalMesh.Object;
 	}
-	const ConstructorHelpers::FClassFinder<UAnimInstance> AnimInstance(TEXT("/Game/Models/Player/Player_Powered/animBP_PoweredFrog"));
-	if(AnimInstance.Class)
-	{
-		PowerModeSettings.AnimBP = AnimInstance.Class;
-	}
+	//const ConstructorHelpers::FClassFinder<UAnimInstance> AnimInstance(TEXT("/Game/Models/Player/Player_Powered/animBP_PoweredFrog"));
+	//if(AnimInstance.Class)
+	//{
+	//	PowerModeSettings.AnimBP = AnimInstance.Class;
+	//}
 }
 
 void AFrogGameCharacter::SetHandCollision(USphereComponent* Collider, FName CollisionProfile)
