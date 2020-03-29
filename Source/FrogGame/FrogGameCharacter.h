@@ -116,7 +116,7 @@ public:
 	bool bIsPunching{false};
 	// Amount of damage the punch will do on each hit.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
-	float PunchDamage{100.f};
+	float PunchDamage{50.f};
 	UPROPERTY(VisibleAnywhere, Category = "Character | PowerMode")
 	float CurrentPowerPoints;
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")
@@ -200,7 +200,7 @@ private:
 
 	/** Uses fist to punch something, can only be used in power mode **/
 	void Punch();
-	void RemoveHandCollision();
+	void RemoveHandCollision() const;
 	UFUNCTION()
 	void OnAttackOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                     int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -216,12 +216,9 @@ private:
 
 
 	void LoadGame();
-
-	void SetHandCollision(class USphereComponent* Collider, FName CollisionProfile);
-
 	/** Changing to PowerMode **/
 	void PowerMode();
-	void SetPlayerModel(const FCharacterSettings& CharacterSettings);
+	void SetPlayerModel(const FCharacterSettings& CharacterSettings) const;
 	void PowerDrain(float DeltaTime);
 	void DeactivatePowerMode();
 

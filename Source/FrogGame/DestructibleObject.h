@@ -28,13 +28,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Destructible)
 	int32 NumDrops{5};
 	bool ShouldDestroy{false};
-
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	class UStaticMeshComponent* StaticMesh;
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
 private:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true") )
-	class UStaticMeshComponent* StaticMesh;
+
 	FTimerHandle TimerHandle;
 	FTransform StartTransform;
 public:
@@ -44,7 +44,7 @@ public:
 	                 AActor* DamageCauser) override;
 	void SpawnSpheres() const;
 	FVector CalculateImpulseVector(AFrogGameCharacter* Frog) const;
-	void KillActor() const;
+	void KillActor();
 	void ActorSaveDataSaved_Implementation() override;
 	void ActorSaveDataLoaded_Implementation() override;
 

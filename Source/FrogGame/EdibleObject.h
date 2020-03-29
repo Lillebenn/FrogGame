@@ -3,21 +3,18 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "DestructibleObject.h"
 #include "GameFramework/Actor.h"
 #include "Edible.h"
-#include "Saveable.h"
 #include "EdibleObject.generated.h"
 
 /**
  * 
  */
 UCLASS(Abstract)
-class FROGGAME_API AEdibleObject : public AActor, public IEdible, public ISaveable
+class FROGGAME_API AEdibleObject : public ADestructibleObject, public IEdible
 {
 	GENERATED_BODY()
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class UStaticMeshComponent* StaticMesh;
 
 
 public:

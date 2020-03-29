@@ -38,7 +38,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	// Configure character movement
 	auto Movement{GetCharacterMovement()};
 	Movement->bOrientRotationToMovement = true; // Character moves in the direction of input...	
-	Movement->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // ...at this rotation rate
+	Movement->RotationRate = FRotator(0.0f, 1080.0f, 0.0f); // ...at this rotation rate
 	Movement->JumpZVelocity = 3000.f;
 	Movement->MaxWalkSpeed = 1600.f;
 	Movement->GravityScale = 6.f;
@@ -72,22 +72,22 @@ AFrogGameCharacter::AFrogGameCharacter()
 	// Power mode punch volumes need to be changed once we get the correct mesh
 	// Creates a collision sphere and attaches it to the characters right hand.
 	RightHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("RightHandCollision"));
-	SetHandCollision(RightHandCollision, TEXT("NoCollision"));
 	RightHandCollision->CanCharacterStepUpOn = ECB_No;
 	RightHandCollision->InitSphereRadius(60.f);
 	RightHandCollision->SetRelativeLocation(FVector(0.f, 9.f, 0.f));
 	// Creates a collision sphere and attaches it to the characters left hand.
 	LeftHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("LeftHandCollision"));
-	SetHandCollision(LeftHandCollision, TEXT("NoCollision"));
 	LeftHandCollision->CanCharacterStepUpOn = ECB_No;
 	LeftHandCollision->InitSphereRadius(60.f);
 	LeftHandCollision->SetRelativeLocation(FVector(0.f, -9.f, 0.f));
+	RemoveHandCollision();
 	// PowerModeSettings defaults
 	PowerModeSettings.MaxWalkSpeed = 1600.f;
 	PowerModeSettings.JumpZHeight = 2000.f;
 	PowerModeSettings.MeshScale = 0.3f;
-	const ConstructorHelpers::FObjectFinder<USkeletalMesh> SkeletalMesh(TEXT("/Game/Models/Player/Player_Powered/sk_frog2.sk_frog2"));
-	if(SkeletalMesh.Object)
+	const ConstructorHelpers::FObjectFinder<USkeletalMesh> SkeletalMesh(
+		TEXT("/Game/Models/Player/Player_Powered/sk_frog2.sk_frog2"));
+	if (SkeletalMesh.Object)
 	{
 		PowerModeSettings.Mesh = SkeletalMesh.Object;
 	}
@@ -96,20 +96,6 @@ AFrogGameCharacter::AFrogGameCharacter()
 	//{
 	//	PowerModeSettings.AnimBP = AnimInstance.Class;
 	//}
-}
-
-void AFrogGameCharacter::SetHandCollision(USphereComponent* Collider, FName CollisionProfile)
-{
-	Collider->SetCollisionProfileName(CollisionProfile);
-	Collider->SetCollisionObjectType(ECC_GameTraceChannel3);
-	if (CollisionProfile == TEXT("Punch"))
-	{
-		Collider->SetNotifyRigidBodyCollision(true);
-	}
-	else
-	{
-		Collider->SetNotifyRigidBodyCollision(false);
-	}
 }
 
 
@@ -351,36 +337,28 @@ void AFrogGameCharacter::Punch()
 		// Also need to make sure the animation cancels early if it hits something, or turns off collision once it does, so it doesn't keep adding collision events.
 		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AFrogGameCharacter::RemoveHandCollision, 0.5f,
 		                                       false);
-		SetHandCollision(RightHandCollision, TEXT("Punch"));
-		SetHandCollision(LeftHandCollision, TEXT("Punch"));
+		RightHandCollision->SetCollisionProfileName(TEXT("Punch"));
+		LeftHandCollision->SetCollisionProfileName(TEXT("Punch"));
 		// Add execution here
 	}
 }
 
-void AFrogGameCharacter::RemoveHandCollision()
+void AFrogGameCharacter::RemoveHandCollision() const
 {
-	SetHandCollision(RightHandCollision, TEXT("NoCollision"));
-	SetHandCollision(LeftHandCollision, TEXT("NoCollision"));
+	RightHandCollision->SetCollisionProfileName(TEXT("NoCollision"));
+	LeftHandCollision->SetCollisionProfileName(TEXT("NoCollision"));
 }
 
 void AFrogGameCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
                                          UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
                                          const FHitResult& SweepResult)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Hit Event with %s!"), *OtherActor->GetName())
-
-	if (OtherActor != this && OtherComp != nullptr && OtherActor->Implements<UEdible>())
+	if (OtherActor != nullptr && OtherActor != this && OtherComp != nullptr)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Hit Event with %s!"), *OtherActor->GetName())
+
 		RemoveHandCollision();
-		UEdibleComponent* EdibleComponent{
-			Cast<UEdibleComponent>(OtherActor->GetComponentByClass(UEdibleComponent::StaticClass()))
-		};
-		if (EdibleComponent)
-		{
-			TSubclassOf<UDamageType> const ValidDamageTypeClass = TSubclassOf<UDamageType>(UDamageType::StaticClass());
-			const FDamageEvent DamageEvent(ValidDamageTypeClass);
-			OtherActor->TakeDamage(PunchDamage, DamageEvent, GetController(), this);
-		}
+		OtherActor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
 	}
 }
 
@@ -422,7 +400,7 @@ void AFrogGameCharacter::PowerMode()
 	// Change from frog mesh and rig to power-frog mesh & rig here.
 }
 
-void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSettings)
+void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSettings) const
 {
 	GetMesh()->SetAnimInstanceClass(CharacterSettings.AnimBP);
 	GetMesh()->SetSkeletalMesh(CharacterSettings.Mesh);
@@ -440,8 +418,7 @@ void AFrogGameCharacter::DeactivatePowerMode()
 {
 	bPowerMode = false;
 	SetPlayerModel(NeutralModeSettings);
-	SetHandCollision(RightHandCollision, TEXT("NoCollision"));
-	SetHandCollision(LeftHandCollision, TEXT("NoCollision"));
+	RemoveHandCollision();
 }
 
 void AFrogGameCharacter::UpdatePowerPoints(const float Points)
@@ -493,7 +470,7 @@ void AFrogGameCharacter::MoveForward(float Value)
 		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
-		if(Value < 0.f && bUsingWhirlwind)
+		if (Value < 0.f && bUsingWhirlwind)
 		{
 			Value = -0.5f;
 		}
