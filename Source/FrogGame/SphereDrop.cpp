@@ -70,7 +70,7 @@ void ASphereDrop::Tick(float DeltaTime)
 			FVector NewPosition;
 			if (FrogFunctionLibrary::Swirl(DeltaTime, SwirlInfo, Frog->GetActorLocation(), NewPosition))
 			{
-				Destroy();
+				Frog->Consume(this);
 			}
 			else
 			{

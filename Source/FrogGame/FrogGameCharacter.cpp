@@ -354,9 +354,11 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 	{
 		return;
 	}
-	if (OtherActor->Implements<UEdible>())
+	const UEdibleComponent* SizeInfo{
+		Cast<UEdibleComponent>(OtherActor->GetComponentByClass(UEdibleComponent::StaticClass()))
+	};
+	if (SizeInfo)
 	{
-		const UEdibleComponent* SizeInfo{Cast<UEdibleComponent>(OtherActor->GetComponentByClass(UEdibleComponent::StaticClass()))};
 		UpdateCurrentScore(SizeInfo->ScorePoints);
 		UpdatePowerPoints(SizeInfo->PowerPoints);
 		UE_LOG(LogTemp, Warning, TEXT("Destroying %s"), *OtherActor->GetName())
@@ -371,7 +373,7 @@ void AFrogGameCharacter::Punch()
 	{
 		// For later, when we have a proper punch animation, turn on collision only when the punch of the player is at the end point
 		// Also need to make sure the animation cancels early if it hits something, or turns off collision once it does, so it doesn't keep adding collision events.
-		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AFrogGameCharacter::OnPunchEnd, 0.5f,
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AFrogGameCharacter::OnPunchEnd, 0.25f,
 		                                       false);
 		RightHandCollision->SetCollisionProfileName(TEXT("Punch"));
 		LeftHandCollision->SetCollisionProfileName(TEXT("Punch"));

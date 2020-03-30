@@ -21,10 +21,10 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UEdibleComponent* EdibleComponent;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Swirl Settings")
-	float MoveToPlayerSpeed{1000.f};
+	float MoveToPlayerSpeed{2000.f};
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Swirl Settings")
-	float InitialRadius{50.f};
+	float InitialRadius{100.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Swirl Settings")
 	float InitialZPosition{-30.f};
 

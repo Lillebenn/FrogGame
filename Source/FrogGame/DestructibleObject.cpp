@@ -57,7 +57,7 @@ float ADestructibleObject::TakeDamage(float DamageAmount, FDamageEvent const& Da
 				{
 					UE_LOG(LogTemp, Warning, TEXT("Missing static mesh reference!"))
 				}
-				GetWorld()->GetTimerManager().SetTimer(TimerHandle, DestructibleComponent, &UCustomDestructibleComponent::KillActor, 3.f,
+				GetWorld()->GetTimerManager().SetTimer(TimerHandle, DestructibleComponent, &UCustomDestructibleComponent::KillActor, 1.f,
 				                                       false);
 			}
 		}
