@@ -3,21 +3,18 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "DestructibleObject.h"
 #include "GameFramework/Actor.h"
 #include "Edible.h"
-#include "Saveable.h"
 #include "EdibleObject.generated.h"
 
 /**
  * 
  */
 UCLASS(Abstract)
-class FROGGAME_API AEdibleObject : public AActor, public IEdible, public ISaveable
+class FROGGAME_API AEdibleObject : public ADestructibleObject, public IEdible
 {
 	GENERATED_BODY()
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class UStaticMeshComponent* StaticMesh;
 
 
 public:
@@ -28,18 +25,16 @@ public:
 	class UEdibleComponent* EdibleComponent;
 	bool bShouldDestroy{false};
 
+	FTransform StartTransform;
+
 	// Interface stuff
 	bool IsDisabled_Implementation() override;
 	void IgnorePawnCollision_Implementation() override;
 	void ActorSaveDataSaved_Implementation() override;
 	void ActorSaveDataLoaded_Implementation() override;
 
-	FTransform GetStartTransform() override;
-
-
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
 private:
-	FTransform StartTransform;
 };

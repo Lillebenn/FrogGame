@@ -15,7 +15,7 @@ ASphereDrop::ASphereDrop()
 
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	StaticMesh->SetCollisionProfileName(TEXT("SphereDrop"));
-	
+
 	EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
 	RootComponent = StaticMesh;
 }
@@ -37,11 +37,11 @@ void ASphereDrop::MoveToPlayer(const float DeltaTime)
 	StartPosition = Frog->GetActorLocation() + Direction * InitialRadius;
 	StartPosition.Z = Frog->GetActorLocation().Z + InitialZPosition;
 
-	const FVector NewPosition{FMath::VInterpConstantTo(GetActorLocation(), StartPosition, DeltaTime, MoveToPlayerSpeed)};
+	const FVector NewPosition{
+		FMath::VInterpConstantTo(GetActorLocation(), StartPosition, DeltaTime, MoveToPlayerSpeed)
+	};
 	SetActorLocation(NewPosition);
 }
-
-
 
 
 // Called every frame
@@ -53,7 +53,9 @@ void ASphereDrop::Tick(float DeltaTime)
 		if (!bShouldSwirl)
 		{
 			MoveToPlayer(DeltaTime);
-			const float RadialDistance{FrogFunctionLibrary::SquaredRadialDistance(GetActorLocation(), Frog->GetActorLocation())};
+			const float RadialDistance{
+				FrogFunctionLibrary::SquaredRadialDistance(GetActorLocation(), Frog->GetActorLocation())
+			};
 			if (RadialDistance <= InitialRadius * InitialRadius)
 			{
 				SwirlInfo.CurrentRadius = FMath::Sqrt(RadialDistance);
@@ -66,16 +68,14 @@ void ASphereDrop::Tick(float DeltaTime)
 		else
 		{
 			FVector NewPosition;
-			if(FrogFunctionLibrary::Swirl(DeltaTime, SwirlInfo, Frog->GetActorLocation(), NewPosition))
+			if (FrogFunctionLibrary::Swirl(DeltaTime, SwirlInfo, Frog->GetActorLocation(), NewPosition))
 			{
-				Destroy();
-			}else
+				Frog->Consume(this);
+			}
+			else
 			{
 				SetActorLocation(NewPosition);
 			}
-			
 		}
 	}
 }
-
-

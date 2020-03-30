@@ -7,11 +7,7 @@
 
 AEdibleObject::AEdibleObject()
 {
-	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
-	StaticMesh->SetCollisionProfileName(TEXT("EdibleProfile"));
 	EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
-
-	RootComponent = StaticMesh;
 }
 
 void AEdibleObject::Tick(float DeltaTime)
@@ -39,10 +35,7 @@ void AEdibleObject::ActorSaveDataLoaded_Implementation()
 {
 }
 
-FTransform AEdibleObject::GetStartTransform()
-{
-	return StartTransform;
-}
+
 
 
 void AEdibleObject::BeginPlay()

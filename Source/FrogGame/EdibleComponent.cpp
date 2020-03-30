@@ -22,7 +22,6 @@ UEdibleComponent::UEdibleComponent()
 void UEdibleComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	CurrentHealth = Health;
 
 	// ...
 }
@@ -37,36 +36,3 @@ void UEdibleComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 	// ...
 }
 
-void UEdibleComponent::SpawnSpheres() const
-{
-	AActor* Actor{GetOwner()};
-	UE_LOG(LogTemp, Warning, TEXT("Owner is %s"), *Actor->GetName())
-	if (Drop)
-	{
-		for (int i{0}; i < NumDrops; i++)
-		{
-			const FVector2D SpawnLocation2D{FMath::RandPointInCircle(125.f)};
-			const FVector ActorLocation{Actor->GetActorLocation()};
-			const FVector SpawnLocation{
-				ActorLocation.X + SpawnLocation2D.X, ActorLocation.Y + SpawnLocation2D.Y, ActorLocation.Z
-			};
-			const FTransform SpawnTransform{SpawnLocation};
-			ASphereDrop* Sphere{Actor->GetWorld()->SpawnActorDeferred<ASphereDrop>(Drop, SpawnTransform)};
-			Sphere->EdibleComponent = DuplicateObject(this, StaticClass());
-			UGameplayStatics::FinishSpawningActor(Sphere, SpawnTransform);
-		}
-	}
-}
-
-FVector UEdibleComponent::CalculateImpulseVector(AFrogGameCharacter* Frog) const
-{
-	FVector ImpulseDirection{GetOwner()->GetActorLocation() - Frog->GetActorLocation()};
-	ImpulseDirection.Normalize();
-	return {ImpulseDirection * FlyAwayForce};
-}
-
-void UEdibleComponent::KillActor() const
-{
-	SpawnSpheres();
-	GetOwner()->SetLifeSpan(0.001f);
-}

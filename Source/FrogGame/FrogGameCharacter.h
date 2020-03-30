@@ -116,7 +116,7 @@ public:
 	bool bIsPunching{false};
 	// Amount of damage the punch will do on each hit.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
-	float PunchDamage{100.f};
+	float PunchDamage{50.f};
 	UPROPERTY(VisibleAnywhere, Category = "Character | PowerMode")
 	float CurrentPowerPoints;
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")
@@ -131,12 +131,12 @@ public:
 	float CurrentScore;
 	// How close object has to be to be eaten (destroyed).
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
-	float EatDistance{200.f};
+	float EatDistance{150.f};
 	// How close the object has to be before it starts shrinking
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
-	float ShrinkDistance{300.f};
-
-	FVector ShrinkSpeed{0.003f};
+	float ShrinkDistance{500.f};
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
+	float ShrinkSpeed{0.01f};
 	// Blueprint for the Whirlwind mesh or something idk.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
 	float WhirlwindWalkSpeed{600.f};
@@ -149,7 +149,11 @@ public:
 	// How quickly the object reaches the middle of the whirlwind.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
 	float InSpeed{30.f};
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
+	float MinRadius{5.f};
 
+	UPROPERTY(EditDefaultsOnly, Category = "Character | Whirlwind")
+	TSubclassOf<AActor> PivotActor;
 protected:
 
 	void BeginPlay() override;
@@ -179,6 +183,7 @@ protected:
 private:
 
 	void FilterOccludedObjects();
+	FVector RotateToAxis(const FVector& A, const FVector& Axis) const;
 	/**
 	 * Max Radius needs to be a factor of distance ahead of the player.
 	 * So if target is at max range from player, then the factor equals 1.
@@ -191,16 +196,18 @@ private:
 	void DoWhirlwind(float DeltaTime);
 	void EndWhirlwind();
 	bool bUsingWhirlwind{false};
+
 	UPROPERTY()
 	FSwirlInfo DefaultWhirlwindSwirl;
 	UPROPERTY()
-	TMap<AActor*, FSwirlInfo> WhirlwindAffectedActors;
+	TArray<AActor*> WhirlwindAffectedActors;
 	UPROPERTY()
 	TArray<AActor*> PotentialTargets;
 
 	/** Uses fist to punch something, can only be used in power mode **/
 	void Punch();
-	void RemoveHandCollision();
+	void OnPunchEnd();
+	void RemoveHandCollision() const;
 	UFUNCTION()
 	void OnAttackOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                     int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -216,12 +223,9 @@ private:
 
 
 	void LoadGame();
-
-	void SetHandCollision(class USphereComponent* Collider, FName CollisionProfile);
-
 	/** Changing to PowerMode **/
 	void PowerMode();
-	void SetPlayerModel(const FCharacterSettings& CharacterSettings);
+	void SetPlayerModel(const FCharacterSettings& CharacterSettings) const;
 	void PowerDrain(float DeltaTime);
 	void DeactivatePowerMode();
 

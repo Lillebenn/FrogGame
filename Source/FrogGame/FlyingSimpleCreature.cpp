@@ -4,6 +4,7 @@
 #include "FlyingSimpleCreature.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "CustomDestructibleComponent.h"
 #include "FrogGameCharacter.h"
 
 
@@ -33,16 +34,17 @@ float AFlyingSimpleCreature::TakeDamage(float DamageAmount, FDamageEvent const& 
 		// This needs to be more specific to the punches or we could just walk it to death
 		if (Frog)
 		{
-			EdibleComponent->CurrentHealth -= ActualDamage;
-			if (EdibleComponent->CurrentHealth <= 0.f && !IsActorBeingDestroyed())
+			float& CurrentHealth{DestructibleComponent->CurrentHealth};
+			CurrentHealth -= ActualDamage;
+			if (CurrentHealth <= 0.f && !IsActorBeingDestroyed())
 			{
-				DisableActor();
+				DisableActor_Implementation();
 				// TODO: Maybe set mass to 2-300kg once it loses all health, so it flies away only when punched to death
 				NavCollider->SetCollisionProfileName(TEXT("BlockAllDynamic"));
 				NavCollider->SetCollisionObjectType(ECC_GameTraceChannel1);
 				NavCollider->SetSimulatePhysics(true);
-				NavCollider->AddImpulse(EdibleComponent->CalculateImpulseVector(Frog));
-				GetWorld()->GetTimerManager().SetTimer(TimerHandle, EdibleComponent, &UEdibleComponent::KillActor, 1.f,
+				NavCollider->AddImpulse(DestructibleComponent->CalculateImpulseVector(Frog));
+				GetWorld()->GetTimerManager().SetTimer(TimerHandle, DestructibleComponent, &UCustomDestructibleComponent::KillActor, 1.f,
 				                                       false);
 			}
 		}

@@ -38,7 +38,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	// Configure character movement
 	auto Movement{GetCharacterMovement()};
 	Movement->bOrientRotationToMovement = true; // Character moves in the direction of input...	
-	Movement->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // ...at this rotation rate
+	Movement->RotationRate = FRotator(0.0f, 1080.0f, 0.0f); // ...at this rotation rate
 	Movement->JumpZVelocity = 3000.f;
 	Movement->MaxWalkSpeed = 1600.f;
 	Movement->GravityScale = 6.f;
@@ -72,22 +72,22 @@ AFrogGameCharacter::AFrogGameCharacter()
 	// Power mode punch volumes need to be changed once we get the correct mesh
 	// Creates a collision sphere and attaches it to the characters right hand.
 	RightHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("RightHandCollision"));
-	SetHandCollision(RightHandCollision, TEXT("NoCollision"));
 	RightHandCollision->CanCharacterStepUpOn = ECB_No;
 	RightHandCollision->InitSphereRadius(60.f);
 	RightHandCollision->SetRelativeLocation(FVector(0.f, 9.f, 0.f));
 	// Creates a collision sphere and attaches it to the characters left hand.
 	LeftHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("LeftHandCollision"));
-	SetHandCollision(LeftHandCollision, TEXT("NoCollision"));
 	LeftHandCollision->CanCharacterStepUpOn = ECB_No;
 	LeftHandCollision->InitSphereRadius(60.f);
 	LeftHandCollision->SetRelativeLocation(FVector(0.f, -9.f, 0.f));
+	RemoveHandCollision();
 	// PowerModeSettings defaults
 	PowerModeSettings.MaxWalkSpeed = 1600.f;
 	PowerModeSettings.JumpZHeight = 2000.f;
 	PowerModeSettings.MeshScale = 0.3f;
-	const ConstructorHelpers::FObjectFinder<USkeletalMesh> SkeletalMesh(TEXT("/Game/Models/Player/Player_Powered/sk_frog2.sk_frog2"));
-	if(SkeletalMesh.Object)
+	const ConstructorHelpers::FObjectFinder<USkeletalMesh> SkeletalMesh(
+		TEXT("/Game/Models/Player/Player_Powered/sk_frog2.sk_frog2"));
+	if (SkeletalMesh.Object)
 	{
 		PowerModeSettings.Mesh = SkeletalMesh.Object;
 	}
@@ -96,20 +96,6 @@ AFrogGameCharacter::AFrogGameCharacter()
 	//{
 	//	PowerModeSettings.AnimBP = AnimInstance.Class;
 	//}
-}
-
-void AFrogGameCharacter::SetHandCollision(USphereComponent* Collider, FName CollisionProfile)
-{
-	Collider->SetCollisionProfileName(CollisionProfile);
-	Collider->SetCollisionObjectType(ECC_GameTraceChannel3);
-	if (CollisionProfile == TEXT("Punch"))
-	{
-		Collider->SetNotifyRigidBodyCollision(true);
-	}
-	else
-	{
-		Collider->SetNotifyRigidBodyCollision(false);
-	}
 }
 
 
@@ -232,25 +218,37 @@ void AFrogGameCharacter::FilterOccludedObjects()
 			// if hit actor is the same as target, no occluding actor was found
 			if (Hit.GetActor() == Target)
 			{
+				AEdibleObject* Edible{Cast<AEdibleObject>(Target)};
+				if (Edible)
+				{
+					Edible->StaticMesh->SetSimulatePhysics(false);
+				}
+				UEdibleComponent* EdibleComponent{
+					Cast<UEdibleComponent>(Target->GetComponentByClass(UEdibleComponent::StaticClass()))
+				};
 				UE_LOG(LogTemp, Warning, TEXT("Added %s to WhirlwindAffectedActors map."), *Target->GetName())
 				IEdible::Execute_IgnorePawnCollision(Target);
-				auto& SwirlInfo = WhirlwindAffectedActors.Add(Target, DefaultWhirlwindSwirl);
-				SwirlInfo.Construct();
+				IEdible::Execute_PauseAI(Target, true); // TODO: Needs testing
+				// Parent the object to an invisible object at the pivot point
+				// Rotate the entire actor in the X axis
+				FVector2D FrogXY{Target->GetActorLocation() - GetActorLocation()};
+				EdibleComponent->PivotDistance = FrogXY.Size();
+				FVector Pivot{GetActorLocation() + GetActorForwardVector() * EdibleComponent->PivotDistance};
 
-				const FVector FrogToTarget{Target->GetActorLocation() - GetActorLocation()};
-				SwirlInfo.RadianDelta = FMath::Atan2(FrogToTarget.X, FrogToTarget.Z);
-				SwirlInfo.CurrentRadius = FMath::Sqrt(
-					(FrogToTarget.Z * FrogToTarget.Z) + (FrogToTarget.X * FrogToTarget.X));
+				EdibleComponent->Parent = GetWorld()->SpawnActor<AActor>(PivotActor, Pivot, FRotator());
+				if (EdibleComponent->Parent)
+				{
+					FAttachmentTransformRules InRule{EAttachmentRule::KeepWorld, false};
+					Target->AttachToActor(EdibleComponent->Parent, InRule);
+				}
 
-				SwirlInfo.MaxRadius = CalcMaxRadius(Target);
-
-				SwirlInfo.LinearUpPosition = Target->GetActorLocation().Y - GetActorLocation().Y;
-
+				WhirlwindAffectedActors.Add(Target);
 				PotentialTargets.Remove(Target);
 			}
 		}
 	}
 }
+
 
 float AFrogGameCharacter::CalcMaxRadius(AActor* Actor) const
 {
@@ -274,41 +272,54 @@ void AFrogGameCharacter::Whirlwind()
 	}
 }
 
-void AFrogGameCharacter::DoWhirlwind(const float DeltaTime)
+void AFrogGameCharacter::DoWhirlwind(float DeltaTime)
 {
 	// for every edible object in the volume, apply an interpolated movement towards the player, and if it gets close enough use Consume.
 	// Instead of giving every object its own FSwirlInfo, we can just generate one for each new object that enters the whirlwind,
 	// and place them in a map where each actor has its own FSwirlInfo for easy lookup.
 	// This happens in OnWhirlwindBeginOverlap.
-	for (auto It = WhirlwindAffectedActors.CreateIterator(); It; ++It)
+	TArray<AActor*> TempArray{WhirlwindAffectedActors};
+	for (auto Actor : TempArray)
 	{
-		AActor* Actor{It->Key};
-		const float DistToPlayer{FVector::Dist(Actor->GetActorLocation(), GetActorLocation())};
-		if (DistToPlayer <= ShrinkDistance)
+		auto EdibleComponent{Cast<UEdibleComponent>(Actor->GetComponentByClass(UEdibleComponent::StaticClass()))};
+
+		float& PivotDistance{EdibleComponent->PivotDistance};
+		PivotDistance -= SuctionSpeed * DeltaTime;
+		if (PivotDistance <= ShrinkDistance)
 		{
 			if (Actor->GetActorScale().Size() >= 0.1f)
 			{
-				const FVector NewScale{Actor->GetActorScale() - ShrinkSpeed};
+				const FVector NewScale{
+					Actor->GetActorScale() - ISaveable::Execute_GetStartTransform(Actor).GetScale3D() * ShrinkSpeed
+				};
 				Actor->SetActorScale3D(NewScale);
 			}
 		}
-		if (DistToPlayer <= EatDistance)
+		if (PivotDistance <= EatDistance)
 		{
 			Consume(Actor);
 			continue;
 		}
-		if (It->Value.CurrentRadius >= It->Value.MaxRadius)
+
+		AActor* Parent{EdibleComponent->Parent};
+		if (!Parent)
 		{
-			const float RadiusRatio{It->Value.MaxRadius / It->Value.CurrentRadius};
-			// If CR == MR, the result will be DefaultLinearInSpeed / 1.
-			It->Value.LinearInSpeed = It->Value.DefaultLinearInSpeed / RadiusRatio;
+			UE_LOG(LogTemp, Warning, TEXT("Pivot not found!"))
+			continue;
 		}
-		FVector OutPosition;
-		// Something to keep in mind -- FSwirlInfo's variables become somewhat misnamed.
-		FrogFunctionLibrary::HorizontalSwirl(DeltaTime, It->Value, GetActorLocation(),
-		                                     OutPosition);
-		It->Value.MaxRadius = CalcMaxRadius(Actor);
-		Actor->SetActorLocation(OutPosition);
+		FVector ParentToActor{Actor->GetActorLocation() - Parent->GetActorLocation()};
+		// Rotate the actor around the pivot
+		FVector NewRelativePosition{ParentToActor.RotateAngleAxis(RotationSpeed, GetActorForwardVector())};
+		if (FVector::Dist(Actor->GetActorLocation(), Parent->GetActorLocation()) > MinRadius)
+		{
+			// Move the actor slightly towards the pivot point
+			NewRelativePosition -= ParentToActor.GetSafeNormal() * InSpeed * DeltaTime;
+		}
+		Actor->SetActorRelativeLocation(NewRelativePosition);
+
+		// Move the pivot actor slightly towards the player
+		FVector NewPosition{GetActorLocation() + GetActorForwardVector() * PivotDistance};
+		Parent->SetActorLocation(NewPosition);
 	}
 }
 
@@ -319,6 +330,19 @@ void AFrogGameCharacter::EndWhirlwind()
 	WhirlwindParticles->SetVisibility(false);
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->MaxWalkSpeed = NeutralModeSettings.MaxWalkSpeed;
+	for (const auto Actor : WhirlwindAffectedActors)
+	{
+		if (auto Edible = Cast<AEdibleObject>(Actor))
+		{
+			Edible->StaticMesh->SetSimulatePhysics(true);
+		}
+		auto EdibleComp{Cast<UEdibleComponent>(Actor->GetComponentByClass(UEdibleComponent::StaticClass()))};
+		if (EdibleComp->Parent)
+		{
+			EdibleComp->Parent->Destroy();
+		}
+		IEdible::Execute_PauseAI(Actor, false);
+	}
 	WhirlwindAffectedActors.Empty();
 
 	UE_LOG(LogTemp, Warning, TEXT("Stopped using whirlwind."))
@@ -330,11 +354,11 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 	{
 		return;
 	}
-	if (OtherActor->Implements<UEdible>())
+	const UEdibleComponent* SizeInfo{
+		Cast<UEdibleComponent>(OtherActor->GetComponentByClass(UEdibleComponent::StaticClass()))
+	};
+	if (SizeInfo)
 	{
-		const UEdibleComponent* SizeInfo{
-			Cast<UEdibleComponent>(OtherActor->GetComponentByClass(UEdibleComponent::StaticClass()))
-		};
 		UpdateCurrentScore(SizeInfo->ScorePoints);
 		UpdatePowerPoints(SizeInfo->PowerPoints);
 		UE_LOG(LogTemp, Warning, TEXT("Destroying %s"), *OtherActor->GetName())
@@ -345,47 +369,47 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 
 void AFrogGameCharacter::Punch()
 {
-	if (bPowerMode)
+	if (bPowerMode && !bIsPunching)
 	{
 		// For later, when we have a proper punch animation, turn on collision only when the punch of the player is at the end point
 		// Also need to make sure the animation cancels early if it hits something, or turns off collision once it does, so it doesn't keep adding collision events.
-		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AFrogGameCharacter::RemoveHandCollision, 0.5f,
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AFrogGameCharacter::OnPunchEnd, 0.25f,
 		                                       false);
-		SetHandCollision(RightHandCollision, TEXT("Punch"));
-		SetHandCollision(LeftHandCollision, TEXT("Punch"));
+		RightHandCollision->SetCollisionProfileName(TEXT("Punch"));
+		LeftHandCollision->SetCollisionProfileName(TEXT("Punch"));
+		bIsPunching = true;
 		// Add execution here
 	}
 }
 
-void AFrogGameCharacter::RemoveHandCollision()
+void AFrogGameCharacter::OnPunchEnd()
 {
-	SetHandCollision(RightHandCollision, TEXT("NoCollision"));
-	SetHandCollision(LeftHandCollision, TEXT("NoCollision"));
+	RemoveHandCollision();
+	bIsPunching = false;
+}
+
+void AFrogGameCharacter::RemoveHandCollision() const
+{
+	RightHandCollision->SetCollisionProfileName(TEXT("NoCollision"));
+	LeftHandCollision->SetCollisionProfileName(TEXT("NoCollision"));
 }
 
 void AFrogGameCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
                                          UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
                                          const FHitResult& SweepResult)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Hit Event with %s!"), *OtherActor->GetName())
-
-	if (OtherActor != this && OtherComp != nullptr && OtherActor->Implements<UEdible>())
+	if (OtherActor != nullptr && OtherActor != this && OtherComp != nullptr)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Hit Event with %s!"), *OtherActor->GetName())
+
 		RemoveHandCollision();
-		UEdibleComponent* EdibleComponent{
-			Cast<UEdibleComponent>(OtherActor->GetComponentByClass(UEdibleComponent::StaticClass()))
-		};
-		if (EdibleComponent)
-		{
-			TSubclassOf<UDamageType> const ValidDamageTypeClass = TSubclassOf<UDamageType>(UDamageType::StaticClass());
-			const FDamageEvent DamageEvent(ValidDamageTypeClass);
-			OtherActor->TakeDamage(PunchDamage, DamageEvent, GetController(), this);
-		}
+		OtherActor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
 	}
 }
 
 void AFrogGameCharacter::OnWhirlwindBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-                                                 UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+                                                 UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
+                                                 bool bFromSweep,
                                                  const FHitResult& SweepResult)
 {
 	if (OtherActor->GetComponentByClass(UEdibleComponent::StaticClass()))
@@ -422,7 +446,7 @@ void AFrogGameCharacter::PowerMode()
 	// Change from frog mesh and rig to power-frog mesh & rig here.
 }
 
-void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSettings)
+void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSettings) const
 {
 	GetMesh()->SetAnimInstanceClass(CharacterSettings.AnimBP);
 	GetMesh()->SetSkeletalMesh(CharacterSettings.Mesh);
@@ -440,11 +464,10 @@ void AFrogGameCharacter::DeactivatePowerMode()
 {
 	bPowerMode = false;
 	SetPlayerModel(NeutralModeSettings);
-	SetHandCollision(RightHandCollision, TEXT("NoCollision"));
-	SetHandCollision(LeftHandCollision, TEXT("NoCollision"));
+	RemoveHandCollision();
 }
 
-void AFrogGameCharacter::UpdatePowerPoints(const float Points)
+void AFrogGameCharacter::UpdatePowerPoints(float Points)
 {
 	CurrentPowerPoints = CurrentPowerPoints + Points;
 	if (CurrentPowerPoints >= MaxPowerPoints)
@@ -455,7 +478,7 @@ void AFrogGameCharacter::UpdatePowerPoints(const float Points)
 	}
 }
 
-void AFrogGameCharacter::PowerDrain(const float DeltaTime)
+void AFrogGameCharacter::PowerDrain(float DeltaTime)
 {
 	const float DrainPoints = (DeltaTime * DrainSpeed);
 	UpdatePowerPoints(DrainPoints);
@@ -493,7 +516,7 @@ void AFrogGameCharacter::MoveForward(float Value)
 		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
-		if(Value < 0.f && bUsingWhirlwind)
+		if (Value < 0.f && bUsingWhirlwind)
 		{
 			Value = -0.5f;
 		}
