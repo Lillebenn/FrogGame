@@ -35,10 +35,7 @@ void AEdibleObject::ActorSaveDataLoaded_Implementation()
 {
 }
 
-FTransform AEdibleObject::GetStartTransform()
-{
-	return StartTransform;
-}
+
 
 
 void AEdibleObject::BeginPlay()

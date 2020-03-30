@@ -29,4 +29,8 @@ public:
 	void OnDisabled();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void IgnorePawnCollision();
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void DisableActor();
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void PauseAI(bool bPause = true);
 };

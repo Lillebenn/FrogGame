@@ -2,9 +2,11 @@
 
 
 #include "AdvCreature.h"
+#include "AIController.h"
+#include "BrainComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/CapsuleComponent.h"
-#include "GameFramework/Controller.h"
+#include "CustomDestructibleComponent.h"
 #include "FrogGameInstance.h"
 #include "FrogGameCharacter.h"
 #include "EdibleComponent.h"
@@ -16,7 +18,7 @@ AAdvCreature::AAdvCreature()
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
-	EdibleComponent->NumDrops = 0;
+	DestructibleComponent = CreateDefaultSubobject<UCustomDestructibleComponent>(TEXT("Destructible"));
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
@@ -47,14 +49,16 @@ float AAdvCreature::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 		// This needs to be more specific to the punches or we could just walk it to death
 		if (Frog)
 		{
-			EdibleComponent->CurrentHealth -= ActualDamage;
-			if (EdibleComponent->CurrentHealth <= 0.f && !IsActorBeingDestroyed())
+			float& CurrentHealth{DestructibleComponent->CurrentHealth};
+			CurrentHealth -= ActualDamage;
+			if (CurrentHealth <= 0.f && !IsActorBeingDestroyed())
 			{
-				DisableActor();
+				DisableActor_Implementation();
 				// TODO: Maybe set mass to 2-300kg once it loses all health, so it flies away at a decent rate
 				GetMesh()->SetSimulatePhysics(true);
-				GetMesh()->AddImpulse(EdibleComponent->CalculateImpulseVector(Frog));
-				GetWorld()->GetTimerManager().SetTimer(TimerHandle, EdibleComponent, &UEdibleComponent::KillActor, 1.f,
+				GetMesh()->AddImpulse(DestructibleComponent->CalculateImpulseVector(Frog));
+				GetWorld()->GetTimerManager().SetTimer(TimerHandle, DestructibleComponent,
+				                                       &UCustomDestructibleComponent::KillActor, 1.f,
 				                                       false);
 			}
 		}
@@ -80,21 +84,37 @@ void AAdvCreature::IgnorePawnCollision_Implementation()
 	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 }
 
-void AAdvCreature::DisableActor()
+void AAdvCreature::DisableActor_Implementation()
 {
 	AController* AI{GetController()};
 	if (AI)
 	{
 		AI->StopMovement();
-		AI->UnPossess();
 		AI->Destroy();
 	}
+	OnDisabled_Implementation();
 	bShouldDestroy = true;
+}
+
+void AAdvCreature::PauseAI_Implementation(bool bPause)
+{
+	AAIController* AI{Cast<AAIController>(GetController())};
+	if (AI)
+	{
+		if (bPause)
+		{
+			AI->BrainComponent->PauseLogic(TEXT("Hit by whirlwind."));
+			AI->StopMovement();
+		}
+		else
+		{
+			AI->BrainComponent->ResumeLogic(TEXT("No longer hit by whirlwind."));
+		}
+	}
 }
 
 void AAdvCreature::OnDisabled_Implementation()
 {
-	DisableActor();
 	UFrogGameInstance* FrogInstance{Cast<UFrogGameInstance>(GetWorld()->GetGameInstance())};
 	if (FrogInstance)
 	{
@@ -108,7 +128,7 @@ void AAdvCreature::ActorSaveDataLoaded_Implementation()
 {
 }
 
-FTransform AAdvCreature::GetStartTransform()
+FTransform AAdvCreature::GetStartTransform_Implementation()
 {
 	return StartTransform;
 }

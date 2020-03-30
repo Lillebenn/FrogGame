@@ -22,6 +22,9 @@ public:
 	AAdvCreature();
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UEdibleComponent* EdibleComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	class UCustomDestructibleComponent* DestructibleComponent;
+
 	// Called every frame
 	void Tick(float DeltaTime) override;
 	float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
@@ -38,14 +41,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Edible)
 	FName AttachBoneName{TEXT("None")};
 
-	void DisableActor();
-	void OnDisabled_Implementation() override;
+	void DisableActor_Implementation() override;
+	void PauseAI_Implementation(bool bPause = true) override;
 
+	void OnDisabled_Implementation() override;
 
 	void ActorSaveDataSaved_Implementation() override;
 	void ActorSaveDataLoaded_Implementation() override;
-
-	FTransform GetStartTransform() override;
+	FTransform GetStartTransform_Implementation() override;
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;

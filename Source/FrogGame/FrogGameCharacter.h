@@ -136,7 +136,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
 	float ShrinkDistance{500.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
-	FVector ShrinkSpeed{0.01f};
+	float ShrinkSpeed{0.01f};
 	// Blueprint for the Whirlwind mesh or something idk.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
 	float WhirlwindWalkSpeed{600.f};
@@ -200,7 +200,7 @@ private:
 	UPROPERTY()
 	FSwirlInfo DefaultWhirlwindSwirl;
 	UPROPERTY()
-	TMap<class AEdibleObject*, FSwirlInfo> WhirlwindAffectedActors;
+	TArray<AActor*> WhirlwindAffectedActors;
 	UPROPERTY()
 	TArray<AActor*> PotentialTargets;
 

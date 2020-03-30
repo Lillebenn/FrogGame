@@ -24,22 +24,17 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UEdibleComponent* EdibleComponent;
 	bool bShouldDestroy{false};
-	UPROPERTY()
-	AActor* Parent{nullptr};
-	float AngleAxis{2.f};
-	float PivotDistance;
+
+	FTransform StartTransform;
+
 	// Interface stuff
 	bool IsDisabled_Implementation() override;
 	void IgnorePawnCollision_Implementation() override;
 	void ActorSaveDataSaved_Implementation() override;
 	void ActorSaveDataLoaded_Implementation() override;
 
-	FTransform GetStartTransform() override;
-
-
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
 private:
-	FTransform StartTransform;
 };

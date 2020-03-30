@@ -16,20 +16,12 @@ class FROGGAME_API ADestructibleObject : public AActor, public ISaveable
 public:
 	// Sets default values for this actor's properties
 	ADestructibleObject();
-	UPROPERTY(EditAnywhere, Category = Destructible)
-	TSubclassOf<class ASphereDrop> Drop;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Destructible)
-	float MaxHealth{100.f};
-	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, SaveGame, Category = Destructible)
-	float CurrentHealth;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Destructible)
-	float FlyAwayForce{750000.f};
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Destructible)
-	int32 NumDrops{5};
+
 	bool ShouldDestroy{false};
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UStaticMeshComponent* StaticMesh;
-
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	class UCustomDestructibleComponent* DestructibleComponent;
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
@@ -42,11 +34,7 @@ public:
 	void Tick(float DeltaTime) override;
 	float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
 	                 AActor* DamageCauser) override;
-	void SpawnSpheres() const;
-	FVector CalculateImpulseVector(AFrogGameCharacter* Frog) const;
-	void KillActor();
 	void ActorSaveDataSaved_Implementation() override;
 	void ActorSaveDataLoaded_Implementation() override;
-
-	FTransform GetStartTransform() override;
+	FTransform GetStartTransform_Implementation() override;
 };

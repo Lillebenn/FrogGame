@@ -2,6 +2,8 @@
 
 
 #include "DestructibleObject.h"
+
+#include "CustomDestructibleComponent.h"
 #include "FrogGameCharacter.h"
 #include "Engine/StaticMesh.h"
 #include "SphereDrop.h"
@@ -13,6 +15,7 @@ ADestructibleObject::ADestructibleObject()
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	StaticMesh->SetCollisionProfileName(TEXT("Edible"));
 	RootComponent = StaticMesh;
+	DestructibleComponent = CreateDefaultSubobject<UCustomDestructibleComponent>(TEXT("Destructible"));
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 }
@@ -21,7 +24,6 @@ ADestructibleObject::ADestructibleObject()
 void ADestructibleObject::BeginPlay()
 {
 	Super::BeginPlay();
-	CurrentHealth = MaxHealth;
 	StartTransform = GetTransform();
 }
 
@@ -41,6 +43,7 @@ float ADestructibleObject::TakeDamage(float DamageAmount, FDamageEvent const& Da
 		AFrogGameCharacter* Frog{Cast<AFrogGameCharacter>(DamageCauser)};
 		if (Frog)
 		{
+			float& CurrentHealth{DestructibleComponent->CurrentHealth};
 			CurrentHealth -= ActualDamage;
 			if (CurrentHealth <= 0.f)
 			{
@@ -48,13 +51,13 @@ float ADestructibleObject::TakeDamage(float DamageAmount, FDamageEvent const& Da
 				{
 					StaticMesh->SetMassOverrideInKg(NAME_None, 100.f);
 					StaticMesh->SetSimulatePhysics(true);
-					StaticMesh->AddImpulse(CalculateImpulseVector(Frog));
+					StaticMesh->AddImpulse(DestructibleComponent->CalculateImpulseVector(Frog));
 				}
 				else
 				{
 					UE_LOG(LogTemp, Warning, TEXT("Missing static mesh reference!"))
 				}
-				GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ADestructibleObject::KillActor, 3.f,
+				GetWorld()->GetTimerManager().SetTimer(TimerHandle, DestructibleComponent, &UCustomDestructibleComponent::KillActor, 3.f,
 				                                       false);
 			}
 		}
@@ -63,37 +66,9 @@ float ADestructibleObject::TakeDamage(float DamageAmount, FDamageEvent const& Da
 }
 
 
-FVector ADestructibleObject::CalculateImpulseVector(AFrogGameCharacter* Frog) const
-{
-	FVector ImpulseDirection{GetActorLocation() - Frog->GetActorLocation()};
-	ImpulseDirection.Normalize();
-	return {ImpulseDirection * FlyAwayForce};
-}
 
-void ADestructibleObject::KillActor()
-{
-	SpawnSpheres();
-	SetLifeSpan(0.001f);
-}
 
-void ADestructibleObject::SpawnSpheres() const
-{
-	if (Drop)
-	{
-		for (int i{0}; i < NumDrops; i++)
-		{
-			const FVector2D SpawnLocation2D{FMath::RandPointInCircle(125.f)};
-			const FVector ActorLocation{GetActorLocation()};
-			const FVector SpawnLocation{
-				ActorLocation.X + SpawnLocation2D.X, ActorLocation.Y + SpawnLocation2D.Y, ActorLocation.Z
-			};
-			const FTransform SpawnTransform{SpawnLocation};
-			GetWorld()->SpawnActor<ASphereDrop>(Drop, SpawnTransform);
-		}
-	}
-}
-
-FTransform ADestructibleObject::GetStartTransform()
+FTransform ADestructibleObject::GetStartTransform_Implementation()
 {
 	return StartTransform;
 }

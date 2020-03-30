@@ -128,7 +128,6 @@ void AFrogGameCharacter::BeginPlay()
 	DefaultWhirlwindSwirl.DefaultLinearUpSpeed = SuctionSpeed;
 	DefaultWhirlwindSwirl.DefaultAngularSpeed = RotationSpeed;
 	DefaultWhirlwindSwirl.DefaultLinearInSpeed = InSpeed;
-
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -185,7 +184,6 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 
 		SetActorRotation(Orientation);
 	}
-	
 }
 
 void AFrogGameCharacter::FilterOccludedObjects()
@@ -221,23 +219,30 @@ void AFrogGameCharacter::FilterOccludedObjects()
 			if (Hit.GetActor() == Target)
 			{
 				AEdibleObject* Edible{Cast<AEdibleObject>(Target)};
+				if (Edible)
+				{
+					Edible->StaticMesh->SetSimulatePhysics(false);
+				}
+				UEdibleComponent* EdibleComponent{
+					Cast<UEdibleComponent>(Target->GetComponentByClass(UEdibleComponent::StaticClass()))
+				};
 				UE_LOG(LogTemp, Warning, TEXT("Added %s to WhirlwindAffectedActors map."), *Target->GetName())
 				IEdible::Execute_IgnorePawnCollision(Target);
-				WhirlwindAffectedActors.Add(Edible, DefaultWhirlwindSwirl);
+				IEdible::Execute_PauseAI(Target, true); // TODO: Needs testing
 				// Parent the object to an invisible object at the pivot point
 				// Rotate the entire actor in the X axis
 				FVector2D FrogXY{Target->GetActorLocation() - GetActorLocation()};
-				Edible->PivotDistance = FrogXY.Size();
-				FVector Pivot{GetActorLocation() + GetActorForwardVector() * Edible->PivotDistance};
+				EdibleComponent->PivotDistance = FrogXY.Size();
+				FVector Pivot{GetActorLocation() + GetActorForwardVector() * EdibleComponent->PivotDistance};
 
-				Edible->Parent = GetWorld()->SpawnActor<AActor>(PivotActor, Pivot, FRotator());
-				if (Edible->Parent)
+				EdibleComponent->Parent = GetWorld()->SpawnActor<AActor>(PivotActor, Pivot, FRotator());
+				if (EdibleComponent->Parent)
 				{
 					FAttachmentTransformRules InRule{EAttachmentRule::KeepWorld, false};
-					Target->AttachToActor(Edible->Parent, InRule);
+					Target->AttachToActor(EdibleComponent->Parent, InRule);
 				}
 
-
+				WhirlwindAffectedActors.Add(Target);
 				PotentialTargets.Remove(Target);
 			}
 		}
@@ -264,11 +269,6 @@ void AFrogGameCharacter::Whirlwind()
 		WhirlwindParticles->SetVisibility(true);
 		GetCharacterMovement()->bOrientRotationToMovement = false;
 		GetCharacterMovement()->MaxWalkSpeed = WhirlwindWalkSpeed;
-		for (const auto ActorTuple : WhirlwindAffectedActors)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s is in whirlwind map"), *ActorTuple.Key->GetName())
-			ActorTuple.Key->StaticMesh->SetSimulatePhysics(true);
-		}
 	}
 }
 
@@ -278,28 +278,33 @@ void AFrogGameCharacter::DoWhirlwind(float DeltaTime)
 	// Instead of giving every object its own FSwirlInfo, we can just generate one for each new object that enters the whirlwind,
 	// and place them in a map where each actor has its own FSwirlInfo for easy lookup.
 	// This happens in OnWhirlwindBeginOverlap.
-	for (auto It = WhirlwindAffectedActors.CreateIterator(); It; ++It)
+	TArray<AActor*> TempArray{WhirlwindAffectedActors};
+	for (auto Actor : TempArray)
 	{
-		AEdibleObject* Actor{It->Key};
-		Actor->PivotDistance -= SuctionSpeed * DeltaTime;
-		if (Actor->PivotDistance <= ShrinkDistance)
+		auto EdibleComponent{Cast<UEdibleComponent>(Actor->GetComponentByClass(UEdibleComponent::StaticClass()))};
+
+		float& PivotDistance{EdibleComponent->PivotDistance};
+		PivotDistance -= SuctionSpeed * DeltaTime;
+		if (PivotDistance <= ShrinkDistance)
 		{
 			if (Actor->GetActorScale().Size() >= 0.1f)
 			{
-				const FVector NewScale{Actor->GetActorScale() - ShrinkSpeed};
+				const FVector NewScale{
+					Actor->GetActorScale() - ISaveable::Execute_GetStartTransform(Actor).GetScale3D() * ShrinkSpeed
+				};
 				Actor->SetActorScale3D(NewScale);
 			}
 		}
-		if (Actor->PivotDistance <= EatDistance)
+		if (PivotDistance <= EatDistance)
 		{
 			Consume(Actor);
 			continue;
 		}
 
-		AActor* Parent{Actor->Parent};
+		AActor* Parent{EdibleComponent->Parent};
 		if (!Parent)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Parent not found!"))
+			UE_LOG(LogTemp, Warning, TEXT("Pivot not found!"))
 			continue;
 		}
 		FVector ParentToActor{Actor->GetActorLocation() - Parent->GetActorLocation()};
@@ -313,7 +318,7 @@ void AFrogGameCharacter::DoWhirlwind(float DeltaTime)
 		Actor->SetActorRelativeLocation(NewRelativePosition);
 
 		// Move the pivot actor slightly towards the player
-		FVector NewPosition{GetActorLocation() + GetActorForwardVector() * Actor->PivotDistance};
+		FVector NewPosition{GetActorLocation() + GetActorForwardVector() * PivotDistance};
 		Parent->SetActorLocation(NewPosition);
 	}
 }
@@ -325,6 +330,19 @@ void AFrogGameCharacter::EndWhirlwind()
 	WhirlwindParticles->SetVisibility(false);
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->MaxWalkSpeed = NeutralModeSettings.MaxWalkSpeed;
+	for (const auto Actor : WhirlwindAffectedActors)
+	{
+		if (auto Edible = Cast<AEdibleObject>(Actor))
+		{
+			Edible->StaticMesh->SetSimulatePhysics(true);
+		}
+		auto EdibleComp{Cast<UEdibleComponent>(Actor->GetComponentByClass(UEdibleComponent::StaticClass()))};
+		if (EdibleComp->Parent)
+		{
+			EdibleComp->Parent->Destroy();
+		}
+		IEdible::Execute_PauseAI(Actor, false);
+	}
 	WhirlwindAffectedActors.Empty();
 
 	UE_LOG(LogTemp, Warning, TEXT("Stopped using whirlwind."))
@@ -338,12 +356,11 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 	}
 	if (OtherActor->Implements<UEdible>())
 	{
-		AEdibleObject* Edible{Cast<AEdibleObject>(OtherActor)};
-		const UEdibleComponent* SizeInfo{Edible->EdibleComponent};
+		const UEdibleComponent* SizeInfo{Cast<UEdibleComponent>(OtherActor->GetComponentByClass(UEdibleComponent::StaticClass()))};
 		UpdateCurrentScore(SizeInfo->ScorePoints);
 		UpdatePowerPoints(SizeInfo->PowerPoints);
-		UE_LOG(LogTemp, Warning, TEXT("Destroying %s"), *Edible->GetName())
-		WhirlwindAffectedActors.Remove(Edible);
+		UE_LOG(LogTemp, Warning, TEXT("Destroying %s"), *OtherActor->GetName())
+		WhirlwindAffectedActors.Remove(OtherActor);
 		OtherActor->Destroy();
 	}
 }

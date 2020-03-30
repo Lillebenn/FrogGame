@@ -2,10 +2,11 @@
 
 
 #include "SimpleCreature.h"
+#include "AIController.h"
+#include "BrainComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "Engine/StaticMesh.h"
+#include "CustomDestructibleComponent.h"
 #include "GameFramework/FloatingPawnMovement.h"
-#include "GameFramework/Controller.h"
 #include "FrogGameInstance.h"
 #include "FrogGameCharacter.h"
 #include "EdibleComponent.h"
@@ -22,7 +23,7 @@ ASimpleCreature::ASimpleCreature()
 
 	RootComponent = CreatureMesh;
 	EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
-	EdibleComponent->NumDrops = 0;
+	DestructibleComponent = CreateDefaultSubobject<UCustomDestructibleComponent>(TEXT("Destructible"));
 	MovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComponent"));
 
 
@@ -61,17 +62,34 @@ void ASimpleCreature::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 }
 
 
-void ASimpleCreature::DisableActor()
+void ASimpleCreature::DisableActor_Implementation()
 {
 	// Not 100% sure if this is necessary, but we don't need the AI to keep running after being snatched.
 	AController* AI{GetController()};
 	if (AI)
 	{
 		AI->StopMovement();
-		AI->UnPossess();
 		AI->Destroy();
 	}
+	OnDisabled_Implementation();
 	bShouldDestroy = true;
+}
+
+void ASimpleCreature::PauseAI_Implementation(bool bPause)
+{
+	AAIController* AI{Cast<AAIController>(GetController())};
+	if (AI)
+	{
+		if (bPause)
+		{
+			AI->BrainComponent->PauseLogic(TEXT("Hit by whirlwind."));
+			AI->StopMovement();
+		}
+		else
+		{
+			AI->BrainComponent->ResumeLogic(TEXT("No longer hit by whirlwind."));
+		}
+	}
 }
 
 UStaticMeshComponent* ASimpleCreature::GetMesh()
@@ -82,7 +100,6 @@ UStaticMeshComponent* ASimpleCreature::GetMesh()
 
 void ASimpleCreature::OnDisabled_Implementation()
 {
-	DisableActor();
 	UFrogGameInstance* FrogInstance{Cast<UFrogGameInstance>(GetWorld()->GetGameInstance())};
 	if (FrogInstance)
 	{
@@ -100,7 +117,7 @@ void ASimpleCreature::ActorSaveDataSaved_Implementation()
 }
 
 
-FTransform ASimpleCreature::GetStartTransform()
+FTransform ASimpleCreature::GetStartTransform_Implementation()
 {
 	return StartTransform;
 }
@@ -116,14 +133,16 @@ float ASimpleCreature::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 		// This needs to be more specific to the punches or we could just walk it to death
 		if (Frog)
 		{
-			EdibleComponent->CurrentHealth -= ActualDamage;
-			if (EdibleComponent->CurrentHealth <= 0.f && !IsActorBeingDestroyed())
+			float& CurrentHealth{DestructibleComponent->CurrentHealth};
+			CurrentHealth -= ActualDamage;
+			if (CurrentHealth <= 0.f && !IsActorBeingDestroyed())
 			{
-				DisableActor();
+				DisableActor_Implementation();
 				// TODO: Maybe set mass to 2-300kg once it loses all health, so it flies away at a decent rate
 				CreatureMesh->SetSimulatePhysics(true);
-				CreatureMesh->AddImpulse(EdibleComponent->CalculateImpulseVector(Frog));
-				GetWorld()->GetTimerManager().SetTimer(TimerHandle, EdibleComponent, &UEdibleComponent::KillActor, 1.f,
+				CreatureMesh->AddImpulse(DestructibleComponent->CalculateImpulseVector(Frog));
+				GetWorld()->GetTimerManager().SetTimer(TimerHandle, DestructibleComponent,
+				                                       &UCustomDestructibleComponent::KillActor, 1.f,
 				                                       false);
 			}
 		}

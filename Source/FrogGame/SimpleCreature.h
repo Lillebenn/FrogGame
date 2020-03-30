@@ -20,20 +20,23 @@ public:
 	ASimpleCreature();
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UEdibleComponent* EdibleComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	class UCustomDestructibleComponent* DestructibleComponent;
 	UPROPERTY(BlueprintReadOnly)
 	class UFloatingPawnMovement* MovementComponent;
 	UStaticMeshComponent* GetMesh();
 
-	void DisableActor();
+	void DisableActor_Implementation() override;
+	void PauseAI_Implementation(bool bPause = true) override;
 	void OnDisabled_Implementation() override;
 	bool IsDisabled_Implementation() override;
-	void IgnorePawnCollision_Implementation();
+	void IgnorePawnCollision_Implementation() override;
 
 	void ActorSaveDataLoaded_Implementation() override;
 	void ActorSaveDataSaved_Implementation() override;
 
 
-	FTransform GetStartTransform() override;
+	FTransform GetStartTransform_Implementation() override;
 	bool bShouldDestroy{false};
 
 	FTimerHandle TimerHandle;
