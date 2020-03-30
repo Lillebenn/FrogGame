@@ -131,12 +131,12 @@ public:
 	float CurrentScore;
 	// How close object has to be to be eaten (destroyed).
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
-	float EatDistance{200.f};
+	float EatDistance{150.f};
 	// How close the object has to be before it starts shrinking
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
-	float ShrinkDistance{300.f};
-
-	FVector ShrinkSpeed{0.003f};
+	float ShrinkDistance{500.f};
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
+	FVector ShrinkSpeed{0.01f};
 	// Blueprint for the Whirlwind mesh or something idk.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
 	float WhirlwindWalkSpeed{600.f};
@@ -149,7 +149,11 @@ public:
 	// How quickly the object reaches the middle of the whirlwind.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
 	float InSpeed{30.f};
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
+	float MinRadius{5.f};
 
+	UPROPERTY(EditDefaultsOnly, Category = "Character | Whirlwind")
+	TSubclassOf<AActor> PivotActor;
 protected:
 
 	void BeginPlay() override;
@@ -196,7 +200,7 @@ private:
 	UPROPERTY()
 	FSwirlInfo DefaultWhirlwindSwirl;
 	UPROPERTY()
-	TMap<AActor*, FSwirlInfo> WhirlwindAffectedActors;
+	TMap<class AEdibleObject*, FSwirlInfo> WhirlwindAffectedActors;
 	UPROPERTY()
 	TArray<AActor*> PotentialTargets;
 

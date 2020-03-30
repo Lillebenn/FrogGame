@@ -24,7 +24,10 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UEdibleComponent* EdibleComponent;
 	bool bShouldDestroy{false};
-
+	UPROPERTY()
+	AActor* Parent{nullptr};
+	float AngleAxis{2.f};
+	float PivotDistance;
 	// Interface stuff
 	bool IsDisabled_Implementation() override;
 	void IgnorePawnCollision_Implementation() override;

@@ -29,6 +29,7 @@ public:
 	bool ShouldDestroy{false};
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UStaticMeshComponent* StaticMesh;
+
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
