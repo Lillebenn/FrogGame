@@ -21,7 +21,7 @@ ADestructibleObject::ADestructibleObject()
 void ADestructibleObject::BeginPlay()
 {
 	Super::BeginPlay();
-	CurrentHealth = Health;
+	CurrentHealth = MaxHealth;
 	StartTransform = GetTransform();
 }
 

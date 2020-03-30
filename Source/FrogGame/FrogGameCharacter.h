@@ -179,6 +179,7 @@ protected:
 private:
 
 	void FilterOccludedObjects();
+	FVector RotateToAxis(const FVector& A, const FVector& Axis) const;
 	/**
 	 * Max Radius needs to be a factor of distance ahead of the player.
 	 * So if target is at max range from player, then the factor equals 1.
@@ -191,6 +192,7 @@ private:
 	void DoWhirlwind(float DeltaTime);
 	void EndWhirlwind();
 	bool bUsingWhirlwind{false};
+
 	UPROPERTY()
 	FSwirlInfo DefaultWhirlwindSwirl;
 	UPROPERTY()
@@ -200,6 +202,7 @@ private:
 
 	/** Uses fist to punch something, can only be used in power mode **/
 	void Punch();
+	void OnPunchEnd();
 	void RemoveHandCollision() const;
 	UFUNCTION()
 	void OnAttackOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,

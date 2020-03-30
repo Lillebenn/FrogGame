@@ -18,10 +18,9 @@ public:
 	ADestructibleObject();
 	UPROPERTY(EditAnywhere, Category = Destructible)
 	TSubclassOf<class ASphereDrop> Drop;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Destructible)
-	float Health{100.f};
-
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, SaveGame, Category = Destructible)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Destructible)
+	float MaxHealth{100.f};
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, SaveGame, Category = Destructible)
 	float CurrentHealth;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Destructible)
 	float FlyAwayForce{750000.f};

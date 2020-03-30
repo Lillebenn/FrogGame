@@ -223,20 +223,13 @@ void AFrogGameCharacter::FilterOccludedObjects()
 				auto& SwirlInfo = WhirlwindAffectedActors.Add(Target, DefaultWhirlwindSwirl);
 				SwirlInfo.Construct();
 
-				const FVector FrogToTarget{Target->GetActorLocation() - GetActorLocation()};
-				SwirlInfo.RadianDelta = FMath::Atan2(FrogToTarget.X, FrogToTarget.Z);
-				SwirlInfo.CurrentRadius = FMath::Sqrt(
-					(FrogToTarget.Z * FrogToTarget.Z) + (FrogToTarget.X * FrogToTarget.X));
-
-				SwirlInfo.MaxRadius = CalcMaxRadius(Target);
-
-				SwirlInfo.LinearUpPosition = Target->GetActorLocation().Y - GetActorLocation().Y;
 
 				PotentialTargets.Remove(Target);
 			}
 		}
 	}
 }
+
 
 float AFrogGameCharacter::CalcMaxRadius(AActor* Actor) const
 {
@@ -257,10 +250,14 @@ void AFrogGameCharacter::Whirlwind()
 		WhirlwindParticles->SetVisibility(true);
 		GetCharacterMovement()->bOrientRotationToMovement = false;
 		GetCharacterMovement()->MaxWalkSpeed = WhirlwindWalkSpeed;
+		for (const auto ActorTuple : WhirlwindAffectedActors)
+		{
+			Cast<ADestructibleObject>(ActorTuple.Key)->StaticMesh->SetSimulatePhysics(true);
+		}
 	}
 }
 
-void AFrogGameCharacter::DoWhirlwind(const float DeltaTime)
+void AFrogGameCharacter::DoWhirlwind(float DeltaTime)
 {
 	// for every edible object in the volume, apply an interpolated movement towards the player, and if it gets close enough use Consume.
 	// Instead of giving every object its own FSwirlInfo, we can just generate one for each new object that enters the whirlwind,
@@ -289,12 +286,29 @@ void AFrogGameCharacter::DoWhirlwind(const float DeltaTime)
 			// If CR == MR, the result will be DefaultLinearInSpeed / 1.
 			It->Value.LinearInSpeed = It->Value.DefaultLinearInSpeed / RadiusRatio;
 		}
-		FVector OutPosition;
-		// Something to keep in mind -- FSwirlInfo's variables become somewhat misnamed.
-		FrogFunctionLibrary::HorizontalSwirl(DeltaTime, It->Value, GetActorLocation(),
-		                                     OutPosition);
-		It->Value.MaxRadius = CalcMaxRadius(Actor);
-		Actor->SetActorLocation(OutPosition);
+		FVector2D FrogXY{Actor->GetActorLocation() - GetActorLocation()};
+		FVector Pivot{GetActorLocation() + GetActorForwardVector() * FrogXY.Size()};
+		FVector LineBetween{(Actor->GetActorLocation() - Pivot)};
+		UE_LOG(LogTemp, Warning, TEXT("LineBetween Vector: X: %f, Y: %f, Z: %f."), LineBetween.X, LineBetween.Y,
+		       LineBetween.Z)
+		float Radius{100}; // Radius is the length of the line between these two.
+		FVector Dimensions;
+		Dimensions.X = Radius;
+
+
+		FVector NewPosition{Actor->GetActorLocation()};
+		//NewPosition.X += Radius * FMath::Sin(Phi) * FMath::Cos(Delta);
+		//NewPosition.Y += Radius * FMath::Cos(Phi) * FMath::Sin(Delta);
+		//NewPosition.Z += Radius * FMath::Cos(Phi);
+		//UE_LOG(LogTemp, Warning, TEXT("New Position Vector: X: %f, Y: %f, Z: %f."), NewPosition.X, NewPosition.Y,
+		//       NewPosition.Z)
+		//NewPosition -= (GetActorForwardVector() * SuctionSpeed * DeltaTime);
+		FVector RotateValue = Dimensions.RotateAngleAxis(RotationSpeed * DeltaTime, GetActorForwardVector());
+
+		NewPosition += RotateValue;
+		// rotate it slightly around the actor forward vector
+		//It->Value.MaxRadius = CalcMaxRadius(Actor);
+		Actor->SetActorLocation(NewPosition);
 	}
 }
 
@@ -331,16 +345,23 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 
 void AFrogGameCharacter::Punch()
 {
-	if (bPowerMode)
+	if (bPowerMode && !bIsPunching)
 	{
 		// For later, when we have a proper punch animation, turn on collision only when the punch of the player is at the end point
 		// Also need to make sure the animation cancels early if it hits something, or turns off collision once it does, so it doesn't keep adding collision events.
-		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AFrogGameCharacter::RemoveHandCollision, 0.5f,
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AFrogGameCharacter::OnPunchEnd, 0.5f,
 		                                       false);
 		RightHandCollision->SetCollisionProfileName(TEXT("Punch"));
 		LeftHandCollision->SetCollisionProfileName(TEXT("Punch"));
+		bIsPunching = true;
 		// Add execution here
 	}
+}
+
+void AFrogGameCharacter::OnPunchEnd()
+{
+	RemoveHandCollision();
+	bIsPunching = false;
 }
 
 void AFrogGameCharacter::RemoveHandCollision() const
@@ -363,7 +384,8 @@ void AFrogGameCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComp, AA
 }
 
 void AFrogGameCharacter::OnWhirlwindBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-                                                 UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+                                                 UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
+                                                 bool bFromSweep,
                                                  const FHitResult& SweepResult)
 {
 	if (OtherActor->GetComponentByClass(UEdibleComponent::StaticClass()))
@@ -421,7 +443,7 @@ void AFrogGameCharacter::DeactivatePowerMode()
 	RemoveHandCollision();
 }
 
-void AFrogGameCharacter::UpdatePowerPoints(const float Points)
+void AFrogGameCharacter::UpdatePowerPoints(float Points)
 {
 	CurrentPowerPoints = CurrentPowerPoints + Points;
 	if (CurrentPowerPoints >= MaxPowerPoints)
@@ -432,7 +454,7 @@ void AFrogGameCharacter::UpdatePowerPoints(const float Points)
 	}
 }
 
-void AFrogGameCharacter::PowerDrain(const float DeltaTime)
+void AFrogGameCharacter::PowerDrain(float DeltaTime)
 {
 	const float DrainPoints = (DeltaTime * DrainSpeed);
 	UpdatePowerPoints(DrainPoints);
