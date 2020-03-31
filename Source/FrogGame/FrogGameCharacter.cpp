@@ -395,7 +395,7 @@ void AFrogGameCharacter::PunchAnimNotify() const
 			PunchParticle->SetTemplate(UpperCut);
 		}
 		PunchParticle->AttachToComponent(RightHandCollision, FAttachmentTransformRules::KeepRelativeTransform);
-		PunchParticle->SetRelativeLocation(FVector(80, 0, 0));
+		PunchParticle->SetRelativeLocation(UpperCutOffset);
 		break;
 	case 1:
 		if (PunchOne)
@@ -403,7 +403,7 @@ void AFrogGameCharacter::PunchAnimNotify() const
 			PunchParticle->SetTemplate(PunchOne);
 		}
 		PunchParticle->AttachToComponent(RightHandCollision, FAttachmentTransformRules::KeepRelativeTransform);
-		PunchParticle->SetRelativeLocation(FVector(25, 50, 0));
+		PunchParticle->SetRelativeLocation(PunchOneOffset);
 		break;
 	case 2:
 		if (PunchTwo)
@@ -411,7 +411,7 @@ void AFrogGameCharacter::PunchAnimNotify() const
 			PunchParticle->SetTemplate(PunchTwo);
 		}
 		PunchParticle->AttachToComponent(LeftHandCollision, FAttachmentTransformRules::KeepRelativeTransform);
-		PunchParticle->SetRelativeLocation(FVector(-50, 0, 25));
+		PunchParticle->SetRelativeLocation(PunchTwoOffset);
 		break;
 	default:
 		break;

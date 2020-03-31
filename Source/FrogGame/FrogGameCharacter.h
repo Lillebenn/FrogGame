@@ -121,6 +121,12 @@ public:
 	class UParticleSystem* PunchTwo;
 	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles")
 	class UParticleSystem* UpperCut;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
+	FVector PunchOneOffset{25, 50, 0};
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
+	FVector PunchTwoOffset{-50, 0, 25};
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
+	FVector UpperCutOffset{80, 0, 0};
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Character | PowerMode")
 	bool bPowerMode{false};
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
