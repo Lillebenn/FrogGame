@@ -44,6 +44,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	Movement->GravityScale = 6.f;
 	Movement->AirControl = 0.2f;
 	Movement->MaxAcceleration = 18000.f;
+
 	WhirlwindVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxTrace"));
 	WhirlwindVolume->SetupAttachment(RootComponent);
 	WhirlwindVolume->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
@@ -81,6 +82,9 @@ AFrogGameCharacter::AFrogGameCharacter()
 	LeftHandCollision->InitSphereRadius(60.f);
 	LeftHandCollision->SetRelativeLocation(FVector(0.f, -9.f, 0.f));
 	RemoveHandCollision();
+	PunchParticle = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Punch Particle"));
+	PunchParticle->SetAutoActivate(false);
+	PunchParticle->SetupAttachment(RightHandCollision);
 	// PowerModeSettings defaults
 	PowerModeSettings.MaxWalkSpeed = 1600.f;
 	PowerModeSettings.JumpZHeight = 2000.f;
@@ -90,6 +94,12 @@ AFrogGameCharacter::AFrogGameCharacter()
 	if (SkeletalMesh.Object)
 	{
 		PowerModeSettings.Mesh = SkeletalMesh.Object;
+	}
+	const ConstructorHelpers::FObjectFinder<UAnimMontage> AnimPunchMontage(
+		TEXT("/Game/Models/Player/Player_Powered/PunchingMontage"));
+	if (AnimPunchMontage.Object)
+	{
+		PunchMontage = AnimPunchMontage.Object;
 	}
 	//const ConstructorHelpers::FClassFinder<UAnimInstance> AnimInstance(TEXT("/Game/Models/Player/Player_Powered/animBP_PoweredFrog"));
 	//if(AnimInstance.Class)
@@ -184,7 +194,24 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 
 		SetActorRotation(Orientation);
 	}
+	// Spawn a child actor that is JUST the particle emitter and set the lifetime of that to 1s when movement is stopped
+	if (GetVelocity().IsZero() && CurrentSmokeTrail)
+	{
+		CurrentSmokeTrail->SetLifeSpan(1.f);
+		CurrentSmokeTrail->GetComponentByClass(UParticleSystemComponent::StaticClass())->Deactivate();
+		CurrentSmokeTrail->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		CurrentSmokeTrail = nullptr;
+	}
+	else if (!CurrentSmokeTrail && !GetVelocity().IsZero())
+	{
+		CurrentSmokeTrail = GetWorld()->SpawnActor<AActor>(SmokeTrailChild);
+		const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
+		CurrentSmokeTrail->AttachToActor(this, InRule);
+		CurrentSmokeTrail->SetActorScale3D(FVector(0.5f));
+		CurrentSmokeTrail->SetActorRelativeLocation(FVector(0, 0, -15.f));
+	}
 }
+
 
 void AFrogGameCharacter::FilterOccludedObjects()
 {
@@ -249,16 +276,6 @@ void AFrogGameCharacter::FilterOccludedObjects()
 	}
 }
 
-
-float AFrogGameCharacter::CalcMaxRadius(AActor* Actor) const
-{
-	const FVector2D FrogToTarget{Actor->GetActorLocation() - GetActorLocation()}; // ignore the z-value
-	const float Dist{FrogToTarget.Size()};
-	const float MaxDist{WhirlwindVolume->GetUnscaledBoxExtent().X * 2.f};
-	// Clamp it to 10, or 10% of the box extent in the Y axis. If distance is much less than max distance, we don't want the max radius to become impossibly tiny.
-	const float Ratio{FMath::Clamp(MaxDist / Dist, 1.f, 10.f)};
-	return {WhirlwindVolume->GetUnscaledBoxExtent().Y * 2.f / Ratio};
-}
 
 void AFrogGameCharacter::Whirlwind()
 {
@@ -367,16 +384,77 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 	}
 }
 
+void AFrogGameCharacter::PunchAnimNotify() const
+{
+	UE_LOG(LogTemp, Warning, TEXT("Punching! Current Punch is %d"), CurrentPunch)
+	switch (CurrentPunch)
+	{
+	case 0:
+		if (UpperCut)
+		{
+			PunchParticle->SetTemplate(UpperCut);
+		}
+		PunchParticle->AttachToComponent(RightHandCollision, FAttachmentTransformRules::KeepRelativeTransform);
+		PunchParticle->SetRelativeLocation(FVector(80, 0, 0));
+		break;
+	case 1:
+		if (PunchOne)
+		{
+			PunchParticle->SetTemplate(PunchOne);
+		}
+		PunchParticle->AttachToComponent(RightHandCollision, FAttachmentTransformRules::KeepRelativeTransform);
+		PunchParticle->SetRelativeLocation(FVector(25, 50, 0));
+		break;
+	case 2:
+		if (PunchTwo)
+		{
+			PunchParticle->SetTemplate(PunchTwo);
+		}
+		PunchParticle->AttachToComponent(LeftHandCollision, FAttachmentTransformRules::KeepRelativeTransform);
+		PunchParticle->SetRelativeLocation(FVector(-50, 0, 25));
+		break;
+	default:
+		break;
+	}
+	PunchParticle->Activate(true);
+}
+
+void AFrogGameCharacter::PunchReset()
+{
+	CurrentPunch = 0;
+}
+
 void AFrogGameCharacter::Punch()
 {
 	if (bPowerMode && !bIsPunching)
 	{
 		// For later, when we have a proper punch animation, turn on collision only when the punch of the player is at the end point
 		// Also need to make sure the animation cancels early if it hits something, or turns off collision once it does, so it doesn't keep adding collision events.
-		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AFrogGameCharacter::OnPunchEnd, 0.25f,
+		GetWorld()->GetTimerManager().SetTimer(PunchEndHandle, this, &AFrogGameCharacter::OnPunchEnd, 0.25f,
+		                                       false);
+		GetWorld()->GetTimerManager().SetTimer(PunchResetHandle, this, &AFrogGameCharacter::PunchReset, 0.75f,
 		                                       false);
 		RightHandCollision->SetCollisionProfileName(TEXT("Punch"));
 		LeftHandCollision->SetCollisionProfileName(TEXT("Punch"));
+		switch (CurrentPunch)
+		{
+		case 0:
+			PlayAnimMontage(PunchMontage, 1, TEXT("First Punch"));
+			break;
+		case 1:
+			PlayAnimMontage(PunchMontage, 1, TEXT("Second Punch"));
+			break;
+		case 2:
+			PlayAnimMontage(PunchMontage, 1, TEXT("UpperCut"));
+			break;
+		default:
+			break;
+		}
+		CurrentPunch++;
+		if (CurrentPunch > 2)
+		{
+			CurrentPunch = 0;
+		}
 		bIsPunching = true;
 		// Add execution here
 	}

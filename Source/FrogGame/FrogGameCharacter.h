@@ -55,6 +55,10 @@ class AFrogGameCharacter : public ACharacter
 	class UChildActorComponent* WhirlwindPivot;
 	UPROPERTY (VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class USphereComponent* RightHandCollision;
+	UPROPERTY (EditDefaultsOnly, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+	class UAnimMontage* PunchMontage;
+	UPROPERTY (VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+	class UParticleSystemComponent* PunchParticle;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class USphereComponent* LeftHandCollision;
@@ -64,7 +68,9 @@ class AFrogGameCharacter : public ACharacter
 		"true"))
 	FCharacterSettings PowerModeSettings;
 
-	FTimerHandle TimerHandle;
+	FTimerHandle PunchEndHandle;
+	FTimerHandle PunchResetHandle;
+
 
 public:
 	AFrogGameCharacter();
@@ -109,7 +115,12 @@ public:
 	float CurrentTargetScore{0.f};
 
 	void Consume(AActor* OtherActor);
-
+	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles")
+	class UParticleSystem* PunchOne;
+	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles")
+	class UParticleSystem* PunchTwo;
+	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles")
+	class UParticleSystem* UpperCut;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Character | PowerMode")
 	bool bPowerMode{false};
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
@@ -154,6 +165,11 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Character | Whirlwind")
 	TSubclassOf<AActor> PivotActor;
+	UFUNCTION(BlueprintCallable)
+	void PunchAnimNotify() const;
+	void PunchReset();
+	UPROPERTY(BlueprintReadWrite)
+	uint8 CurrentPunch{0};
 protected:
 
 	void BeginPlay() override;
@@ -183,15 +199,6 @@ protected:
 private:
 
 	void FilterOccludedObjects();
-	FVector RotateToAxis(const FVector& A, const FVector& Axis) const;
-	/**
-	 * Max Radius needs to be a factor of distance ahead of the player.
-	 * So if target is at max range from player, then the factor equals 1.
-	 * If it's close, then the factor is much smaller.
-	 */
-	float CalcMaxRadius(AActor* Actor) const;
-
-
 	void Whirlwind();
 	void DoWhirlwind(float DeltaTime);
 	void EndWhirlwind();
@@ -203,6 +210,11 @@ private:
 	TArray<AActor*> WhirlwindAffectedActors;
 	UPROPERTY()
 	TArray<AActor*> PotentialTargets;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Character | Particles")
+	TSubclassOf<AActor> SmokeTrailChild;
+	UPROPERTY()
+	AActor* CurrentSmokeTrail;
 
 	/** Uses fist to punch something, can only be used in power mode **/
 	void Punch();
