@@ -116,6 +116,7 @@ void AFrogGameCharacter::BeginPlay()
 
 	WhirlwindVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindBeginOverlap);
 	WhirlwindVolume->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindEndOverlap);
+	WhirlwindRange = WhirlwindVolume->GetScaledBoxExtent().X;
 	LeftHandCollision->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnAttackOverlap);
 	RightHandCollision->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnAttackOverlap);
 
@@ -180,10 +181,6 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	if (bPowerMode)
 	{
 		PowerDrain(DeltaTime);
-		if (CurrentPowerPoints <= 0)
-		{
-			DeactivatePowerMode();
-		}
 	}
 	else if (bUsingWhirlwind)
 	{
@@ -194,21 +191,12 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 
 		SetActorRotation(Orientation);
 	}
-	// Spawn a child actor that is JUST the particle emitter and set the lifetime of that to 1s when movement is stopped
 	if (GetVelocity().IsZero() && CurrentSmokeTrail)
 	{
 		CurrentSmokeTrail->SetLifeSpan(1.f);
 		CurrentSmokeTrail->GetComponentByClass(UParticleSystemComponent::StaticClass())->Deactivate();
 		CurrentSmokeTrail->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 		CurrentSmokeTrail = nullptr;
-	}
-	else if (!CurrentSmokeTrail && !GetVelocity().IsZero())
-	{
-		CurrentSmokeTrail = GetWorld()->SpawnActor<AActor>(SmokeTrailChild);
-		const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
-		CurrentSmokeTrail->AttachToActor(this, InRule);
-		CurrentSmokeTrail->SetActorScale3D(FVector(0.5f));
-		CurrentSmokeTrail->SetActorRelativeLocation(FVector(0, 0, -15.f));
 	}
 }
 
@@ -302,15 +290,12 @@ void AFrogGameCharacter::DoWhirlwind(float DeltaTime)
 
 		float& PivotDistance{EdibleComponent->PivotDistance};
 		PivotDistance -= SuctionSpeed * DeltaTime;
-		if (PivotDistance <= ShrinkDistance)
+		if(PivotDistance != 0.f)
 		{
-			if (Actor->GetActorScale().Size() >= 0.1f)
-			{
-				const FVector NewScale{
-					Actor->GetActorScale() - ISaveable::Execute_GetStartTransform(Actor).GetScale3D() * ShrinkSpeed
-				};
-				Actor->SetActorScale3D(NewScale);
-			}
+			const FVector NewScale{
+				ISaveable::Execute_GetStartTransform(Actor).GetScale3D() * PivotDistance / WhirlwindRange
+			};
+			Actor->SetActorScale3D(NewScale);
 		}
 		if (PivotDistance <= EatDistance)
 		{
@@ -560,6 +545,10 @@ void AFrogGameCharacter::PowerDrain(float DeltaTime)
 {
 	const float DrainPoints = (DeltaTime * DrainSpeed);
 	UpdatePowerPoints(DrainPoints);
+	if (CurrentPowerPoints <= 0.f)
+	{
+		DeactivatePowerMode();
+	}
 }
 
 
@@ -586,6 +575,17 @@ void AFrogGameCharacter::LookUpAtRate(float Rate)
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 
+void AFrogGameCharacter::SpawnSmokeTrail()
+{
+	if (!CurrentSmokeTrail)
+	{
+		CurrentSmokeTrail = GetWorld()->SpawnActor<AActor>(SmokeTrailChild);
+		const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
+		CurrentSmokeTrail->AttachToActor(this, InRule);
+		CurrentSmokeTrail->SetActorScale3D(FVector(0.5f));
+		CurrentSmokeTrail->SetActorRelativeLocation(FVector(0, 0, -15.f));
+	}
+}
 
 void AFrogGameCharacter::MoveForward(float Value)
 {
@@ -598,6 +598,7 @@ void AFrogGameCharacter::MoveForward(float Value)
 		{
 			Value = -0.5f;
 		}
+		SpawnSmokeTrail();
 		// get forward vector
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 		AddMovementInput(Direction, Value);
@@ -615,6 +616,7 @@ void AFrogGameCharacter::MoveRight(float Value)
 		{
 			Value = -0.5f;
 		}
+		SpawnSmokeTrail();
 		// get right vector 
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 		// add movement in that direction

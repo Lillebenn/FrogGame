@@ -149,9 +149,6 @@ public:
 	// How close object has to be to be eaten (destroyed).
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
 	float EatDistance{150.f};
-	// How close the object has to be before it starts shrinking
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
-	float ShrinkDistance{500.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
 	float ShrinkSpeed{0.01f};
 	// Blueprint for the Whirlwind mesh or something idk.
@@ -168,7 +165,8 @@ public:
 	float InSpeed{30.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
 	float MinRadius{5.f};
-
+	
+	float WhirlwindRange;
 	UPROPERTY(EditDefaultsOnly, Category = "Character | Whirlwind")
 	TSubclassOf<AActor> PivotActor;
 	UFUNCTION(BlueprintCallable)
@@ -196,6 +194,10 @@ protected:
 	 * @param Rate	This is a normalized rate, i.e. 1.0 means 100% of desired turn rate
 	 */
 	void LookUpAtRate(float Rate);
+	/**
+	 * Spawn a child actor that is JUST the particle emitter and set the lifetime of that to 1s when movement is stopped
+	 */
+	void SpawnSmokeTrail();
 
 	void Landed(const FHitResult& Hit) override;
 	// APawn interface
