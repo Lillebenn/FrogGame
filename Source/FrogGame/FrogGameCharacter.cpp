@@ -100,11 +100,11 @@ AFrogGameCharacter::AFrogGameCharacter()
 	{
 		PunchMontage = AnimPunchMontage.Object;
 	}
-	//const ConstructorHelpers::FClassFinder<UAnimInstance> AnimInstance(TEXT("/Game/Models/Player/Player_Powered/animBP_PoweredFrog"));
-	//if(AnimInstance.Class)
-	//{
-	//	PowerModeSettings.AnimBP = AnimInstance.Class;
-	//}
+	const ConstructorHelpers::FClassFinder<UAnimInstance> AnimInstance(TEXT("/Game/Models/Player/Player_Powered/animBP_PoweredFrog"));
+	if(AnimInstance.Class)
+	{
+		PowerModeSettings.AnimBP = AnimInstance.Class;
+	}
 }
 
 
@@ -133,6 +133,8 @@ void AFrogGameCharacter::BeginPlay()
 	NeutralModeSettings.MaxWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
 	NeutralModeSettings.JumpZHeight = GetCharacterMovement()->JumpZVelocity;
 	NeutralModeSettings.GravityScale = GetCharacterMovement()->GravityScale;
+	NeutralModeSettings.SmokeTrailZPos = SmokeTrailOffset.Z;
+	NeutralModeSettings.SmokeTrailScale = SmokeTrailScale.X;
 
 	// Setup the default whirlwind swirl settings
 	DefaultWhirlwindSwirl.DefaultLinearUpSpeed = SuctionSpeed;
@@ -181,6 +183,10 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	if (bPowerMode)
 	{
 		PowerDrain(DeltaTime);
+		if (bPunchMove)
+		{
+			MoveForward(PunchForwardDistance);
+		}
 	}
 	else if (bUsingWhirlwind)
 	{
@@ -370,7 +376,7 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 	}
 }
 
-void AFrogGameCharacter::PunchAnimNotify() const
+void AFrogGameCharacter::PunchAnimNotify()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Punching! Current Punch is %d"), CurrentPunch)
 	switch (CurrentPunch)
@@ -403,6 +409,7 @@ void AFrogGameCharacter::PunchAnimNotify() const
 		break;
 	}
 	PunchParticle->Activate(true);
+	bPunchMove = false;
 }
 
 void AFrogGameCharacter::PunchReset()
@@ -445,6 +452,7 @@ void AFrogGameCharacter::DoPunch()
 		CurrentPunch = 0;
 	}
 	bIsPunching = true;
+	bPunchMove = true;
 }
 
 void AFrogGameCharacter::StopPunch()
@@ -512,7 +520,7 @@ void AFrogGameCharacter::PowerMode()
 	// Change from frog mesh and rig to power-frog mesh & rig here.
 }
 
-void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSettings) const
+void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSettings)
 {
 	GetMesh()->SetAnimInstanceClass(CharacterSettings.AnimBP);
 	GetMesh()->SetSkeletalMesh(CharacterSettings.Mesh);
@@ -524,6 +532,8 @@ void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSetti
 	GetCharacterMovement()->MaxWalkSpeed = CharacterSettings.MaxWalkSpeed;
 	GetCharacterMovement()->GravityScale = CharacterSettings.GravityScale;
 	GetCharacterMovement()->JumpZVelocity = CharacterSettings.JumpZHeight;
+	SmokeTrailOffset = FVector(0.f, 0.f, CharacterSettings.SmokeTrailZPos);
+	SmokeTrailScale = FVector(CharacterSettings.SmokeTrailScale);
 }
 
 void AFrogGameCharacter::DeactivatePowerMode()
@@ -585,8 +595,8 @@ void AFrogGameCharacter::SpawnSmokeTrail()
 		CurrentSmokeTrail = GetWorld()->SpawnActor<AActor>(SmokeTrailChild);
 		const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
 		CurrentSmokeTrail->AttachToActor(this, InRule);
-		CurrentSmokeTrail->SetActorScale3D(FVector(0.5f));
-		CurrentSmokeTrail->SetActorRelativeLocation(FVector(0, 0, -15.f));
+		CurrentSmokeTrail->SetActorScale3D(SmokeTrailScale);
+		CurrentSmokeTrail->SetActorRelativeLocation(SmokeTrailOffset);
 	}
 }
 
