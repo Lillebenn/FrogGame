@@ -68,7 +68,7 @@ class AFrogGameCharacter : public ACharacter
 		"true"))
 	FCharacterSettings PowerModeSettings;
 
-	FTimerHandle PunchEndHandle;
+	FTimerHandle PunchRepeatTimer;
 	FTimerHandle PunchResetHandle;
 
 
@@ -226,7 +226,8 @@ private:
 
 	/** Uses fist to punch something, can only be used in power mode **/
 	void Punch();
-	void OnPunchEnd();
+	void DoPunch();
+	void StopPunch();
 	void RemoveHandCollision() const;
 	UFUNCTION()
 	void OnAttackOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,

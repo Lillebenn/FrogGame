@@ -47,8 +47,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 
 	WhirlwindVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxTrace"));
 	WhirlwindVolume->SetupAttachment(RootComponent);
-	WhirlwindVolume->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	WhirlwindVolume->SetCollisionProfileName(TEXT("Whirlwind"));
+	WhirlwindVolume->SetCollisionProfileName(TEXT("NoCollision"));
 
 	WhirlwindParticles = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Whirlwind Particle System"));
 	WhirlwindParticles->SetupAttachment(RootComponent);
@@ -153,6 +152,7 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindAction("Whirlwind", IE_Released, this, &AFrogGameCharacter::EndWhirlwind);
 
 	PlayerInputComponent->BindAction("Punch", IE_Pressed, this, &AFrogGameCharacter::Punch);
+	PlayerInputComponent->BindAction("Punch", IE_Released, this, &AFrogGameCharacter::StopPunch);
 
 	// This is here for test purposes, will activate when the powerbar is filled up.
 	PlayerInputComponent->BindAction("PowerMode", IE_Pressed, this, &AFrogGameCharacter::PowerMode);
@@ -271,6 +271,7 @@ void AFrogGameCharacter::Whirlwind()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Using whirlwind!"))
 		bUsingWhirlwind = true;
+		WhirlwindVolume->SetCollisionProfileName(TEXT("Whirlwind"));
 		WhirlwindParticles->SetVisibility(true);
 		GetCharacterMovement()->bOrientRotationToMovement = false;
 		GetCharacterMovement()->MaxWalkSpeed = WhirlwindWalkSpeed;
@@ -290,17 +291,17 @@ void AFrogGameCharacter::DoWhirlwind(float DeltaTime)
 
 		float& PivotDistance{EdibleComponent->PivotDistance};
 		PivotDistance -= SuctionSpeed * DeltaTime;
-		if(PivotDistance != 0.f)
+		if (PivotDistance <= EatDistance)
+		{
+			Consume(Actor);
+			continue;
+		}
+		if (PivotDistance != 0.f)
 		{
 			const FVector NewScale{
 				ISaveable::Execute_GetStartTransform(Actor).GetScale3D() * PivotDistance / WhirlwindRange
 			};
 			Actor->SetActorScale3D(NewScale);
-		}
-		if (PivotDistance <= EatDistance)
-		{
-			Consume(Actor);
-			continue;
 		}
 
 		AActor* Parent{EdibleComponent->Parent};
@@ -318,7 +319,6 @@ void AFrogGameCharacter::DoWhirlwind(float DeltaTime)
 			NewRelativePosition -= ParentToActor.GetSafeNormal() * InSpeed * DeltaTime;
 		}
 		Actor->SetActorRelativeLocation(NewRelativePosition);
-
 		// Move the pivot actor slightly towards the player
 		FVector NewPosition{GetActorLocation() + GetActorForwardVector() * PivotDistance};
 		Parent->SetActorLocation(NewPosition);
@@ -329,6 +329,7 @@ void AFrogGameCharacter::DoWhirlwind(float DeltaTime)
 void AFrogGameCharacter::EndWhirlwind()
 {
 	bUsingWhirlwind = false;
+	WhirlwindVolume->SetCollisionProfileName(TEXT("NoCollision"));
 	WhirlwindParticles->SetVisibility(false);
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->MaxWalkSpeed = NeutralModeSettings.MaxWalkSpeed;
@@ -413,40 +414,42 @@ void AFrogGameCharacter::Punch()
 {
 	if (bPowerMode && !bIsPunching)
 	{
-		// For later, when we have a proper punch animation, turn on collision only when the punch of the player is at the end point
-		// Also need to make sure the animation cancels early if it hits something, or turns off collision once it does, so it doesn't keep adding collision events.
-		GetWorld()->GetTimerManager().SetTimer(PunchEndHandle, this, &AFrogGameCharacter::OnPunchEnd, 0.25f,
-		                                       false);
-		GetWorld()->GetTimerManager().SetTimer(PunchResetHandle, this, &AFrogGameCharacter::PunchReset, 0.75f,
-		                                       false);
-		RightHandCollision->SetCollisionProfileName(TEXT("Punch"));
-		LeftHandCollision->SetCollisionProfileName(TEXT("Punch"));
-		switch (CurrentPunch)
-		{
-		case 0:
-			PlayAnimMontage(PunchMontage, 1, TEXT("First Punch"));
-			break;
-		case 1:
-			PlayAnimMontage(PunchMontage, 1, TEXT("Second Punch"));
-			break;
-		case 2:
-			PlayAnimMontage(PunchMontage, 1, TEXT("UpperCut"));
-			break;
-		default:
-			break;
-		}
-		CurrentPunch++;
-		if (CurrentPunch > 2)
-		{
-			CurrentPunch = 0;
-		}
-		bIsPunching = true;
-		// Add execution here
+		GetWorld()->GetTimerManager().SetTimer(PunchRepeatTimer, this, &AFrogGameCharacter::DoPunch, 0.35f,
+		                                       true, 0.f);
 	}
 }
 
-void AFrogGameCharacter::OnPunchEnd()
+void AFrogGameCharacter::DoPunch()
 {
+	GetWorld()->GetTimerManager().SetTimer(PunchResetHandle, this, &AFrogGameCharacter::PunchReset, 0.75f,
+	                                       false);
+	RightHandCollision->SetCollisionProfileName(TEXT("Punch"));
+	LeftHandCollision->SetCollisionProfileName(TEXT("Punch"));
+	switch (CurrentPunch)
+	{
+	case 0:
+		PlayAnimMontage(PunchMontage, 1, TEXT("First Punch"));
+		break;
+	case 1:
+		PlayAnimMontage(PunchMontage, 1, TEXT("Second Punch"));
+		break;
+	case 2:
+		PlayAnimMontage(PunchMontage, 1, TEXT("UpperCut"));
+		break;
+	default:
+		break;
+	}
+	CurrentPunch++;
+	if (CurrentPunch > 2)
+	{
+		CurrentPunch = 0;
+	}
+	bIsPunching = true;
+}
+
+void AFrogGameCharacter::StopPunch()
+{
+	GetWorld()->GetTimerManager().ClearTimer(PunchRepeatTimer);
 	RemoveHandCollision();
 	bIsPunching = false;
 }
