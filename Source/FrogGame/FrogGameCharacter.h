@@ -80,7 +80,7 @@ public:
 
 	/** Accessor Function for Current Score */
 	UFUNCTION(BlueprintCallable, Category = "Character | Score")
-	float GetCurrentScore() const
+	int GetCurrentScore() const
 	{
 		return CurrentScore;
 	}
@@ -89,7 +89,7 @@ public:
 	* @Param Score This is the amount to increase the players score by. This should only be positive!
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Character | Score")
-	void UpdateCurrentScore(const float Score)
+	void UpdateCurrentScore(const int Score)
 	{
 		CurrentScore = CurrentScore + Score;
 	}
@@ -98,6 +98,12 @@ public:
 	float GetCurrentPowerPoints() const
 	{
 		return CurrentPowerPoints;
+	}
+
+	UFUNCTION(BlueprintCallable, Category = "Character | PowerMode")
+	bool GetCurrentFrogState() const
+	{
+		return bPowerMode;
 	}
 
 	/**
@@ -162,7 +168,7 @@ public:
 
 	/** The Players current score */
 	UPROPERTY(EditAnywhere, SaveGame, Category = "Character | Score")
-	float CurrentScore;
+	int CurrentScore;
 	// How close object has to be to be eaten (destroyed).
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind")
 	float EatDistance{150.f};
