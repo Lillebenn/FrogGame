@@ -70,20 +70,10 @@ AFrogGameCharacter::AFrogGameCharacter()
 	GetArrowComponent()->bEditableWhenInherited = true;
 
 	// Power mode punch volumes need to be changed once we get the correct mesh
-	// Creates a collision sphere and attaches it to the characters right hand.
-	RightHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("RightHandCollision"));
-	RightHandCollision->CanCharacterStepUpOn = ECB_No;
-	RightHandCollision->InitSphereRadius(60.f);
-	RightHandCollision->SetRelativeLocation(FVector(0.f, 9.f, 0.f));
-	// Creates a collision sphere and attaches it to the characters left hand.
-	LeftHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("LeftHandCollision"));
-	LeftHandCollision->CanCharacterStepUpOn = ECB_No;
-	LeftHandCollision->InitSphereRadius(60.f);
-	LeftHandCollision->SetRelativeLocation(FVector(0.f, -9.f, 0.f));
-	RemoveHandCollision();
+	// Creates a collision boxes and attaches them to the characters right hand.
 	PunchParticle = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Punch Particle"));
 	PunchParticle->SetAutoActivate(false);
-	PunchParticle->SetupAttachment(RightHandCollision);
+	PunchParticle->SetupAttachment(GetMesh());
 	// PowerModeSettings defaults
 	PowerModeSettings.MaxWalkSpeed = 1600.f;
 	PowerModeSettings.JumpZHeight = 2000.f;
@@ -116,8 +106,13 @@ void AFrogGameCharacter::BeginPlay()
 	WhirlwindVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindBeginOverlap);
 	WhirlwindVolume->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindEndOverlap);
 	WhirlwindRange = WhirlwindVolume->GetScaledBoxExtent().X;
-	LeftHandCollision->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnAttackOverlap);
-	RightHandCollision->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnAttackOverlap);
+	if (PunchVolumeType)
+	{
+		PunchVolumeActor = GetWorld()->SpawnActor<AActor>(PunchVolumeType);
+		PunchVolumeActor->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
+		PunchVolume = Cast<UBoxComponent>(PunchVolumeActor->GetComponentByClass(UBoxComponent::StaticClass()));
+		PunchVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnAttackOverlap);
+	}
 
 	// Setting Hud trackers to 0 at the start.
 	CurrentScore = 0.f;
@@ -379,6 +374,8 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 void AFrogGameCharacter::PunchAnimNotify()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Punching! Current Punch is %d"), CurrentPunch)
+	const FAttachmentTransformRules InRule{EAttachmentRule::KeepRelative, false};
+
 	switch (CurrentPunch)
 	{
 	case 0:
@@ -386,7 +383,8 @@ void AFrogGameCharacter::PunchAnimNotify()
 		{
 			PunchParticle->SetTemplate(UpperCut);
 		}
-		PunchParticle->AttachToComponent(RightHandCollision, FAttachmentTransformRules::KeepRelativeTransform);
+		PunchParticle->AttachToComponent(GetMesh(), InRule,
+		                                 TEXT("r_hand_end_j"));
 		PunchParticle->SetRelativeLocation(UpperCutOffset);
 		break;
 	case 1:
@@ -394,7 +392,8 @@ void AFrogGameCharacter::PunchAnimNotify()
 		{
 			PunchParticle->SetTemplate(PunchOne);
 		}
-		PunchParticle->AttachToComponent(RightHandCollision, FAttachmentTransformRules::KeepRelativeTransform);
+		PunchParticle->AttachToComponent(GetMesh(), InRule,
+		                                 TEXT("r_hand_end_j"));
 		PunchParticle->SetRelativeLocation(PunchOneOffset);
 		break;
 	case 2:
@@ -402,13 +401,15 @@ void AFrogGameCharacter::PunchAnimNotify()
 		{
 			PunchParticle->SetTemplate(PunchTwo);
 		}
-		PunchParticle->AttachToComponent(LeftHandCollision, FAttachmentTransformRules::KeepRelativeTransform);
+		PunchParticle->AttachToComponent(GetMesh(), InRule,
+		                                 TEXT("l_hand_end_j"));
 		PunchParticle->SetRelativeLocation(PunchTwoOffset);
 		break;
 	default:
 		break;
 	}
 	PunchParticle->Activate(true);
+	ApplyDamage();
 	bPunchMove = false;
 }
 
@@ -430,21 +431,29 @@ void AFrogGameCharacter::DoPunch()
 {
 	GetWorld()->GetTimerManager().SetTimer(PunchResetHandle, this, &AFrogGameCharacter::PunchReset, 0.75f,
 	                                       false);
-	RightHandCollision->SetCollisionProfileName(TEXT("Punch"));
-	LeftHandCollision->SetCollisionProfileName(TEXT("Punch"));
+	FVector PunchVolumePosition{PunchVolume->GetUnscaledBoxExtent().X, 0.f, -10.f};
+
 	switch (CurrentPunch)
 	{
 	case 0:
 		PlayAnimMontage(PunchMontage, 1, TEXT("First Punch"));
+		PunchVolumePosition.Y = RightPunchVolumeYPosition;
 		break;
 	case 1:
 		PlayAnimMontage(PunchMontage, 1, TEXT("Second Punch"));
+		PunchVolumePosition.Y = LeftPunchVolumeYPosition;
 		break;
 	case 2:
 		PlayAnimMontage(PunchMontage, 1, TEXT("UpperCut"));
+		PunchVolumePosition.Y = RightPunchVolumeYPosition;
 		break;
 	default:
 		break;
+	}
+	if (PunchVolumeActor)
+	{
+		PunchVolumeActor->SetActorRelativeLocation(PunchVolumePosition);
+		PunchVolume->SetCollisionProfileName(TEXT("Punch"));
 	}
 	CurrentPunch++;
 	if (CurrentPunch > 2)
@@ -455,18 +464,26 @@ void AFrogGameCharacter::DoPunch()
 	bPunchMove = true;
 }
 
+void AFrogGameCharacter::ApplyDamage()
+{
+	for (auto Actor : HitActors)
+	{
+		Actor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
+	}
+	HitActors.Empty();
+	PunchVolume->SetCollisionProfileName(TEXT("NoCollision"));
+}
+
 void AFrogGameCharacter::StopPunch()
 {
 	GetWorld()->GetTimerManager().ClearTimer(PunchRepeatTimer);
-	RemoveHandCollision();
+	if (PunchVolume)
+	{
+		PunchVolume->SetCollisionProfileName(TEXT("NoCollision"));
+	}
 	bIsPunching = false;
 }
 
-void AFrogGameCharacter::RemoveHandCollision() const
-{
-	RightHandCollision->SetCollisionProfileName(TEXT("NoCollision"));
-	LeftHandCollision->SetCollisionProfileName(TEXT("NoCollision"));
-}
 
 void AFrogGameCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
                                          UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
@@ -476,8 +493,10 @@ void AFrogGameCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComp, AA
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Hit Event with %s!"), *OtherActor->GetName())
 
-		RemoveHandCollision();
-		OtherActor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
+		if (!HitActors.Contains(OtherActor))
+		{
+			HitActors.Add(OtherActor);
+		}
 	}
 }
 
@@ -513,11 +532,7 @@ void AFrogGameCharacter::PowerMode()
 	bPowerMode = true;
 	EndWhirlwind();
 	SetPlayerModel(PowerModeSettings);
-	const FAttachmentTransformRules InRule{EAttachmentRule::KeepRelative, false};
-
-	RightHandCollision->AttachToComponent(GetMesh(), InRule, TEXT("r_wrist_j"));
-	LeftHandCollision->AttachToComponent(GetMesh(), InRule, TEXT("l_wrist_j"));
-	// Change from frog mesh and rig to power-frog mesh & rig here.
+	//const FAttachmentTransformRules InRule{EAttachmentRule::KeepRelative, false};
 }
 
 void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSettings)
@@ -540,7 +555,10 @@ void AFrogGameCharacter::DeactivatePowerMode()
 {
 	bPowerMode = false;
 	SetPlayerModel(NeutralModeSettings);
-	RemoveHandCollision();
+	if (PunchVolume)
+	{
+		PunchVolume->SetCollisionProfileName(TEXT("NoCollision"));
+	}
 }
 
 void AFrogGameCharacter::UpdatePowerPoints(float Points)

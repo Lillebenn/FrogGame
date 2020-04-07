@@ -57,15 +57,13 @@ class AFrogGameCharacter : public ACharacter
 	class UParticleSystemComponent* WhirlwindParticles;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UChildActorComponent* WhirlwindPivot;
-	UPROPERTY (VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	class USphereComponent* RightHandCollision;
+
 	UPROPERTY (EditDefaultsOnly, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UAnimMontage* PunchMontage;
 	UPROPERTY (VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UParticleSystemComponent* PunchParticle;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	class USphereComponent* LeftHandCollision;
+
 	UPROPERTY()
 	FCharacterSettings NeutralModeSettings;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character | PowerMode", meta = (AllowPrivateAccess =
@@ -135,6 +133,18 @@ public:
 	bool bPowerMode{false};
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
 	bool bIsPunching{false};
+	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")
+	TSubclassOf<AActor> PunchVolumeType;
+	UPROPERTY()
+	UBoxComponent* PunchVolume;
+	UPROPERTY()
+	TArray<AActor*> HitActors;
+	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")
+	float RightPunchVolumeYPosition;
+	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")
+	float LeftPunchVolumeYPosition;
+	UPROPERTY()
+	AActor* PunchVolumeActor;
 	// How far the player should "dash" forward each punch. 0 = don't move at all, 1 = Equivalent to holding down W for roughly 0.2 ms. 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
 	float PunchForwardDistance{0.15f};
@@ -237,8 +247,8 @@ private:
 	/** Uses fist to punch something, can only be used in power mode **/
 	void Punch();
 	void DoPunch();
+	void ApplyDamage();
 	void StopPunch();
-	void RemoveHandCollision() const;
 	UFUNCTION()
 	void OnAttackOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                     int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
