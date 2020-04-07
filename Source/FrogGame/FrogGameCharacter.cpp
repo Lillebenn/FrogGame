@@ -120,7 +120,7 @@ void AFrogGameCharacter::BeginPlay()
 	RightHandCollision->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnAttackOverlap);
 
 	// Setting Hud trackers to 0 at the start.
-	CurrentScore = 0.f;
+	CurrentScore = 0;
 	CurrentPowerPoints = 0.f;
 
 	NeutralModeSettings.Mesh = GetMesh()->SkeletalMesh;
