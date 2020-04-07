@@ -66,9 +66,6 @@ AFrogGameCharacter::AFrogGameCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	// Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
-
-	GetArrowComponent()->bEditableWhenInherited = true;
-
 	// Power mode punch volumes need to be changed once we get the correct mesh
 	// Creates a collision boxes and attaches them to the characters right hand.
 	PunchParticle = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Punch Particle"));
@@ -169,8 +166,15 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindAxis("TurnRate", this, &AFrogGameCharacter::TurnAtRate);
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AFrogGameCharacter::LookUpAtRate);
+
+	PlayerInputComponent->BindAction("PauseMenu", IE_Pressed, this, &AFrogGameCharacter::OpenPauseMenu);
 }
 
+void AFrogGameCharacter::OpenPauseMenu()
+{
+	// TODO: Replace this with a call to a pause menu widget, this is just for play-testing purposes so people can quit without Alt-F4
+	UKismetSystemLibrary::QuitGame(GetWorld(), Cast<APlayerController>(GetController()), EQuitPreference::Quit, true);
+}
 
 void AFrogGameCharacter::Tick(float DeltaTime)
 {

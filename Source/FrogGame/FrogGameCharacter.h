@@ -266,8 +266,8 @@ private:
 	void OnWhirlwindEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                           int32 OtherBodyIndex);
 
+	void OpenPauseMenu();
 	void SaveGame();
-
 
 	void LoadGame();
 	/** Changing to PowerMode **/
@@ -287,3 +287,4 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };
+
