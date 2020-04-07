@@ -100,11 +100,11 @@ AFrogGameCharacter::AFrogGameCharacter()
 	{
 		PunchMontage = AnimPunchMontage.Object;
 	}
-	const ConstructorHelpers::FClassFinder<UAnimInstance> AnimInstance(TEXT("/Game/Models/Player/Player_Powered/animBP_PoweredFrog"));
-	if(AnimInstance.Class)
-	{
-		PowerModeSettings.AnimBP = AnimInstance.Class;
-	}
+	//const ConstructorHelpers::FClassFinder<UAnimInstance> AnimInstance(TEXT("/Game/Models/Player/Player_Powered/animBP_PoweredFrog"));
+	//if(AnimInstance.Class)
+	//{
+	//	PowerModeSettings.AnimBP = AnimInstance.Class;
+	//}
 }
 
 
