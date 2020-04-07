@@ -102,6 +102,12 @@ public:
 		return CurrentPowerPoints;
 	}
 
+	UFUNCTION(BlueprintCallable, Category = "Character | PowerMode")
+	bool GetCurrentFrogState() const
+	{
+		return bPowerMode;
+	}
+
 	/**
 	* @Param Points This is the amount to increase the players powerpoints by. This should only be positive on objects!
 	*/
