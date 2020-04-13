@@ -196,15 +196,11 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 
 		SetActorRotation(Orientation);
 	}
-	if (GetVelocity().IsZero() && CurrentSmokeTrail)
+	if (GetVelocity().IsZero() || GetCharacterMovement()->IsFalling())
 	{
-		CurrentSmokeTrail->SetLifeSpan(1.f);
-		CurrentSmokeTrail->GetComponentByClass(UParticleSystemComponent::StaticClass())->Deactivate();
-		CurrentSmokeTrail->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-		CurrentSmokeTrail = nullptr;
+		DisableSmokeTrail();
 	}
 }
-
 
 void AFrogGameCharacter::FilterOccludedObjects()
 {
@@ -620,6 +616,21 @@ void AFrogGameCharacter::SpawnSmokeTrail()
 		CurrentSmokeTrail->SetActorScale3D(SmokeTrailScale);
 		CurrentSmokeTrail->SetActorRelativeLocation(SmokeTrailOffset);
 	}
+}
+void AFrogGameCharacter::DisableSmokeTrail()
+{
+	if(CurrentSmokeTrail)
+	{
+		CurrentSmokeTrail->SetLifeSpan(1.f);
+		CurrentSmokeTrail->GetComponentByClass(UParticleSystemComponent::StaticClass())->Deactivate();
+		CurrentSmokeTrail->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		CurrentSmokeTrail = nullptr;
+	}
+}
+void AFrogGameCharacter::Jump()
+{
+	Super::Jump();
+	DisableSmokeTrail();
 }
 
 void AFrogGameCharacter::MoveForward(float Value)

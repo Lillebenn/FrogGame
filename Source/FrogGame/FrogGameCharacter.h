@@ -166,7 +166,7 @@ public:
 	float DrainSpeed{-0.075f};
 
 
-	/** The Players current score */
+	/** The Player's current score */
 	UPROPERTY(EditAnywhere, SaveGame, Category = "Character | Score")
 	int CurrentScore;
 	// How close object has to be to be eaten (destroyed).
@@ -223,6 +223,7 @@ protected:
 	 */
 	void SpawnSmokeTrail();
 
+	void Jump() override;
 	void Landed(const FHitResult& Hit) override;
 	// APawn interface
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -279,6 +280,7 @@ private:
 public:
 
 	void Tick(float DeltaTime) override;
+	void DisableSmokeTrail();
 
 
 	/** Returns CameraBoom subobject **/
