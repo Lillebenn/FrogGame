@@ -147,7 +147,7 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 
 	PlayerInputComponent->BindAction("Punch", IE_Pressed, this, &AFrogGameCharacter::Punch);
 	PlayerInputComponent->BindAction("Punch", IE_Released, this, &AFrogGameCharacter::StopPunch);
-
+	PlayerInputComponent->BindAction("StopPowerMode", IE_Pressed, this, &AFrogGameCharacter::DeactivatePowerMode);
 	// This is here for test purposes, will activate when the powerbar is filled up.
 	PlayerInputComponent->BindAction("PowerMode", IE_Pressed, this, &AFrogGameCharacter::PowerMode);
 
@@ -555,6 +555,7 @@ void AFrogGameCharacter::DeactivatePowerMode()
 {
 	bPowerMode = false;
 	SetPlayerModel(NeutralModeSettings);
+	WhirlwindParticles->ResetNextTick();
 	if (PunchVolume)
 	{
 		PunchVolume->SetCollisionProfileName(TEXT("NoCollision"));

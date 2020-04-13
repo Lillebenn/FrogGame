@@ -32,7 +32,7 @@ protected:
 public:
 	// Called every frame
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-	FVector CalculateImpulseVector(class AFrogGameCharacter* Frog) const;
+	FVector CalculateImpulseVector(AActor* Actor) const;
 	void SpawnSpheres() const;
 	void KillActor();
 };

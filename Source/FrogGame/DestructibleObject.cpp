@@ -4,6 +4,7 @@
 #include "DestructibleObject.h"
 
 #include "CustomDestructibleComponent.h"
+#include "Edible.h"
 #include "FrogGameCharacter.h"
 #include "Engine/StaticMesh.h"
 #include "SphereDrop.h"
@@ -40,32 +41,52 @@ float ADestructibleObject::TakeDamage(float DamageAmount, FDamageEvent const& Da
 	UE_LOG(LogTemp, Warning, TEXT("Taking %f damage."), ActualDamage);
 	if (ActualDamage > 0.f)
 	{
-		AFrogGameCharacter* Frog{Cast<AFrogGameCharacter>(DamageCauser)};
-		if (Frog)
+		float& CurrentHealth{DestructibleComponent->CurrentHealth};
+		CurrentHealth -= ActualDamage;
+		if (CurrentHealth <= 0.f)
 		{
-			float& CurrentHealth{DestructibleComponent->CurrentHealth};
-			CurrentHealth -= ActualDamage;
-			if (CurrentHealth <= 0.f)
+			DeathDamage = ActualDamage;
+			if (StaticMesh)
 			{
-				if (StaticMesh)
-				{
-					StaticMesh->SetMassOverrideInKg(NAME_None, 100.f);
-					StaticMesh->SetSimulatePhysics(true);
-					StaticMesh->AddImpulse(DestructibleComponent->CalculateImpulseVector(Frog));
-				}
-				else
-				{
-					UE_LOG(LogTemp, Warning, TEXT("Missing static mesh reference!"))
-				}
-				GetWorld()->GetTimerManager().SetTimer(TimerHandle, DestructibleComponent, &UCustomDestructibleComponent::KillActor, 1.f,
-				                                       false);
+				ActivatePhysics();
+				ImpulseVector = DestructibleComponent->CalculateImpulseVector(DamageCauser);
+				StaticMesh->AddImpulse(ImpulseVector);
 			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Missing static mesh reference!"))
+			}
+			GetWorld()->GetTimerManager().SetTimer(TimerHandle, DestructibleComponent,
+			                                       &UCustomDestructibleComponent::KillActor, 1.f,
+			                                       false);
 		}
 	}
 	return ActualDamage;
 }
 
+void ADestructibleObject::ActivatePhysics()
+{
+	StaticMesh->SetMassOverrideInKg(NAME_None, 100.f);
+	StaticMesh->SetSimulatePhysics(true);
+	StaticMesh->SetNotifyRigidBodyCollision(true);
+	//StaticMesh->OnComponentHit.AddDynamic(this, &ADestructibleObject::OnHit);
+}
 
+void ADestructibleObject::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+                                FVector NormalImpulse, const FHitResult& Hit)
+{
+	if (OtherActor != nullptr && OtherActor != this && OtherComp != nullptr)
+	{
+		UCustomDestructibleComponent* OtherDestructible = Cast<UCustomDestructibleComponent>(
+			OtherActor->GetComponentByClass(UCustomDestructibleComponent::StaticClass()));
+		if (OtherDestructible && DestructibleComponent->FlyAwayForce > 50000.f)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%f"), DestructibleComponent->FlyAwayForce);
+			OtherDestructible->FlyAwayForce = DestructibleComponent->FlyAwayForce / 2.f;
+			OtherActor->TakeDamage(DeathDamage, FDamageEvent(), GetInstigatorController(), this);
+		}
+	}
+}
 
 
 FTransform ADestructibleObject::GetStartTransform_Implementation()

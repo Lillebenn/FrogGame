@@ -36,9 +36,9 @@ void UCustomDestructibleComponent::TickComponent(float DeltaTime, ELevelTick Tic
 	// ...
 }
 
-FVector UCustomDestructibleComponent::CalculateImpulseVector(AFrogGameCharacter* Frog) const
+FVector UCustomDestructibleComponent::CalculateImpulseVector(AActor* Actor) const
 {
-	FVector ImpulseDirection{GetOwner()->GetActorLocation() - Frog->GetActorLocation()};
+	FVector ImpulseDirection{GetOwner()->GetActorLocation() - Actor->GetActorLocation()};
 	ImpulseDirection.Normalize();
 	return {ImpulseDirection * FlyAwayForce};
 }

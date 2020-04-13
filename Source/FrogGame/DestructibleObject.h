@@ -29,11 +29,17 @@ private:
 
 	FTimerHandle TimerHandle;
 	FTransform StartTransform;
+	FVector ImpulseVector;
+	float DeathDamage{500.f};
 public:
 	// Called every frame
 	void Tick(float DeltaTime) override;
 	float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
 	                 AActor* DamageCauser) override;
+	void ActivatePhysics();
+	UFUNCTION()
+	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse,
+	           const FHitResult& Hit);
 	void ActorSaveDataSaved_Implementation() override;
 	void ActorSaveDataLoaded_Implementation() override;
 	FTransform GetStartTransform_Implementation() override;
