@@ -68,6 +68,7 @@ void ASphereDrop::Tick(float DeltaTime)
 		else
 		{
 			FVector NewPosition;
+			// TODO: Close enough OR X amount of seconds have passed.
 			if (FrogFunctionLibrary::Swirl(DeltaTime, SwirlInfo, Frog->GetActorLocation(), NewPosition))
 			{
 				Frog->Consume(this);
