@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Components/SphereComponent.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "TimerManager.h"
@@ -165,7 +166,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")
 	float DrainSpeed{-0.075f};
 
-
+	UPROPERTY(EditAnywhere, Category = Character)
+	TSubclassOf<AActor> ShockwaveActor;
+	UPROPERTY(EditAnywhere, Category = Character)
+	USphereComponent* ShockwaveCollider;
 	/** The Player's current score */
 	UPROPERTY(EditAnywhere, SaveGame, Category = "Character | Score")
 	int CurrentScore;
@@ -230,7 +234,8 @@ protected:
 	// End of APawn interface
 
 private:
-
+	void ConstructNeutralModeSettings();
+	void AttachedActorsSetup();
 	void FilterOccludedObjects();
 	void Whirlwind();
 	void DoWhirlwind(float DeltaTime);
@@ -289,4 +294,3 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };
-

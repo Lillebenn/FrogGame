@@ -6,6 +6,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/InputComponent.h"
+#include "CustomDestructibleComponent.h"
 #include "Engine.h"
 #include "Engine/EngineTypes.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -103,31 +104,12 @@ void AFrogGameCharacter::BeginPlay()
 	WhirlwindVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindBeginOverlap);
 	WhirlwindVolume->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindEndOverlap);
 	WhirlwindRange = WhirlwindVolume->GetScaledBoxExtent().X;
-	if (PunchVolumeType)
-	{
-		PunchVolumeActor = GetWorld()->SpawnActor<AActor>(PunchVolumeType);
-		PunchVolumeActor->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
-		PunchVolume = Cast<UBoxComponent>(PunchVolumeActor->GetComponentByClass(UBoxComponent::StaticClass()));
-		PunchVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnAttackOverlap);
-	}
-
+	AttachedActorsSetup();
 	// Setting Hud trackers to 0 at the start.
 	CurrentScore = 0;
 	CurrentPowerPoints = 0.f;
 
-	NeutralModeSettings.Mesh = GetMesh()->SkeletalMesh;
-	NeutralModeSettings.AnimBP = GetMesh()->GetAnimInstance()->GetClass();
-	FVector2D Capsule;
-	GetCapsuleComponent()->GetUnscaledCapsuleSize(Capsule.X, Capsule.Y);
-	NeutralModeSettings.CapsuleSize = Capsule;
-	NeutralModeSettings.MeshScale = GetMesh()->GetRelativeScale3D().X;
-	NeutralModeSettings.BoomRange = CameraBoom->TargetArmLength;
-	NeutralModeSettings.MaxWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
-	NeutralModeSettings.JumpZHeight = GetCharacterMovement()->JumpZVelocity;
-	NeutralModeSettings.GravityScale = GetCharacterMovement()->GravityScale;
-	NeutralModeSettings.SmokeTrailZPos = SmokeTrailOffset.Z;
-	NeutralModeSettings.SmokeTrailScale = SmokeTrailScale.X;
-
+	ConstructNeutralModeSettings();
 	// Setup the default whirlwind swirl settings
 	DefaultWhirlwindSwirl.DefaultLinearUpSpeed = SuctionSpeed;
 	DefaultWhirlwindSwirl.DefaultAngularSpeed = RotationSpeed;
@@ -136,7 +118,6 @@ void AFrogGameCharacter::BeginPlay()
 
 //////////////////////////////////////////////////////////////////////////
 // Input
-
 void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	// Set up gameplay key bindings
@@ -161,13 +142,48 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 
 	// We have 2 versions of the rotation bindings to handle different kinds of devices differently
 	// "turn" handles devices that provide an absolute delta, such as a mouse.
-	// "turnrate" is for devices that we choose to treat as a rate of change, such as an analog joystick
+	// "TurnRate" is for devices that we choose to treat as a rate of change, such as an analog joystick
 	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
 	PlayerInputComponent->BindAxis("TurnRate", this, &AFrogGameCharacter::TurnAtRate);
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AFrogGameCharacter::LookUpAtRate);
 
 	PlayerInputComponent->BindAction("PauseMenu", IE_Pressed, this, &AFrogGameCharacter::OpenPauseMenu);
+}
+
+void AFrogGameCharacter::ConstructNeutralModeSettings()
+{
+	NeutralModeSettings.Mesh = GetMesh()->SkeletalMesh;
+	NeutralModeSettings.AnimBP = GetMesh()->GetAnimInstance()->GetClass();
+	FVector2D Capsule;
+	GetCapsuleComponent()->GetUnscaledCapsuleSize(Capsule.X, Capsule.Y);
+	NeutralModeSettings.CapsuleSize = Capsule;
+	NeutralModeSettings.MeshScale = GetMesh()->GetRelativeScale3D().X;
+	NeutralModeSettings.BoomRange = CameraBoom->TargetArmLength;
+	NeutralModeSettings.MaxWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
+	NeutralModeSettings.JumpZHeight = GetCharacterMovement()->JumpZVelocity;
+	NeutralModeSettings.GravityScale = GetCharacterMovement()->GravityScale;
+	NeutralModeSettings.SmokeTrailZPos = SmokeTrailOffset.Z;
+	NeutralModeSettings.SmokeTrailScale = SmokeTrailScale.X;
+}
+
+void AFrogGameCharacter::AttachedActorsSetup()
+{
+	if (PunchVolumeType)
+	{
+		PunchVolumeActor = GetWorld()->SpawnActor<AActor>(PunchVolumeType);
+		PunchVolumeActor->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
+		PunchVolume = Cast<UBoxComponent>(PunchVolumeActor->GetComponentByClass(UBoxComponent::StaticClass()));
+		PunchVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnAttackOverlap);
+	}
+	if (ShockwaveActor)
+	{
+		auto Actor{GetWorld()->SpawnActor<AActor>(ShockwaveActor)};
+		Actor->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
+		Actor->SetActorRelativeLocation(FVector(0.f, 0.f, -10.f));
+		ShockwaveCollider = Cast<USphereComponent>(Actor->GetComponentByClass(USphereComponent::StaticClass()));
+		ShockwaveCollider->SetCollisionProfileName(TEXT("NoCollision"));
+	}
 }
 
 void AFrogGameCharacter::OpenPauseMenu()
@@ -288,6 +304,10 @@ void AFrogGameCharacter::DoWhirlwind(float DeltaTime)
 	TArray<AActor*> TempArray{WhirlwindAffectedActors};
 	for (auto Actor : TempArray)
 	{
+		if(!Actor->Implements<IEdible>())
+		{
+			continue;
+		}
 		auto EdibleComponent{Cast<UEdibleComponent>(Actor->GetComponentByClass(UEdibleComponent::StaticClass()))};
 
 		float& PivotDistance{EdibleComponent->PivotDistance};
@@ -618,9 +638,10 @@ void AFrogGameCharacter::SpawnSmokeTrail()
 		CurrentSmokeTrail->SetActorRelativeLocation(SmokeTrailOffset);
 	}
 }
+
 void AFrogGameCharacter::DisableSmokeTrail()
 {
-	if(CurrentSmokeTrail)
+	if (CurrentSmokeTrail)
 	{
 		CurrentSmokeTrail->SetLifeSpan(1.f);
 		CurrentSmokeTrail->GetComponentByClass(UParticleSystemComponent::StaticClass())->Deactivate();
@@ -628,10 +649,12 @@ void AFrogGameCharacter::DisableSmokeTrail()
 		CurrentSmokeTrail = nullptr;
 	}
 }
+
 void AFrogGameCharacter::Jump()
 {
 	Super::Jump();
 	DisableSmokeTrail();
+	ShockwaveCollider->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
 }
 
 void AFrogGameCharacter::MoveForward(float Value)
@@ -675,4 +698,14 @@ void AFrogGameCharacter::MoveRight(float Value)
 void AFrogGameCharacter::Landed(const FHitResult& Hit)
 {
 	// use this event to add shockwave etc
+	TArray<AActor*> OverlappingActors;
+	ShockwaveCollider->GetOverlappingActors(OverlappingActors);
+	for (auto Actor : OverlappingActors)
+	{
+		if (Actor->Implements<IEdible>())
+		{
+			Actor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
+		}
+	}
+	ShockwaveCollider->SetCollisionProfileName(TEXT("NoCollision"));
 }

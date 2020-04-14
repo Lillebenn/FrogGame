@@ -69,7 +69,7 @@ void ADestructibleObject::ActivatePhysics()
 	StaticMesh->SetMassOverrideInKg(NAME_None, 100.f);
 	StaticMesh->SetSimulatePhysics(true);
 	StaticMesh->SetNotifyRigidBodyCollision(true);
-	//StaticMesh->OnComponentHit.AddDynamic(this, &ADestructibleObject::OnHit);
+	StaticMesh->SetCollisionResponseToChannel(ECC_Camera, ECollisionResponse::ECR_Ignore);
 }
 
 void ADestructibleObject::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
