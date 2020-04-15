@@ -1,12 +1,11 @@
 // Copyright 1998-2019 Epic Games, Inc. All Rights Reserved.
 
 #include "FrogGameCharacter.h"
-#include "HeadMountedDisplayFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/InputComponent.h"
-#include "CustomDestructibleComponent.h"
+#include "DestructibleObject.h"
 #include "Engine.h"
 #include "Engine/EngineTypes.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -100,7 +99,7 @@ void AFrogGameCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnOverlap);
 	WhirlwindVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindBeginOverlap);
 	WhirlwindVolume->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindEndOverlap);
 	WhirlwindRange = WhirlwindVolume->GetScaledBoxExtent().X;
@@ -182,6 +181,7 @@ void AFrogGameCharacter::AttachedActorsSetup()
 		Actor->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
 		Actor->SetActorRelativeLocation(FVector(0.f, 0.f, -10.f));
 		ShockwaveCollider = Cast<USphereComponent>(Actor->GetComponentByClass(USphereComponent::StaticClass()));
+		ShockwaveColliderRadius = ShockwaveCollider->GetUnscaledSphereRadius();
 		ShockwaveCollider->SetCollisionProfileName(TEXT("NoCollision"));
 	}
 }
@@ -304,7 +304,7 @@ void AFrogGameCharacter::DoWhirlwind(float DeltaTime)
 	TArray<AActor*> TempArray{WhirlwindAffectedActors};
 	for (auto Actor : TempArray)
 	{
-		if(!Actor->Implements<UEdible>())
+		if (!Actor->Implements<UEdible>())
 		{
 			continue;
 		}
@@ -504,6 +504,17 @@ void AFrogGameCharacter::StopPunch()
 	bIsPunching = false;
 }
 
+void AFrogGameCharacter::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+                                   UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+                                   const FHitResult& SweepResult)
+{
+	if (OtherActor != nullptr && OtherActor != this && OtherActor->IsA(SmallDestructible) && OtherComp != nullptr)
+	{
+		// TODO: Maybe do a different function if we don't want shit to fly around
+		OtherActor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
+	}
+}
+
 
 void AFrogGameCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
                                          UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
@@ -538,7 +549,7 @@ void AFrogGameCharacter::OnWhirlwindEndOverlap(UPrimitiveComponent* OverlappedCo
 
 	if (OtherActor && (OtherActor != this) && OtherComp)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Target stopped overlapping."))
+		//UE_LOG(LogTemp, Warning, TEXT("Target stopped overlapping."))
 		if (PotentialTargets.Find(OtherActor) != INDEX_NONE)
 		{
 			PotentialTargets.Remove(OtherActor); // Not sure if this works as intended
@@ -653,9 +664,11 @@ void AFrogGameCharacter::DisableSmokeTrail()
 void AFrogGameCharacter::Jump()
 {
 	InitialZValue = GetActorLocation().Z;
+	bFirstJump = true;
 	Super::Jump();
 	DisableSmokeTrail();
 	ShockwaveCollider->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
+	ShockwaveCollider->SetSphereRadius(ShockwaveColliderRadius);
 }
 
 void AFrogGameCharacter::MoveForward(float Value)
@@ -698,12 +711,15 @@ void AFrogGameCharacter::MoveRight(float Value)
 
 void AFrogGameCharacter::Landed(const FHitResult& Hit)
 {
+	Super::Landed(Hit);
 	// use this event to add shockwave etc
 	const float ZDiff{GetActorLocation().Z - InitialZValue};
-	if(ZDiff > 0.f)
+
+	if (ZDiff < 0.f && bFirstJump)
 	{
-		const float AdditionalSize{ZDiff * 0.05f};
-		ShockwaveCollider->SetSphereRadius(ShockwaveCollider->GetScaledSphereRadius() + AdditionalSize);
+		const float AdditionalSize{FMath::Abs(ZDiff) * 0.05f};
+		const float NewSize{ShockwaveCollider->GetUnscaledSphereRadius() + AdditionalSize};
+		ShockwaveCollider->SetSphereRadius(NewSize);
 	}
 	TArray<AActor*> OverlappingActors;
 	ShockwaveCollider->GetOverlappingActors(OverlappingActors);

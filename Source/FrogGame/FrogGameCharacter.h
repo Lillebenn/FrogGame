@@ -6,7 +6,6 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "TimerManager.h"
-#include "EdibleComponent.h"
 #include "FrogFunctionLibrary.h"
 #include "FrogGameCharacter.generated.h"
 USTRUCT(BlueprintType)
@@ -170,6 +169,9 @@ public:
 	TSubclassOf<AActor> ShockwaveActor;
 	UPROPERTY(EditAnywhere, Category = Character)
 	USphereComponent* ShockwaveCollider;
+	// Blueprint type that should be destroyed when walking on top of it
+	UPROPERTY(EditDefaultsOnly, Category = Character)
+	TSubclassOf<class ADestructibleObject> SmallDestructible;
 	/** The Player's current score */
 	UPROPERTY(EditAnywhere, SaveGame, Category = "Character | Score")
 	int CurrentScore;
@@ -235,6 +237,10 @@ protected:
 	// End of APawn interface
 
 private:
+
+	float ShockwaveColliderRadius;
+	bool bFirstJump{false};
+
 	void ConstructNeutralModeSettings();
 	void AttachedActorsSetup();
 	void FilterOccludedObjects();
@@ -262,6 +268,9 @@ private:
 	void DoPunch();
 	void ApplyDamage();
 	void StopPunch();
+	UFUNCTION()
+	void OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	               int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 	UFUNCTION()
 	void OnAttackOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                     int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
