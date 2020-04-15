@@ -62,7 +62,7 @@ void ASphereDrop::Tick(float DeltaTime)
 		{
 			MoveToPlayer(DeltaTime);
 			const float RadialDistance{
-				FrogFunctionLibrary::SquaredRadialDistance(GetActorLocation(), Frog->GetActorLocation())
+				FFrogLibrary::SquaredRadialDistance(GetActorLocation(), Frog->GetActorLocation())
 			};
 			if (RadialDistance <= InitialRadius * InitialRadius)
 			{
@@ -76,7 +76,7 @@ void ASphereDrop::Tick(float DeltaTime)
 		else
 		{
 			FVector NewPosition;
-			if (FrogFunctionLibrary::Swirl(DeltaTime, SwirlInfo, Frog->GetActorLocation(), NewPosition))
+			if (FFrogLibrary::Swirl(DeltaTime, SwirlInfo, Frog->GetActorLocation(), NewPosition))
 			{
 				Consume();
 			}

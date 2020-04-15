@@ -6,7 +6,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "TimerManager.h"
-#include "FrogFunctionLibrary.h"
+#include "FFrogLibrary.h"
 #include "FrogGameCharacter.generated.h"
 USTRUCT(BlueprintType)
 struct FCharacterSettings
