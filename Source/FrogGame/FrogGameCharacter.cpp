@@ -304,7 +304,7 @@ void AFrogGameCharacter::DoWhirlwind(float DeltaTime)
 	TArray<AActor*> TempArray{WhirlwindAffectedActors};
 	for (auto Actor : TempArray)
 	{
-		if(!Actor->Implements<IEdible>())
+		if(!Actor->Implements<UEdible>())
 		{
 			continue;
 		}
@@ -652,6 +652,7 @@ void AFrogGameCharacter::DisableSmokeTrail()
 
 void AFrogGameCharacter::Jump()
 {
+	InitialZValue = GetActorLocation().Z;
 	Super::Jump();
 	DisableSmokeTrail();
 	ShockwaveCollider->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
@@ -698,11 +699,17 @@ void AFrogGameCharacter::MoveRight(float Value)
 void AFrogGameCharacter::Landed(const FHitResult& Hit)
 {
 	// use this event to add shockwave etc
+	const float ZDiff{GetActorLocation().Z - InitialZValue};
+	if(ZDiff > 0.f)
+	{
+		const float AdditionalSize{ZDiff * 0.05f};
+		ShockwaveCollider->SetSphereRadius(ShockwaveCollider->GetScaledSphereRadius() + AdditionalSize);
+	}
 	TArray<AActor*> OverlappingActors;
 	ShockwaveCollider->GetOverlappingActors(OverlappingActors);
 	for (auto Actor : OverlappingActors)
 	{
-		if (Actor->Implements<IEdible>())
+		if (Actor->Implements<UEdible>())
 		{
 			Actor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
 		}

@@ -228,6 +228,7 @@ protected:
 	void SpawnSmokeTrail();
 
 	void Jump() override;
+	float InitialZValue;
 	void Landed(const FHitResult& Hit) override;
 	// APawn interface
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;

@@ -28,6 +28,7 @@ void ASphereDrop::BeginPlay()
 	Frog = Cast<AFrogGameCharacter>(GetWorld()->GetFirstPlayerController()->GetCharacter());
 	SwirlInfo.LinearUpPosition = InitialZPosition;
 	SwirlInfo.Construct();
+	GetWorld()->GetTimerManager().SetTimer(SphereLifeSpan, this, &ASphereDrop::Consume, 3.f);
 }
 
 void ASphereDrop::MoveToPlayer(const float DeltaTime)
@@ -43,6 +44,13 @@ void ASphereDrop::MoveToPlayer(const float DeltaTime)
 	SetActorLocation(NewPosition);
 }
 
+void ASphereDrop::Consume()
+{
+	if (Frog)
+	{
+		Frog->Consume(this);
+	}
+}
 
 // Called every frame
 void ASphereDrop::Tick(float DeltaTime)
@@ -68,10 +76,9 @@ void ASphereDrop::Tick(float DeltaTime)
 		else
 		{
 			FVector NewPosition;
-			// TODO: Close enough OR X amount of seconds have passed.
 			if (FrogFunctionLibrary::Swirl(DeltaTime, SwirlInfo, Frog->GetActorLocation(), NewPosition))
 			{
-				Frog->Consume(this);
+				Consume();
 			}
 			else
 			{

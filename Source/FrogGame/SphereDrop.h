@@ -31,6 +31,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Swirl Settings")
 	FSwirlInfo SwirlInfo;
 
+	FTimerHandle SphereLifeSpan;
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
@@ -41,9 +42,12 @@ private:
 	void MoveToPlayer(float DeltaTime);
 	bool bShouldSwirl{false};
 
+	void Consume();
 	FVector StartPosition;
 
 public:
 	// Called every frame
 	void Tick(float DeltaTime) override;
 };
+
+
