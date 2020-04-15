@@ -167,7 +167,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = Character)
 	TSubclassOf<AActor> ShockwaveActor;
-	UPROPERTY(EditAnywhere, Category = Character)
+	UPROPERTY()
+	UParticleSystemComponent* ShockwaveSmoke;
+	UPROPERTY()
 	USphereComponent* ShockwaveCollider;
 	// Blueprint type that should be destroyed when walking on top of it
 	UPROPERTY(EditDefaultsOnly, Category = Character)

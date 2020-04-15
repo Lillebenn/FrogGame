@@ -183,6 +183,8 @@ void AFrogGameCharacter::AttachedActorsSetup()
 		ShockwaveCollider = Cast<USphereComponent>(Actor->GetComponentByClass(USphereComponent::StaticClass()));
 		ShockwaveColliderRadius = ShockwaveCollider->GetUnscaledSphereRadius();
 		ShockwaveCollider->SetCollisionProfileName(TEXT("NoCollision"));
+		ShockwaveSmoke = Cast<UParticleSystemComponent>(
+			Actor->GetComponentByClass(UParticleSystemComponent::StaticClass()));
 	}
 }
 
@@ -713,13 +715,16 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
 	// use this event to add shockwave etc
-	const float ZDiff{GetActorLocation().Z - InitialZValue};
-
-	if (ZDiff < 0.f && bFirstJump)
+	if (bFirstJump)
 	{
-		const float AdditionalSize{FMath::Abs(ZDiff) * 0.05f};
-		const float NewSize{ShockwaveCollider->GetUnscaledSphereRadius() + AdditionalSize};
-		ShockwaveCollider->SetSphereRadius(NewSize);
+		ShockwaveSmoke->Activate(true);
+		const float ZDiff{GetActorLocation().Z - InitialZValue};
+		if (ZDiff < 0.f)
+		{
+			const float AdditionalSize{FMath::Abs(ZDiff) * 0.05f};
+			const float NewSize{ShockwaveCollider->GetUnscaledSphereRadius() + AdditionalSize};
+			ShockwaveCollider->SetSphereRadius(NewSize);
+		}
 	}
 	TArray<AActor*> OverlappingActors;
 	ShockwaveCollider->GetOverlappingActors(OverlappingActors);
