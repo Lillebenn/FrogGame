@@ -25,12 +25,12 @@ public:
 
 	UPROPERTY()
 	class UStaticMeshComponent* DisplayedObject;
-	UPROPERTY(EditAnywhere, Category = Camera)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category = Camera)
 	class UCineCameraComponent* CineCam;
 	// Add static meshes to this array in the order you want them displayed.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
 	TArray<UStaticMesh*> StaticMeshes;
-	// Folders to fill from if desired. Leave empty to only add assets manually. 
+	// Folders to fill from if desired. Leave empty to only add assets manually. Not guaranteed to find all meshes.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Camera)
 	TArray<FString> AutoFillFolders;
 
@@ -64,7 +64,7 @@ public:
 	int Index;
 	// How far out the boom should go depending on the size of the item. This probably won't mean much to you.
 	UPROPERTY(EditAnywhere, Category = Camera)
-	float DistanceMultiplier{5.5f};
+	float DistanceMultiplier{7.f};
 
 private:
 

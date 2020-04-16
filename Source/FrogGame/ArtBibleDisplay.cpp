@@ -120,8 +120,11 @@ void AArtBibleDisplay::MeshArrayFromList()
 			for (auto Object : Objects)
 			{
 				FString GamePath{TEXT("/Game/") + Directory + Object};
-				UE_LOG(LogTemp, Warning, TEXT("%s"), *GamePath)
-				StaticMeshes.Add(FFrogLibrary::LoadMeshFromPath(*GamePath));
+				UStaticMesh* Mesh{FFrogLibrary::LoadMeshFromPath(*GamePath)};
+				if (Mesh)
+				{
+					StaticMeshes.Add(Mesh);
+				}
 			}
 		}
 	}
