@@ -57,9 +57,16 @@ public:
 	 * Finds the squared distance between vector A and B according to a capsule coordinate system. Get the square root for a more accurate value.
 	 */
 	static float SquaredRadialDistance(const FVector& A, const FVector& B);
-	static TArray<FString> GetAllFilesInDirectory(FString directory, bool fullPath = true,
-	                                              FString onlyFilesStartingWith = TEXT(""),
-	                                              FString onlyFilesEndingWith = TEXT(""));
+	/*
+	 * @param Directory Absolute path of the directory to search.
+	 * @param bFullPath Whether to return the full path of each object or just the filename.
+	 * @param bStripExtension Whether to strip the extension from the file name.
+	 */
+	static TArray<FString> GetAllFilesInDirectory(FString Directory,
+	                                              bool bFullPath = true,
+	                                              bool bStripExtension = true,
+	                                              FString OnlyFilesStartingWith = TEXT(""),
+	                                              FString OnlyFilesEndingWith = TEXT(""));
 
 	static FORCEINLINE FName GetObjPath(const UObject* Obj)
 	{
@@ -67,7 +74,7 @@ public:
 		if (!Obj->IsValidLowLevel()) return NAME_None;
 		//~
 
-		FStringAssetReference ThePath = FStringAssetReference(Obj);
+		const FStringAssetReference ThePath = FStringAssetReference(Obj);
 
 		if (!ThePath.IsValid()) return NAME_None;
 

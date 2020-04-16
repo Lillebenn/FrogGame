@@ -116,11 +116,10 @@ void AArtBibleDisplay::MeshArrayFromList()
 		FString ActualPath{FPaths::Combine(FPaths::ProjectUserDir(), TEXT("Content/"), Directory)};
 		if (FPaths::DirectoryExists(ActualPath))
 		{
-			TArray<FString> Objects{FFrogLibrary::GetAllFilesInDirectory(ActualPath, false)};
+			TArray<FString> Objects{FFrogLibrary::GetAllFilesInDirectory(ActualPath)};
 			for (auto Object : Objects)
 			{
-				FString GamePath{TEXT("/Game/") + Directory + Object};
-				UStaticMesh* Mesh{FFrogLibrary::LoadMeshFromPath(*GamePath)};
+				UStaticMesh* Mesh{FFrogLibrary::LoadMeshFromPath(*Object)};
 				if (Mesh)
 				{
 					StaticMeshes.Add(Mesh);

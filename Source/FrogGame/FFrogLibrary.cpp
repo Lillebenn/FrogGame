@@ -5,6 +5,7 @@
 
 
 #include "HAL/PlatformFilemanager.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "Misc/LocalTimestampDirectoryVisitor.h"
 #include "Misc/Paths.h"
 
@@ -63,46 +64,62 @@ float FFrogLibrary::SquaredRadialDistance(const FVector& A, const FVector& B)
 	return SquaredRadialDistance;
 }
 
-TArray<FString> FFrogLibrary::GetAllFilesInDirectory(FString directory, bool fullPath,
-                                                     FString onlyFilesStartingWith, FString onlyFilesEndingWith)
+TArray<FString> FFrogLibrary::GetAllFilesInDirectory(FString Directory, bool bFullPath,
+                                                     bool bStripExtension, FString OnlyFilesStartingWith,
+                                                     FString OnlyFilesEndingWith)
 {
 	// Get all files in directory
-	TArray<FString> directoriesToSkip;
+	TArray<FString> DirectoriesToSkip;
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	FLocalTimestampDirectoryVisitor Visitor(PlatformFile, directoriesToSkip, directoriesToSkip, false);
-	PlatformFile.IterateDirectory(*directory, Visitor);
-	TArray<FString> files;
-
+	FLocalTimestampDirectoryVisitor Visitor(PlatformFile, DirectoriesToSkip, DirectoriesToSkip, false);
+	PlatformFile.IterateDirectory(*Directory, Visitor);
+	TArray<FString> Files;
+	FString Content{TEXT("/Content")};
 	for (TMap<FString, FDateTime>::TIterator TimestampIt(Visitor.FileTimes); TimestampIt; ++TimestampIt)
 	{
-		const FString filePath = TimestampIt.Key().LeftChop(7);
-		const FString fileName = FPaths::GetCleanFilename(filePath);
-		bool shouldAddFile = true;
+		FString FilePath = TimestampIt.Key();
+		FString FileName;
+
+		if (bStripExtension)
+		{
+			// Get the filename and path, stripping out the extension
+			FileName = FPaths::GetCleanFilename(FilePath);
+			int ExtensionLength{FPaths::GetExtension(FileName).Len() + 1};
+			FilePath = FilePath.LeftChop(ExtensionLength);
+			FileName = FileName.LeftChop(ExtensionLength);
+		}
+		else
+		{
+			FileName = FPaths::GetCleanFilename(FilePath);
+		}
+		// Edit file path to correspond to Content Browser path
+		FilePath = TEXT("/Game") + FilePath.RightChop(FilePath.Find(Content) + Content.Len());
+
+
+		bool bShouldAddFile = true;
 
 		// Check if filename starts with required characters
-		if (!onlyFilesStartingWith.IsEmpty())
+		if (!OnlyFilesStartingWith.IsEmpty())
 		{
-			const FString left = fileName.Left(onlyFilesStartingWith.Len());
+			const FString Left = FileName.Left(OnlyFilesStartingWith.Len());
 
-			if (!(fileName.Left(onlyFilesStartingWith.Len()).Equals(onlyFilesStartingWith)))
-				shouldAddFile = false;
+			if (!(FileName.Left(OnlyFilesStartingWith.Len()).Equals(OnlyFilesStartingWith)))
+				bShouldAddFile = false;
 		}
 
 		// Check if file extension is required characters
-		if (!onlyFilesEndingWith.IsEmpty())
+		if (!OnlyFilesEndingWith.IsEmpty())
 		{
-			if (!(FPaths::GetExtension(fileName, false).Equals(onlyFilesEndingWith, ESearchCase::IgnoreCase)))
-				shouldAddFile = false;
+			if (!(FPaths::GetExtension(FileName, false).Equals(OnlyFilesEndingWith, ESearchCase::IgnoreCase)))
+				bShouldAddFile = false;
 		}
 
 		// Add full path to results
-		if (shouldAddFile)
+		if (bShouldAddFile)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s"), *filePath);
-
-			files.Add(fullPath ? filePath : fileName);
+			Files.Add(bFullPath ? FilePath : FileName);
 		}
 	}
 
-	return files;
+	return Files;
 }
