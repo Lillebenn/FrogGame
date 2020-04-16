@@ -1,0 +1,14 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UE4Editor-ArtDisplayer.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"C:\Unreal Projects\FrogGame\Intermediate\Build\Win64\FrogGameEditor\Development\Engine\SharedPCH.Engine.ShadowErrors.h.obj"
+"C:\Unreal Projects\FrogGame\Plugins\ArtBibleDisplayer\ArtDisplayer\Intermediate\Build\Win64\UE4Editor\Development\ArtDisplayer\Module.ArtDisplayer.cpp.obj"
+"C:\Unreal Projects\FrogGame\Plugins\ArtBibleDisplayer\ArtDisplayer\Intermediate\Build\Win64\UE4Editor\Development\ArtDisplayer\Module.ArtDisplayer.gen.cpp.obj"
+"C:\Unreal Projects\FrogGame\Plugins\ArtBibleDisplayer\ArtDisplayer\Intermediate\Build\Win64\UE4Editor\Development\ArtDisplayer\Default.rc2.res"
+/OUT:"C:\Unreal Projects\FrogGame\Plugins\ArtBibleDisplayer\ArtDisplayer\Intermediate\Build\Win64\UE4Editor\Development\ArtDisplayer\UE4Editor-ArtDisplayer.lib"
+/INCLUDE:IMPLEMENT_MODULE_ArtDisplayer
