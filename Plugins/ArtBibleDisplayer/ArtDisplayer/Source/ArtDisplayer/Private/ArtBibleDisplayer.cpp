@@ -12,12 +12,16 @@ AArtBibleDisplayer::AArtBibleDisplayer()
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	DisplayedObject = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Displayed Object"));
-	RootComponent = DisplayedObject;
+	USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	RootComponent = Root;
+	SkelMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Skeletal Mesh"));
+	SkelMesh->SetupAttachment(RootComponent);
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
 	CameraBoom->SetRelativeRotation(FRotator(-15.f, 0.f, 0.f));
+	DisplayedObject = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Displayed Object"));
+	DisplayedObject->SetupAttachment(RootComponent);
 }
 
 // Called when the game starts or when spawned
@@ -25,11 +29,13 @@ void AArtBibleDisplayer::BeginPlay()
 {
 	Super::BeginPlay();
 	MeshArrayFromList();
-	if (StaticMeshes.Num() == 0)
+	NumMeshes = StaticMeshes.Num() + SkeletalMeshes.Num();
+	if (NumMeshes == 0)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed to find any meshes to display!"));
 		return;
 	}
+
 	CurrentDelay = DelayTime;
 	Index = NextIndex;
 	// Get the first object to display.
@@ -42,7 +48,7 @@ void AArtBibleDisplayer::BeginPlay()
 void AArtBibleDisplayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if (StaticMeshes.Num() == 0)
+	if (NumMeshes == 0)
 	{
 		return;
 	}
@@ -89,24 +95,45 @@ void AArtBibleDisplayer::Tick(float DeltaTime)
 
 void AArtBibleDisplayer::SwitchDisplayedObject()
 {
-	if (Index >= StaticMeshes.Num())
+	if (Index >= NumMeshes)
 	{
 		Index = bLoop ? 0 : Index - 1;
 		NextIndex = Index + 1;
 
 		//GEngine->AddOnScreenDebugMessage(0, 5.f, FColor::Red, TEXT("Reached the end of the list!"));
 	}
-	DisplayedObject->SetStaticMesh(StaticMeshes[Index]);
-	const FSphere Bounds{DisplayedObject->Bounds.GetSphere()};
-	CameraBoom->TargetArmLength = Bounds.W * 10.f;
+	float BoundsRadius;
+	if (Index < SkeletalMeshes.Num())
+	{
+		if (!bDisplayingSkeletalMeshes)
+		{
+			bDisplayingSkeletalMeshes = true;
+			DisplayedObject->SetStaticMesh(nullptr);
+		}
+		SkelMesh->SetSkeletalMesh(SkeletalMeshes[Index]);
+		BoundsRadius = SkelMesh->Bounds.GetSphere().W;
+	}
+	else
+	{
+		if (bDisplayingSkeletalMeshes)
+		{
+			bDisplayingSkeletalMeshes = false;
+			SkelMesh->SetSkeletalMesh(nullptr);
+		}
+		DisplayedObject->SetStaticMesh(StaticMeshes[Index - SkeletalMeshes.Num()]);
+		BoundsRadius = DisplayedObject->Bounds.GetSphere().W;
+	}
+	CameraBoom->TargetArmLength = BoundsRadius * 10.f;
 	if (bCameraZOffset)
 	{
 		FVector NewOffset{CameraBoom->GetRelativeLocation()};
-		NewOffset.Z = Bounds.W;
+		NewOffset.Z = BoundsRadius;
 		CameraBoom->TargetOffset = NewOffset;
 	}
 	CurYaw = 0.f;
 }
+
+
 
 void AArtBibleDisplayer::MeshArrayFromList()
 {
@@ -117,12 +144,26 @@ void AArtBibleDisplayer::MeshArrayFromList()
 		if (FPaths::DirectoryExists(ActualPath))
 		{
 			TArray<FString> Objects{FileLoader::GetAllFilesInDirectory(ActualPath)};
-			for (auto Object : Objects)
+			if (!bStaticOnly)
 			{
-				UStaticMesh* Mesh{FileLoader::LoadMeshFromPath(*Object)};
-				if (Mesh)
+				for (auto Object : Objects)
 				{
-					StaticMeshes.Add(Mesh);
+					USkeletalMesh* Mesh{FileLoader::LoadSkeletalMeshFromPath(*Object)};
+					if (Mesh)
+					{
+						SkeletalMeshes.Add(Mesh);
+					}
+				}
+			}
+			if (!bSkeletalOnly)
+			{
+				for (auto Object : Objects)
+				{
+					UStaticMesh* Mesh{FileLoader::LoadStaticMeshFromPath(*Object)};
+					if (Mesh)
+					{
+						StaticMeshes.Add(Mesh);
+					}
 				}
 			}
 		}

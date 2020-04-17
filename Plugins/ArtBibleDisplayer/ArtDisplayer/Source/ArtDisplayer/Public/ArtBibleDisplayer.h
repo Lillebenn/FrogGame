@@ -25,16 +25,27 @@ public:
 
 	UPROPERTY()
 	class UStaticMeshComponent* DisplayedObject;
+
+	UPROPERTY()
+	class USkeletalMeshComponent* SkelMesh;
 	// Add static meshes to this array in the order you want them displayed.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
 	TArray<UStaticMesh*> StaticMeshes;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
+	TArray<class USkeletalMesh*> SkeletalMeshes;
 	// Folders to fill from if desired. Leave empty to only add assets manually. Not guaranteed to find all meshes.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Camera)
 	TArray<FString> AutoFillFolders;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
-
+	// Only scan for static meshes.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Camera, meta = (EditCondition = "!bSkeletalOnly"))
+	bool bStaticOnly{true};
+	// Only scan for skeletal meshes.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Camera, meta = (EditCondition = "!bStaticOnly"))
+	bool bSkeletalOnly{false};
 	// Should the Art Displayer automatically switch to the next mesh in line?
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Camera)
 	bool bAutoDisplay{true};
@@ -55,11 +66,13 @@ public:
 		"Delay", EditCondition = "!bFullRotation"))
 	float DelayTime{2.f};
 	// Index to display next (or first if set in defaults.) 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Camera, meta = (EditCondition = "!bAutoDisplay"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Camera)
 	int NextIndex{0};
 	// Index of current asset shown. 
 	UPROPERTY(VisibleInstanceOnly, Category = Camera)
 	int Index;
+
+	bool bDisplayingSkeletalMeshes{false};
 	// Should the camera boom offset its Z position to account for a low pivot point? (Try to set the pivot points of your meshes to the middle of the mesh if possible for optimal viewing.)
 	UPROPERTY(EditAnywhere, Category = Camera)
 	bool bCameraZOffset{false};
@@ -68,8 +81,8 @@ private:
 
 	float CurrentDelay;
 	float CurYaw{0.f};
+	int NumMeshes{0};
 
 	void SwitchDisplayedObject();
-
 	void MeshArrayFromList();
 };

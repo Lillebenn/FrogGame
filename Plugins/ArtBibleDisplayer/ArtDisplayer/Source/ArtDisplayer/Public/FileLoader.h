@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/SkeletalMesh.h"
 
 
 /**
@@ -53,12 +54,20 @@ public:
 		return Cast<ObjClass>(StaticLoadObject(ObjClass::StaticClass(), NULL, *Path.ToString()));
 	}
 
-	static FORCEINLINE UStaticMesh* LoadMeshFromPath(const FName& Path)
+	static FORCEINLINE UStaticMesh* LoadStaticMeshFromPath(const FName& Path)
 	{
 		if (Path == NAME_None) return nullptr;
 		//~
 
 		return LoadObjFromPath<UStaticMesh>(Path);
+	}
+
+	static FORCEINLINE USkeletalMesh* LoadSkeletalMeshFromPath(const FName& Path)
+	{
+		if (Path == NAME_None) return nullptr;
+		//~
+
+		return LoadObjFromPath<USkeletalMesh>(Path);
 	}
 
 private:
