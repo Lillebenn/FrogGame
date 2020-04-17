@@ -25,16 +25,27 @@ public:
 
 	UPROPERTY()
 	class UStaticMeshComponent* DisplayedObject;
+
+	UPROPERTY()
+	class USkeletalMeshComponent* SkelMesh;
 	// Add static meshes to this array in the order you want them displayed.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
 	TArray<UStaticMesh*> StaticMeshes;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
+	TArray<class USkeletalMesh*> SkeletalMeshes;
 	// Folders to fill from if desired. Leave empty to only add assets manually. Not guaranteed to find all meshes.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Camera)
 	TArray<FString> AutoFillFolders;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
-
+	// Only scan for static meshes.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Camera, meta = (EditCondition = "!bOnlySkeletal"))
+	bool bOnlyStatic{false};
+	// Only scan for skeletal meshes.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Camera, meta = (EditCondition = "!bOnlyStatic"))
+	bool bOnlySkeletal{false};
 	// Should the Art Displayer automatically switch to the next mesh in line?
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Camera)
 	bool bAutoDisplay{true};
@@ -60,6 +71,8 @@ public:
 	// Index of current asset shown. 
 	UPROPERTY(VisibleInstanceOnly, Category = Camera)
 	int Index;
+
+	int NumSkeletalMeshes{0};
 	// Should the camera boom offset its Z position to account for a low pivot point? (Try to set the pivot points of your meshes to the middle of the mesh if possible for optimal viewing.)
 	UPROPERTY(EditAnywhere, Category = Camera)
 	bool bCameraZOffset{false};
@@ -68,8 +81,9 @@ private:
 
 	float CurrentDelay;
 	float CurYaw{0.f};
+	int NumMeshes{0};
 
 	void SwitchDisplayedObject();
-
+	void SetDisplayType(bool bToSkeletal);
 	void MeshArrayFromList();
 };

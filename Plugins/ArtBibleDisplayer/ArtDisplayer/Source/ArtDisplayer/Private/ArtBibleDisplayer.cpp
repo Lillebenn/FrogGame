@@ -11,13 +11,14 @@ AArtBibleDisplayer::AArtBibleDisplayer()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
-	DisplayedObject = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Displayed Object"));
-	RootComponent = DisplayedObject;
+	SkelMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Skeletal Mesh"));
+	RootComponent = SkelMesh;
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
 	CameraBoom->SetRelativeRotation(FRotator(-15.f, 0.f, 0.f));
+	DisplayedObject = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Displayed Object"));
+	DisplayedObject->SetupAttachment(RootComponent);
 }
 
 // Called when the game starts or when spawned
@@ -25,11 +26,18 @@ void AArtBibleDisplayer::BeginPlay()
 {
 	Super::BeginPlay();
 	MeshArrayFromList();
-	if (StaticMeshes.Num() == 0)
+	NumMeshes = StaticMeshes.Num() + SkeletalMeshes.Num();
+	if (NumMeshes == 0)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed to find any meshes to display!"));
 		return;
 	}
+	if (SkeletalMeshes.Num() == 0)
+	{
+		RootComponent = DisplayedObject;
+		CameraBoom->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	}
+
 	CurrentDelay = DelayTime;
 	Index = NextIndex;
 	// Get the first object to display.
@@ -42,7 +50,7 @@ void AArtBibleDisplayer::BeginPlay()
 void AArtBibleDisplayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if (StaticMeshes.Num() == 0)
+	if (NumMeshes == 0)
 	{
 		return;
 	}
@@ -89,23 +97,55 @@ void AArtBibleDisplayer::Tick(float DeltaTime)
 
 void AArtBibleDisplayer::SwitchDisplayedObject()
 {
-	if (Index >= StaticMeshes.Num())
+	if (Index >= NumMeshes)
 	{
 		Index = bLoop ? 0 : Index - 1;
 		NextIndex = Index + 1;
 
 		//GEngine->AddOnScreenDebugMessage(0, 5.f, FColor::Red, TEXT("Reached the end of the list!"));
 	}
-	DisplayedObject->SetStaticMesh(StaticMeshes[Index]);
-	const FSphere Bounds{DisplayedObject->Bounds.GetSphere()};
-	CameraBoom->TargetArmLength = Bounds.W * 10.f;
+	float BoundsRadius;
+	if (Index < NumSkeletalMeshes)
+	{
+		if (RootComponent != SkelMesh)
+		{
+			SetDisplayType(true);
+		}
+		SkelMesh->SetSkeletalMesh(SkeletalMeshes[Index]);
+		BoundsRadius = SkelMesh->Bounds.GetSphere().W;
+	}
+	else
+	{
+		if (RootComponent != DisplayedObject)
+		{
+			SetDisplayType(false);
+		}
+		DisplayedObject->SetStaticMesh(StaticMeshes[Index]);
+		BoundsRadius = DisplayedObject->Bounds.GetSphere().W;
+	}
+	CameraBoom->TargetArmLength = BoundsRadius * 10.f;
 	if (bCameraZOffset)
 	{
 		FVector NewOffset{CameraBoom->GetRelativeLocation()};
-		NewOffset.Z = Bounds.W;
+		NewOffset.Z = BoundsRadius;
 		CameraBoom->TargetOffset = NewOffset;
 	}
 	CurYaw = 0.f;
+}
+
+void AArtBibleDisplayer::SetDisplayType(const bool bToSkeletal)
+{
+	if (bToSkeletal)
+	{
+		RootComponent = SkelMesh;
+		DisplayedObject->SetStaticMesh(nullptr);
+	}
+	else
+	{
+		RootComponent = DisplayedObject;
+		SkelMesh->SetSkeletalMesh(nullptr);
+	}
+	CameraBoom->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 }
 
 void AArtBibleDisplayer::MeshArrayFromList()
@@ -117,12 +157,26 @@ void AArtBibleDisplayer::MeshArrayFromList()
 		if (FPaths::DirectoryExists(ActualPath))
 		{
 			TArray<FString> Objects{FileLoader::GetAllFilesInDirectory(ActualPath)};
-			for (auto Object : Objects)
+			if (!bOnlyStatic)
 			{
-				UStaticMesh* Mesh{FileLoader::LoadMeshFromPath(*Object)};
-				if (Mesh)
+				for (auto Object : Objects)
 				{
-					StaticMeshes.Add(Mesh);
+					USkeletalMesh* Mesh{FileLoader::LoadSkeletalMeshFromPath(*Object)};
+					if (Mesh)
+					{
+						SkeletalMeshes.Add(Mesh);
+					}
+				}
+			}
+			if (!bOnlySkeletal)
+			{
+				for (auto Object : Objects)
+				{
+					UStaticMesh* Mesh{FileLoader::LoadStaticMeshFromPath(*Object)};
+					if (Mesh)
+					{
+						StaticMeshes.Add(Mesh);
+					}
 				}
 			}
 		}
