@@ -11,8 +11,11 @@ AArtBibleDisplayer::AArtBibleDisplayer()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	RootComponent = Root;
 	SkelMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Skeletal Mesh"));
-	RootComponent = SkelMesh;
+	SkelMesh->SetupAttachment(RootComponent);
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
@@ -31,11 +34,6 @@ void AArtBibleDisplayer::BeginPlay()
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed to find any meshes to display!"));
 		return;
-	}
-	if (SkeletalMeshes.Num() == 0)
-	{
-		RootComponent = DisplayedObject;
-		CameraBoom->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	}
 
 	CurrentDelay = DelayTime;
@@ -105,22 +103,24 @@ void AArtBibleDisplayer::SwitchDisplayedObject()
 		//GEngine->AddOnScreenDebugMessage(0, 5.f, FColor::Red, TEXT("Reached the end of the list!"));
 	}
 	float BoundsRadius;
-	if (Index < NumSkeletalMeshes)
+	if (Index < SkeletalMeshes.Num())
 	{
-		if (RootComponent != SkelMesh)
+		if (!bDisplayingSkeletalMeshes)
 		{
-			SetDisplayType(true);
+			bDisplayingSkeletalMeshes = true;
+			DisplayedObject->SetStaticMesh(nullptr);
 		}
 		SkelMesh->SetSkeletalMesh(SkeletalMeshes[Index]);
 		BoundsRadius = SkelMesh->Bounds.GetSphere().W;
 	}
 	else
 	{
-		if (RootComponent != DisplayedObject)
+		if (bDisplayingSkeletalMeshes)
 		{
-			SetDisplayType(false);
+			bDisplayingSkeletalMeshes = false;
+			SkelMesh->SetSkeletalMesh(nullptr);
 		}
-		DisplayedObject->SetStaticMesh(StaticMeshes[Index]);
+		DisplayedObject->SetStaticMesh(StaticMeshes[Index - SkeletalMeshes.Num()]);
 		BoundsRadius = DisplayedObject->Bounds.GetSphere().W;
 	}
 	CameraBoom->TargetArmLength = BoundsRadius * 10.f;
@@ -133,20 +133,7 @@ void AArtBibleDisplayer::SwitchDisplayedObject()
 	CurYaw = 0.f;
 }
 
-void AArtBibleDisplayer::SetDisplayType(const bool bToSkeletal)
-{
-	if (bToSkeletal)
-	{
-		RootComponent = SkelMesh;
-		DisplayedObject->SetStaticMesh(nullptr);
-	}
-	else
-	{
-		RootComponent = DisplayedObject;
-		SkelMesh->SetSkeletalMesh(nullptr);
-	}
-	CameraBoom->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
-}
+
 
 void AArtBibleDisplayer::MeshArrayFromList()
 {
@@ -157,7 +144,7 @@ void AArtBibleDisplayer::MeshArrayFromList()
 		if (FPaths::DirectoryExists(ActualPath))
 		{
 			TArray<FString> Objects{FileLoader::GetAllFilesInDirectory(ActualPath)};
-			if (!bOnlyStatic)
+			if (!bStaticOnly)
 			{
 				for (auto Object : Objects)
 				{
@@ -168,7 +155,7 @@ void AArtBibleDisplayer::MeshArrayFromList()
 					}
 				}
 			}
-			if (!bOnlySkeletal)
+			if (!bSkeletalOnly)
 			{
 				for (auto Object : Objects)
 				{
