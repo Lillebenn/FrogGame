@@ -16,7 +16,7 @@
 	"Modules": [
 		{
 			"Name": "ArtDisplayer",
-			"Type": "Runtime",
+			"Type": "Editor",
 			"LoadingPhase": "Default",
 			"WhitelistPlatforms": [
 				"Win64",
