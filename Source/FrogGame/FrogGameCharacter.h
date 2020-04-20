@@ -39,6 +39,12 @@ struct FCharacterSettings
 	// Add other variables here based on what we change between modes.
 };
 
+enum class ECharacterMode
+{
+	Neutral,
+	Power
+};
+
 UCLASS(config=Game, Abstract)
 class AFrogGameCharacter : public ACharacter
 {
@@ -118,6 +124,8 @@ public:
 
 	float CurrentTargetScore{0.f};
 
+	ECharacterMode CurrentMode{ECharacterMode::Neutral};
+
 	void Consume(AActor* OtherActor);
 	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles")
 	class UParticleSystem* PunchOne;
@@ -139,7 +147,7 @@ public:
 	TSubclassOf<AActor> PunchVolumeType;
 	UPROPERTY()
 	UBoxComponent* PunchVolume;
-		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
 	TSubclassOf<class UCameraShake> PunchShake;
 	UPROPERTY()
 	TArray<AActor*> HitActors;

@@ -244,7 +244,8 @@ void AFrogGameCharacter::FilterOccludedObjects()
 				UE_LOG(LogTemp, Warning, TEXT("%s failed trace."), *Target->GetName())
 			}
 			// if hit actor is the same as target, no occluding actor was found
-			if (Hit.GetActor() == Target || Hit.GetActor()->Implements<UEdible>())
+			const bool ImplementsEdible{Hit.GetActor() ? Hit.GetActor()->Implements<UEdible>() : false};
+			if (Hit.GetActor() == Target || ImplementsEdible)
 			{
 				AEdibleObject* Edible{Cast<AEdibleObject>(Target)};
 				if (Edible)
@@ -374,13 +375,13 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 	{
 		return;
 	}
-	const UEdibleComponent* SizeInfo{
+	const UEdibleComponent* Edible{
 		Cast<UEdibleComponent>(OtherActor->GetComponentByClass(UEdibleComponent::StaticClass()))
 	};
-	if (SizeInfo)
+	if (Edible)
 	{
-		UpdateCurrentScore(SizeInfo->ScorePoints);
-		UpdatePowerPoints(SizeInfo->PowerPoints);
+		UpdateCurrentScore(Edible->ScorePoints);
+		UpdatePowerPoints(Edible->PowerPoints);
 		UE_LOG(LogTemp, Warning, TEXT("Destroying %s"), *OtherActor->GetName())
 		WhirlwindAffectedActors.Remove(OtherActor);
 		OtherActor->Destroy();
@@ -494,7 +495,7 @@ void AFrogGameCharacter::ApplyDamage()
 	{
 		Actor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
 	}
-	if(HitActors.Num() > 0 && PunchShake)
+	if (HitActors.Num() > 0 && PunchShake)
 	{
 		GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayCameraShake(PunchShake, 3);
 	}
@@ -571,6 +572,7 @@ void AFrogGameCharacter::PowerMode()
 	bPowerMode = true;
 	EndWhirlwind();
 	SetPlayerModel(PowerModeSettings);
+	CurrentMode = ECharacterMode::Power;
 	//const FAttachmentTransformRules InRule{EAttachmentRule::KeepRelative, false};
 }
 
@@ -595,6 +597,8 @@ void AFrogGameCharacter::DeactivatePowerMode()
 	bPowerMode = false;
 	SetPlayerModel(NeutralModeSettings);
 	DisableWhirlwindPfx();
+	CurrentMode = ECharacterMode::Neutral;
+	
 	if (PunchVolume)
 	{
 		PunchVolume->SetCollisionProfileName(TEXT("NoCollision"));
@@ -752,7 +756,7 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 			const float AdditionalSize{FMath::Abs(ZDiff) * 0.05f};
 			const float NewSize{ShockwaveCollider->GetUnscaledSphereRadius() + AdditionalSize};
 			ShockwaveCollider->SetSphereRadius(NewSize);
-			if(ShockwaveShake)
+			if (ShockwaveShake)
 			{
 				GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayCameraShake(ShockwaveShake, 2);
 			}

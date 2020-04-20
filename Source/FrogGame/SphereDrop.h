@@ -24,9 +24,9 @@ public:
 	float MoveToPlayerSpeed{2000.f};
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Swirl Settings")
-	float InitialRadius{100.f};
+	float InitialRadius{140.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Swirl Settings")
-	float InitialZPosition{-30.f};
+	float InitialZPosition{-40.f};
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Swirl Settings")
 	FSwirlInfo SwirlInfo;
