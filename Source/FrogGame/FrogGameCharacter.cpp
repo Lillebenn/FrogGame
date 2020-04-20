@@ -49,12 +49,6 @@ AFrogGameCharacter::AFrogGameCharacter()
 	WhirlwindVolume->SetupAttachment(RootComponent);
 	WhirlwindVolume->SetCollisionProfileName(TEXT("NoCollision"));
 
-	WhirlwindParticles = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Whirlwind Particle System"));
-	WhirlwindParticles->SetupAttachment(RootComponent);
-	WhirlwindParticles->SetVisibility(false);
-	WhirlwindPivot = CreateDefaultSubobject<UChildActorComponent>(TEXT("Whirlwind Pivot"));
-	WhirlwindPivot->bEditableWhenInherited = true;
-	WhirlwindPivot->SetupAttachment(WhirlwindParticles);
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
@@ -291,7 +285,7 @@ void AFrogGameCharacter::Whirlwind()
 		UE_LOG(LogTemp, Warning, TEXT("Using whirlwind!"))
 		bUsingWhirlwind = true;
 		WhirlwindVolume->SetCollisionProfileName(TEXT("Whirlwind"));
-		WhirlwindParticles->SetVisibility(true);
+		SpawnWhirlwindPfx();
 		GetCharacterMovement()->bOrientRotationToMovement = false;
 		GetCharacterMovement()->MaxWalkSpeed = WhirlwindWalkSpeed;
 	}
@@ -353,7 +347,7 @@ void AFrogGameCharacter::EndWhirlwind()
 {
 	bUsingWhirlwind = false;
 	WhirlwindVolume->SetCollisionProfileName(TEXT("NoCollision"));
-	WhirlwindParticles->SetVisibility(false);
+	DisableWhirlwindPfx();
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->MaxWalkSpeed = NeutralModeSettings.MaxWalkSpeed;
 	for (const auto Actor : WhirlwindAffectedActors)
@@ -588,7 +582,7 @@ void AFrogGameCharacter::DeactivatePowerMode()
 {
 	bPowerMode = false;
 	SetPlayerModel(NeutralModeSettings);
-	WhirlwindParticles->ResetNextTick();
+	DisableWhirlwindPfx();
 	if (PunchVolume)
 	{
 		PunchVolume->SetCollisionProfileName(TEXT("NoCollision"));
@@ -638,6 +632,28 @@ void AFrogGameCharacter::LookUpAtRate(float Rate)
 {
 	// calculate delta for this frame from the rate information
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
+}
+
+void AFrogGameCharacter::SpawnWhirlwindPfx()
+{
+	if (BPWhirlwindPFX && !WhirlwindPFX)
+	{
+		WhirlwindPFX = GetWorld()->SpawnActor<AActor>(BPWhirlwindPFX);
+		const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
+		WhirlwindPFX->AttachToActor(this, InRule);
+		WhirlwindPFX->SetActorRelativeRotation(FRotator(-90.f, 0.f, 0.f));
+		WhirlwindPFX->SetActorRelativeLocation(FVector(5.f, 6.f, -2.f));
+		WhirlwindPFX->SetActorRelativeScale3D(FVector(0.1f,0.1f, 0.1f));
+	}
+}
+
+void AFrogGameCharacter::DisableWhirlwindPfx()
+{
+	if (WhirlwindPFX)
+	{
+		WhirlwindPFX->Destroy();
+		WhirlwindPFX = nullptr;
+	}
 }
 
 void AFrogGameCharacter::SpawnSmokeTrail()
