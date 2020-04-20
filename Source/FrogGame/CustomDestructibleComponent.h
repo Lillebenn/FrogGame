@@ -25,6 +25,10 @@ public:
 	float FlyAwayForce{750000.f};
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Destructible)
 	int32 NumDrops{5};
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Destructible)
+	class UParticleSystem* DestructionSmoke;
+	UPROPERTY(EditDefaultsOnly, Category = Destructible)
+	float SmokeScale{5.f};
 protected:
 	// Called when the game starts
 	void BeginPlay() override;

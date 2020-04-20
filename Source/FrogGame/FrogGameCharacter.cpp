@@ -244,7 +244,7 @@ void AFrogGameCharacter::FilterOccludedObjects()
 				UE_LOG(LogTemp, Warning, TEXT("%s failed trace."), *Target->GetName())
 			}
 			// if hit actor is the same as target, no occluding actor was found
-			if (Hit.GetActor() == Target)
+			if (Hit.GetActor() == Target || Hit.GetActor()->Implements<UEdible>())
 			{
 				AEdibleObject* Edible{Cast<AEdibleObject>(Target)};
 				if (Edible)

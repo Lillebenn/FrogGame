@@ -5,6 +5,7 @@
 #include "Engine/World.h"
 #include "SphereDrop.h"
 #include "FrogGameCharacter.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values for this component's properties
 UCustomDestructibleComponent::UCustomDestructibleComponent()
@@ -62,5 +63,9 @@ void UCustomDestructibleComponent::SpawnSpheres() const
 void UCustomDestructibleComponent::KillActor()
 {
 	SpawnSpheres();
+	if(DestructionSmoke)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), DestructionSmoke, GetOwner()->GetActorLocation(), FRotator::ZeroRotator, FVector(SmokeScale));
+	}
 	GetOwner()->SetLifeSpan(0.001f);
 }
