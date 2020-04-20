@@ -121,15 +121,17 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 
 	PlayerInputComponent->BindAction("Punch", IE_Pressed, this, &AFrogGameCharacter::Punch);
 	PlayerInputComponent->BindAction("Punch", IE_Released, this, &AFrogGameCharacter::StopPunch);
-	PlayerInputComponent->BindAction("StopPowerMode", IE_Pressed, this, &AFrogGameCharacter::DeactivatePowerMode);
+
 	// This is here for test purposes, will activate when the powerbar is filled up.
 	PlayerInputComponent->BindAction("PowerMode", IE_Pressed, this, &AFrogGameCharacter::PowerMode);
 
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	//PlayerInputComponent->BindAction("Jump", IE_Released, this, &AFrogGameCharacter::ExecuteJump);
-
+#if WITH_EDITOR
+	PlayerInputComponent->BindAction("StopPowerMode", IE_Pressed, this, &AFrogGameCharacter::DeactivatePowerMode);
 	PlayerInputComponent->BindAction("TestSave", IE_Pressed, this, &AFrogGameCharacter::SaveGame);
 	PlayerInputComponent->BindAction("TestLoad", IE_Pressed, this, &AFrogGameCharacter::LoadGame);
+#endif
 	PlayerInputComponent->BindAxis("MoveForward", this, &AFrogGameCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AFrogGameCharacter::MoveRight);
 
@@ -568,12 +570,13 @@ void AFrogGameCharacter::OnWhirlwindEndOverlap(UPrimitiveComponent* OverlappedCo
 
 void AFrogGameCharacter::PowerMode()
 {
-	CurrentPowerPoints = MaxPowerPoints;
-	bPowerMode = true;
-	EndWhirlwind();
-	SetPlayerModel(PowerModeSettings);
-	CurrentMode = ECharacterMode::Power;
-	//const FAttachmentTransformRules InRule{EAttachmentRule::KeepRelative, false};
+	if (CurrentPowerPoints >= MaxPowerPoints / 10.f)
+	{
+		bPowerMode = true;
+		EndWhirlwind();
+		SetPlayerModel(PowerModeSettings);
+		CurrentMode = ECharacterMode::Power;
+	}
 }
 
 void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSettings)
@@ -598,7 +601,7 @@ void AFrogGameCharacter::DeactivatePowerMode()
 	SetPlayerModel(NeutralModeSettings);
 	DisableWhirlwindPfx();
 	CurrentMode = ECharacterMode::Neutral;
-	
+
 	if (PunchVolume)
 	{
 		PunchVolume->SetCollisionProfileName(TEXT("NoCollision"));
