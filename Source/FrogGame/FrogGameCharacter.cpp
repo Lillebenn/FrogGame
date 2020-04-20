@@ -748,6 +748,10 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 			const float AdditionalSize{FMath::Abs(ZDiff) * 0.05f};
 			const float NewSize{ShockwaveCollider->GetUnscaledSphereRadius() + AdditionalSize};
 			ShockwaveCollider->SetSphereRadius(NewSize);
+			if(ShockwaveShake)
+			{
+				GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayCameraShake(ShockwaveShake, 2);
+			}
 		}
 	}
 	TArray<AActor*> OverlappingActors;

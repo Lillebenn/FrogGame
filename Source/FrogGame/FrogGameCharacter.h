@@ -161,12 +161,14 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")
 	float DrainSpeed{-0.075f};
 
-	UPROPERTY(EditAnywhere, Category = Character)
+	UPROPERTY(EditAnywhere, Category = "Character | Shockwave")
 	TSubclassOf<AActor> ShockwaveActor;
 	UPROPERTY()
 	UParticleSystemComponent* ShockwaveSmoke;
 	UPROPERTY()
 	USphereComponent* ShockwaveCollider;
+	UPROPERTY(EditAnywhere, Category = "Character | Shockwave")
+	TSubclassOf<class UCameraShake> ShockwaveShake;
 	// Blueprint type that should be destroyed when walking on top of it
 	UPROPERTY(EditDefaultsOnly, Category = Character)
 	TSubclassOf<class ADestructibleObject> SmallDestructible;
