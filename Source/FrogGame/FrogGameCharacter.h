@@ -139,6 +139,8 @@ public:
 	TSubclassOf<AActor> PunchVolumeType;
 	UPROPERTY()
 	UBoxComponent* PunchVolume;
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
+	TSubclassOf<class UCameraShake> PunchShake;
 	UPROPERTY()
 	TArray<AActor*> HitActors;
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")

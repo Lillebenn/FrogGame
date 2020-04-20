@@ -494,6 +494,10 @@ void AFrogGameCharacter::ApplyDamage()
 	{
 		Actor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
 	}
+	if(HitActors.Num() > 0 && PunchShake)
+	{
+		GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayCameraShake(PunchShake, 3);
+	}
 	HitActors.Empty();
 	PunchVolume->SetCollisionProfileName(TEXT("NoCollision"));
 }
