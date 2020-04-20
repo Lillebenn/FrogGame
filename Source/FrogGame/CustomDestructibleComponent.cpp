@@ -60,7 +60,7 @@ void UCustomDestructibleComponent::SpawnSpheres() const
 		}
 	}
 }
-void UCustomDestructibleComponent::KillActor()
+void UCustomDestructibleComponent::KillActor() const
 {
 	SpawnSpheres();
 	if(DestructionSmoke)

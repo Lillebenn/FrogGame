@@ -448,7 +448,11 @@ void AFrogGameCharacter::DoPunch()
 	GetWorld()->GetTimerManager().SetTimer(PunchResetHandle, this, &AFrogGameCharacter::PunchReset, 0.75f,
 	                                       false);
 	FVector PunchVolumePosition{PunchVolume->GetUnscaledBoxExtent().X, 0.f, -10.f};
-
+	if (GetCharacterMovement()->IsFalling())
+	{
+		CurrentPunch = 2;
+	}
+	FVector BoxExtent{FVector(30.f, 15.f, 25.f)};
 	switch (CurrentPunch)
 	{
 	case 0:
@@ -462,14 +466,18 @@ void AFrogGameCharacter::DoPunch()
 	case 2:
 		PlayAnimMontage(PunchMontage, 1, TEXT("UpperCut"));
 		PunchVolumePosition.Y = RightPunchVolumeYPosition;
+		BoxExtent = FVector(20.f, 15.f, 40.f);
+		PunchVolumePosition.Z = 30.f;
 		break;
 	default:
 		break;
 	}
+
 	if (PunchVolumeActor)
 	{
 		PunchVolumeActor->SetActorRelativeLocation(PunchVolumePosition);
 		PunchVolume->SetCollisionProfileName(TEXT("Punch"));
+		PunchVolume->SetBoxExtent(BoxExtent);
 	}
 	CurrentPunch++;
 	if (CurrentPunch > 2)
@@ -643,7 +651,7 @@ void AFrogGameCharacter::SpawnWhirlwindPfx()
 		WhirlwindPFX->AttachToActor(this, InRule);
 		WhirlwindPFX->SetActorRelativeRotation(FRotator(-90.f, 0.f, 0.f));
 		WhirlwindPFX->SetActorRelativeLocation(FVector(5.f, 6.f, -2.f));
-		WhirlwindPFX->SetActorRelativeScale3D(FVector(0.1f,0.1f, 0.1f));
+		WhirlwindPFX->SetActorRelativeScale3D(FVector(0.1f, 0.1f, 0.1f));
 	}
 }
 

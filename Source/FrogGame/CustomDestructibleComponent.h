@@ -38,5 +38,5 @@ public:
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	FVector CalculateImpulseVector(AActor* Actor) const;
 	void SpawnSpheres() const;
-	void KillActor();
+	void KillActor() const;
 };
