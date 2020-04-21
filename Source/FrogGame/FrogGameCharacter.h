@@ -129,7 +129,7 @@ public:
 	ECharacterMode CurrentMode{ECharacterMode::Neutral};
 
 	void Consume(AActor* OtherActor);
-	void ConsumeSphere(ASphereDrop* Sphere);
+	void Consume(ASphereDrop* Sphere);
 	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles")
 	class UParticleSystem* PunchOne;
 	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles")

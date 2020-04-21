@@ -41,7 +41,6 @@ void ASphereDrop::BeginPlay()
 			SwirlInfo.LinearInSpeed = 0;
 		}
 	}
-	DestructScale = GetActorScale() * 0.05f;
 }
 
 void ASphereDrop::MoveToPlayer(const float DeltaTime)
@@ -61,8 +60,7 @@ void ASphereDrop::Consume()
 {
 	if (Frog)
 	{
-		Frog->ConsumeSphere(this);
-		bConsumed = true;
+		Frog->Consume(this);
 	}
 }
 
@@ -100,13 +98,5 @@ void ASphereDrop::Tick(float DeltaTime)
 			}
 		}
 	}
-	if(bConsumed)
-	{
-		FVector NewScale{GetActorScale() - DestructScale * DeltaTime};
-		SetActorScale3D(NewScale);
-		if(FVector::Dist(GetActorScale(), DestructScale) < 10.f)
-		{
-			Destroy();
-		}
-	}
+
 }

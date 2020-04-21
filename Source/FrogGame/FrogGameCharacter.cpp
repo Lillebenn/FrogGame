@@ -391,7 +391,7 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 	}
 }
 
-void AFrogGameCharacter::ConsumeSphere(ASphereDrop* Sphere)
+void AFrogGameCharacter::Consume(ASphereDrop* Sphere)
 {
 	const UEdibleComponent* Edible{
 		Cast<UEdibleComponent>(Sphere->GetComponentByClass(UEdibleComponent::StaticClass()))
@@ -400,6 +400,7 @@ void AFrogGameCharacter::ConsumeSphere(ASphereDrop* Sphere)
 	{
 		UpdateCurrentScore(Edible->ScorePoints);
 		UpdatePowerPoints(Edible->PowerPoints);
+		Sphere->Destroy();
 	}
 }
 
