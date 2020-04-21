@@ -6,6 +6,7 @@
 #include "FrogGameCharacter.h"
 #include "GameFramework/PlayerController.h"
 #include "EdibleComponent.h"
+#include "Materials/Material.h"
 
 // Sets default values
 ASphereDrop::ASphereDrop()
@@ -28,7 +29,7 @@ void ASphereDrop::BeginPlay()
 	Frog = Cast<AFrogGameCharacter>(GetWorld()->GetFirstPlayerController()->GetCharacter());
 	SwirlInfo.LinearUpPosition = InitialZPosition;
 	SwirlInfo.Construct();
-	GetWorld()->GetTimerManager().SetTimer(SphereLifeSpan, this, &ASphereDrop::Consume, 3.f);
+	GetWorld()->GetTimerManager().SetTimer(SphereLifeSpan, this, &ASphereDrop::Consume, 2.5f);
 	if(Frog)
 	{
 		if(Frog->CurrentMode == ECharacterMode::Neutral)
@@ -40,6 +41,7 @@ void ASphereDrop::BeginPlay()
 			SwirlInfo.LinearInSpeed = 0;
 		}
 	}
+	DestructScale = GetActorScale() * 0.05f;
 }
 
 void ASphereDrop::MoveToPlayer(const float DeltaTime)
@@ -59,7 +61,8 @@ void ASphereDrop::Consume()
 {
 	if (Frog)
 	{
-		Frog->Consume(this);
+		Frog->ConsumeSphere(this);
+		bConsumed = true;
 	}
 }
 
@@ -95,6 +98,15 @@ void ASphereDrop::Tick(float DeltaTime)
 			{
 				SetActorLocation(NewPosition);
 			}
+		}
+	}
+	if(bConsumed)
+	{
+		FVector NewScale{GetActorScale() - DestructScale * DeltaTime};
+		SetActorScale3D(NewScale);
+		if(FVector::Dist(GetActorScale(), DestructScale) < 10.f)
+		{
+			Destroy();
 		}
 	}
 }

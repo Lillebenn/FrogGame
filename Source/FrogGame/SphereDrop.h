@@ -45,6 +45,9 @@ private:
 	void Consume();
 	FVector StartPosition;
 
+	bool bConsumed{false};
+	FVector DestructScale{0.05f};
+
 public:
 	// Called every frame
 	void Tick(float DeltaTime) override;
