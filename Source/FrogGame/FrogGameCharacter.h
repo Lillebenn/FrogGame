@@ -173,6 +173,9 @@ public:
 	// How quickly the Power Mode bar drains
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")
 	float DrainSpeed{-0.075f};
+	// The frogs health
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | Health")
+	float FrogHealth{ 1000.f };
 
 	UPROPERTY(EditAnywhere, Category = "Character | Shockwave")
 	TSubclassOf<AActor> ShockwaveActor;
