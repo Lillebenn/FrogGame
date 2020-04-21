@@ -29,6 +29,17 @@ void ASphereDrop::BeginPlay()
 	SwirlInfo.LinearUpPosition = InitialZPosition;
 	SwirlInfo.Construct();
 	GetWorld()->GetTimerManager().SetTimer(SphereLifeSpan, this, &ASphereDrop::Consume, 3.f);
+	if(Frog)
+	{
+		if(Frog->CurrentMode == ECharacterMode::Neutral)
+		{
+			InitialRadius = InitialRadius * 1.5f;
+		}else
+		{
+			SwirlInfo.LinearUpSpeed = SwirlInfo.LinearUpSpeed * 2.f;
+			SwirlInfo.LinearInSpeed = 0;
+		}
+	}
 }
 
 void ASphereDrop::MoveToPlayer(const float DeltaTime)

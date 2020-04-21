@@ -5,6 +5,8 @@
 #include "Engine/World.h"
 #include "SphereDrop.h"
 #include "FrogGameCharacter.h"
+#include "Kismet/GameplayStatics.h"
+#include "UObject/ConstructorHelpers.h"
 
 // Sets default values for this component's properties
 UCustomDestructibleComponent::UCustomDestructibleComponent()
@@ -12,7 +14,8 @@ UCustomDestructibleComponent::UCustomDestructibleComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
-
+	static ConstructorHelpers::FClassFinder<ASphereDrop> SphereDrop(TEXT("/Game/Blueprints/Environment/BP_SphereDrop"));
+	Drop = SphereDrop.Class;
 	// ...
 }
 
@@ -29,7 +32,7 @@ void UCustomDestructibleComponent::BeginPlay()
 
 // Called every frame
 void UCustomDestructibleComponent::TickComponent(float DeltaTime, ELevelTick TickType,
-                                           FActorComponentTickFunction* ThisTickFunction)
+                                                 FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
@@ -54,13 +57,20 @@ void UCustomDestructibleComponent::SpawnSpheres() const
 			const FVector SpawnLocation{
 				ActorLocation.X + SpawnLocation2D.X, ActorLocation.Y + SpawnLocation2D.Y, ActorLocation.Z
 			};
-			const FTransform SpawnTransform{SpawnLocation};
+			const FVector Scale{0.5f, 0.5f, 0.5f};
+			const FTransform SpawnTransform{FRotator(), SpawnLocation, Scale};
 			GetWorld()->SpawnActor<ASphereDrop>(Drop, SpawnTransform);
 		}
 	}
 }
-void UCustomDestructibleComponent::KillActor()
+
+void UCustomDestructibleComponent::KillActor() const
 {
 	SpawnSpheres();
+	if (DestructionSmoke)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), DestructionSmoke, GetOwner()->GetActorLocation(),
+		                                         FRotator::ZeroRotator, FVector(SmokeScale));
+	}
 	GetOwner()->SetLifeSpan(0.001f);
 }

@@ -39,6 +39,12 @@ struct FCharacterSettings
 	// Add other variables here based on what we change between modes.
 };
 
+enum class ECharacterMode
+{
+	Neutral,
+	Power
+};
+
 UCLASS(config=Game, Abstract)
 class AFrogGameCharacter : public ACharacter
 {
@@ -53,10 +59,6 @@ class AFrogGameCharacter : public ACharacter
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* WhirlwindVolume;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	class UParticleSystemComponent* WhirlwindParticles;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	class UChildActorComponent* WhirlwindPivot;
 
 	UPROPERTY (EditDefaultsOnly, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UAnimMontage* PunchMontage;
@@ -122,6 +124,8 @@ public:
 
 	float CurrentTargetScore{0.f};
 
+	ECharacterMode CurrentMode{ECharacterMode::Neutral};
+
 	void Consume(AActor* OtherActor);
 	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles")
 	class UParticleSystem* PunchOne;
@@ -143,6 +147,8 @@ public:
 	TSubclassOf<AActor> PunchVolumeType;
 	UPROPERTY()
 	UBoxComponent* PunchVolume;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
+	TSubclassOf<class UCameraShake> PunchShake;
 	UPROPERTY()
 	TArray<AActor*> HitActors;
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")
@@ -168,12 +174,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | Health")
 	float FrogHealth{ 1000.f };
 
-	UPROPERTY(EditAnywhere, Category = Character)
+	UPROPERTY(EditAnywhere, Category = "Character | Shockwave")
 	TSubclassOf<AActor> ShockwaveActor;
 	UPROPERTY()
 	UParticleSystemComponent* ShockwaveSmoke;
 	UPROPERTY()
 	USphereComponent* ShockwaveCollider;
+	UPROPERTY(EditAnywhere, Category = "Character | Shockwave")
+	TSubclassOf<class UCameraShake> ShockwaveShake;
 	// Blueprint type that should be destroyed when walking on top of it
 	UPROPERTY(EditDefaultsOnly, Category = Character)
 	TSubclassOf<class ADestructibleObject> SmallDestructible;
@@ -229,6 +237,7 @@ protected:
 	 * @param Rate	This is a normalized rate, i.e. 1.0 means 100% of desired turn rate
 	 */
 	void LookUpAtRate(float Rate);
+	void SpawnWhirlwindPfx();
 	/**
 	 * Spawn a child actor that is JUST the particle emitter and set the lifetime of that to 1s when movement is stopped
 	 */
@@ -253,7 +262,10 @@ private:
 	void DoWhirlwind(float DeltaTime);
 	void EndWhirlwind();
 	bool bUsingWhirlwind{false};
-
+	UPROPERTY(EditAnywhere, Category = "Character | Whirlwind")
+	TSubclassOf<AActor> BPWhirlwindPFX;
+	UPROPERTY()
+	AActor* WhirlwindPFX;
 	UPROPERTY()
 	FSwirlInfo DefaultWhirlwindSwirl;
 	UPROPERTY()
@@ -296,11 +308,12 @@ private:
 	void SetPlayerModel(const FCharacterSettings& CharacterSettings);
 	void PowerDrain(float DeltaTime);
 	void DeactivatePowerMode();
+	void DisableSmokeTrail();
+	void DisableWhirlwindPfx();
 
 public:
 
 	void Tick(float DeltaTime) override;
-	void DisableSmokeTrail();
 
 
 	/** Returns CameraBoom subobject **/

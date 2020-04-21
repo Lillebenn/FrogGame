@@ -49,12 +49,6 @@ AFrogGameCharacter::AFrogGameCharacter()
 	WhirlwindVolume->SetupAttachment(RootComponent);
 	WhirlwindVolume->SetCollisionProfileName(TEXT("NoCollision"));
 
-	WhirlwindParticles = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Whirlwind Particle System"));
-	WhirlwindParticles->SetupAttachment(RootComponent);
-	WhirlwindParticles->SetVisibility(false);
-	WhirlwindPivot = CreateDefaultSubobject<UChildActorComponent>(TEXT("Whirlwind Pivot"));
-	WhirlwindPivot->bEditableWhenInherited = true;
-	WhirlwindPivot->SetupAttachment(WhirlwindParticles);
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
@@ -127,15 +121,17 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 
 	PlayerInputComponent->BindAction("Punch", IE_Pressed, this, &AFrogGameCharacter::Punch);
 	PlayerInputComponent->BindAction("Punch", IE_Released, this, &AFrogGameCharacter::StopPunch);
-	PlayerInputComponent->BindAction("StopPowerMode", IE_Pressed, this, &AFrogGameCharacter::DeactivatePowerMode);
+
 	// This is here for test purposes, will activate when the powerbar is filled up.
 	PlayerInputComponent->BindAction("PowerMode", IE_Pressed, this, &AFrogGameCharacter::PowerMode);
 
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	//PlayerInputComponent->BindAction("Jump", IE_Released, this, &AFrogGameCharacter::ExecuteJump);
-
+#if WITH_EDITOR
+	PlayerInputComponent->BindAction("StopPowerMode", IE_Pressed, this, &AFrogGameCharacter::DeactivatePowerMode);
 	PlayerInputComponent->BindAction("TestSave", IE_Pressed, this, &AFrogGameCharacter::SaveGame);
 	PlayerInputComponent->BindAction("TestLoad", IE_Pressed, this, &AFrogGameCharacter::LoadGame);
+#endif
 	PlayerInputComponent->BindAxis("MoveForward", this, &AFrogGameCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AFrogGameCharacter::MoveRight);
 
@@ -250,7 +246,8 @@ void AFrogGameCharacter::FilterOccludedObjects()
 				UE_LOG(LogTemp, Warning, TEXT("%s failed trace."), *Target->GetName())
 			}
 			// if hit actor is the same as target, no occluding actor was found
-			if (Hit.GetActor() == Target)
+			const bool ImplementsEdible{Hit.GetActor() ? Hit.GetActor()->Implements<UEdible>() : false};
+			if (Hit.GetActor() == Target || ImplementsEdible)
 			{
 				AEdibleObject* Edible{Cast<AEdibleObject>(Target)};
 				if (Edible)
@@ -291,7 +288,7 @@ void AFrogGameCharacter::Whirlwind()
 		UE_LOG(LogTemp, Warning, TEXT("Using whirlwind!"))
 		bUsingWhirlwind = true;
 		WhirlwindVolume->SetCollisionProfileName(TEXT("Whirlwind"));
-		WhirlwindParticles->SetVisibility(true);
+		SpawnWhirlwindPfx();
 		GetCharacterMovement()->bOrientRotationToMovement = false;
 		GetCharacterMovement()->MaxWalkSpeed = WhirlwindWalkSpeed;
 	}
@@ -353,7 +350,7 @@ void AFrogGameCharacter::EndWhirlwind()
 {
 	bUsingWhirlwind = false;
 	WhirlwindVolume->SetCollisionProfileName(TEXT("NoCollision"));
-	WhirlwindParticles->SetVisibility(false);
+	DisableWhirlwindPfx();
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->MaxWalkSpeed = NeutralModeSettings.MaxWalkSpeed;
 	for (const auto Actor : WhirlwindAffectedActors)
@@ -380,13 +377,13 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 	{
 		return;
 	}
-	const UEdibleComponent* SizeInfo{
+	const UEdibleComponent* Edible{
 		Cast<UEdibleComponent>(OtherActor->GetComponentByClass(UEdibleComponent::StaticClass()))
 	};
-	if (SizeInfo)
+	if (Edible)
 	{
-		UpdateCurrentScore(SizeInfo->ScorePoints);
-		UpdatePowerPoints(SizeInfo->PowerPoints);
+		UpdateCurrentScore(Edible->ScorePoints);
+		UpdatePowerPoints(Edible->PowerPoints);
 		UE_LOG(LogTemp, Warning, TEXT("Destroying %s"), *OtherActor->GetName())
 		WhirlwindAffectedActors.Remove(OtherActor);
 		OtherActor->Destroy();
@@ -454,7 +451,11 @@ void AFrogGameCharacter::DoPunch()
 	GetWorld()->GetTimerManager().SetTimer(PunchResetHandle, this, &AFrogGameCharacter::PunchReset, 0.75f,
 	                                       false);
 	FVector PunchVolumePosition{PunchVolume->GetUnscaledBoxExtent().X, 0.f, -10.f};
-
+	if (GetCharacterMovement()->IsFalling())
+	{
+		CurrentPunch = 2;
+	}
+	FVector BoxExtent{FVector(30.f, 15.f, 25.f)};
 	switch (CurrentPunch)
 	{
 	case 0:
@@ -468,14 +469,18 @@ void AFrogGameCharacter::DoPunch()
 	case 2:
 		PlayAnimMontage(PunchMontage, 1, TEXT("UpperCut"));
 		PunchVolumePosition.Y = RightPunchVolumeYPosition;
+		BoxExtent = FVector(20.f, 15.f, 40.f);
+		PunchVolumePosition.Z = 30.f;
 		break;
 	default:
 		break;
 	}
+
 	if (PunchVolumeActor)
 	{
 		PunchVolumeActor->SetActorRelativeLocation(PunchVolumePosition);
 		PunchVolume->SetCollisionProfileName(TEXT("Punch"));
+		PunchVolume->SetBoxExtent(BoxExtent);
 	}
 	CurrentPunch++;
 	if (CurrentPunch > 2)
@@ -491,6 +496,10 @@ void AFrogGameCharacter::ApplyDamage()
 	for (auto Actor : HitActors)
 	{
 		Actor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
+	}
+	if (HitActors.Num() > 0 && PunchShake)
+	{
+		GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayCameraShake(PunchShake, 3);
 	}
 	HitActors.Empty();
 	PunchVolume->SetCollisionProfileName(TEXT("NoCollision"));
@@ -561,11 +570,13 @@ void AFrogGameCharacter::OnWhirlwindEndOverlap(UPrimitiveComponent* OverlappedCo
 
 void AFrogGameCharacter::PowerMode()
 {
-	CurrentPowerPoints = MaxPowerPoints;
-	bPowerMode = true;
-	EndWhirlwind();
-	SetPlayerModel(PowerModeSettings);
-	//const FAttachmentTransformRules InRule{EAttachmentRule::KeepRelative, false};
+	if (CurrentPowerPoints >= MaxPowerPoints / 10.f)
+	{
+		bPowerMode = true;
+		EndWhirlwind();
+		SetPlayerModel(PowerModeSettings);
+		CurrentMode = ECharacterMode::Power;
+	}
 }
 
 void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSettings)
@@ -588,7 +599,9 @@ void AFrogGameCharacter::DeactivatePowerMode()
 {
 	bPowerMode = false;
 	SetPlayerModel(NeutralModeSettings);
-	WhirlwindParticles->ResetNextTick();
+	DisableWhirlwindPfx();
+	CurrentMode = ECharacterMode::Neutral;
+
 	if (PunchVolume)
 	{
 		PunchVolume->SetCollisionProfileName(TEXT("NoCollision"));
@@ -638,6 +651,28 @@ void AFrogGameCharacter::LookUpAtRate(float Rate)
 {
 	// calculate delta for this frame from the rate information
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
+}
+
+void AFrogGameCharacter::SpawnWhirlwindPfx()
+{
+	if (BPWhirlwindPFX && !WhirlwindPFX)
+	{
+		WhirlwindPFX = GetWorld()->SpawnActor<AActor>(BPWhirlwindPFX);
+		const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
+		WhirlwindPFX->AttachToActor(this, InRule);
+		WhirlwindPFX->SetActorRelativeRotation(FRotator(-90.f, 0.f, 0.f));
+		WhirlwindPFX->SetActorRelativeLocation(FVector(5.f, 6.f, -2.f));
+		WhirlwindPFX->SetActorRelativeScale3D(FVector(0.1f, 0.1f, 0.1f));
+	}
+}
+
+void AFrogGameCharacter::DisableWhirlwindPfx()
+{
+	if (WhirlwindPFX)
+	{
+		WhirlwindPFX->Destroy();
+		WhirlwindPFX = nullptr;
+	}
 }
 
 void AFrogGameCharacter::SpawnSmokeTrail()
@@ -724,6 +759,10 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 			const float AdditionalSize{FMath::Abs(ZDiff) * 0.05f};
 			const float NewSize{ShockwaveCollider->GetUnscaledSphereRadius() + AdditionalSize};
 			ShockwaveCollider->SetSphereRadius(NewSize);
+			if (ShockwaveShake)
+			{
+				GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayCameraShake(ShockwaveShake, 2);
+			}
 		}
 	}
 	TArray<AActor*> OverlappingActors;
