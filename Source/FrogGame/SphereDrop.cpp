@@ -6,6 +6,7 @@
 #include "FrogGameCharacter.h"
 #include "GameFramework/PlayerController.h"
 #include "EdibleComponent.h"
+#include "Materials/Material.h"
 
 // Sets default values
 ASphereDrop::ASphereDrop()
@@ -28,7 +29,7 @@ void ASphereDrop::BeginPlay()
 	Frog = Cast<AFrogGameCharacter>(GetWorld()->GetFirstPlayerController()->GetCharacter());
 	SwirlInfo.LinearUpPosition = InitialZPosition;
 	SwirlInfo.Construct();
-	GetWorld()->GetTimerManager().SetTimer(SphereLifeSpan, this, &ASphereDrop::Consume, 3.f);
+	GetWorld()->GetTimerManager().SetTimer(SphereLifeSpan, this, &ASphereDrop::Consume, 2.5f);
 	if(Frog)
 	{
 		if(Frog->CurrentMode == ECharacterMode::Neutral)
@@ -97,4 +98,5 @@ void ASphereDrop::Tick(float DeltaTime)
 			}
 		}
 	}
+
 }

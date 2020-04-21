@@ -15,6 +15,7 @@
 #include "Edible.h"
 #include "EdibleObject.h"
 #include "SimpleCreature.h"
+#include "SphereDrop.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AFrogGameCharacter
@@ -387,6 +388,19 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 		UE_LOG(LogTemp, Warning, TEXT("Destroying %s"), *OtherActor->GetName())
 		WhirlwindAffectedActors.Remove(OtherActor);
 		OtherActor->Destroy();
+	}
+}
+
+void AFrogGameCharacter::Consume(ASphereDrop* Sphere)
+{
+	const UEdibleComponent* Edible{
+		Cast<UEdibleComponent>(Sphere->GetComponentByClass(UEdibleComponent::StaticClass()))
+	};
+	if (Edible)
+	{
+		UpdateCurrentScore(Edible->ScorePoints);
+		UpdatePowerPoints(Edible->PowerPoints);
+		Sphere->Destroy();
 	}
 }
 

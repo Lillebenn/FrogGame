@@ -70,6 +70,7 @@ void ADestructibleObject::ActivatePhysics()
 	StaticMesh->SetSimulatePhysics(true);
 	StaticMesh->SetNotifyRigidBodyCollision(true);
 	StaticMesh->SetCollisionResponseToChannel(ECC_Camera, ECollisionResponse::ECR_Ignore);
+	StaticMesh->SetCollisionResponseToChannel(ECC_Pawn, ECollisionResponse::ECR_Ignore);
 }
 
 void ADestructibleObject::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,

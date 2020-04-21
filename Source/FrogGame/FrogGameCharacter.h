@@ -7,6 +7,8 @@
 #include "GameFramework/Character.h"
 #include "TimerManager.h"
 #include "FFrogLibrary.h"
+#include "SphereDrop.h"
+
 #include "FrogGameCharacter.generated.h"
 USTRUCT(BlueprintType)
 struct FCharacterSettings
@@ -127,6 +129,7 @@ public:
 	ECharacterMode CurrentMode{ECharacterMode::Neutral};
 
 	void Consume(AActor* OtherActor);
+	void Consume(ASphereDrop* Sphere);
 	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles")
 	class UParticleSystem* PunchOne;
 	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles")
