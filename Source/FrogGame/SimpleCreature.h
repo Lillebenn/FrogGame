@@ -30,7 +30,6 @@ public:
 	void PauseAI_Implementation(bool bPause = true) override;
 	void OnDisabled_Implementation() override;
 	bool IsDisabled_Implementation() override;
-	void IgnorePawnCollision_Implementation() override;
 
 	void ActorSaveDataLoaded_Implementation() override;
 	void ActorSaveDataSaved_Implementation() override;

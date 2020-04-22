@@ -78,12 +78,6 @@ bool AAdvCreature::IsDisabled_Implementation()
 	return bShouldDestroy;
 }
 
-void AAdvCreature::IgnorePawnCollision_Implementation()
-{
-	GetMesh()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
-}
-
 void AAdvCreature::DisableActor_Implementation()
 {
 	AController* AI{GetController()};

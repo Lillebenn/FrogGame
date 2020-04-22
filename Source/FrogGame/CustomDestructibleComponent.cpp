@@ -2,6 +2,8 @@
 
 
 #include "CustomDestructibleComponent.h"
+
+#include "EdibleComponent.h"
 #include "Engine/World.h"
 #include "SphereDrop.h"
 #include "FrogGameCharacter.h"
@@ -50,6 +52,7 @@ void UCustomDestructibleComponent::SpawnSpheres() const
 {
 	if (Drop)
 	{
+		const auto Edible{GetOwner()->FindComponentByClass<UEdibleComponent>()};
 		for (int i{0}; i < NumDrops; i++)
 		{
 			const FVector2D SpawnLocation2D{FMath::RandPointInCircle(125.f)};
@@ -59,18 +62,27 @@ void UCustomDestructibleComponent::SpawnSpheres() const
 			};
 			const FVector Scale{0.5f, 0.5f, 0.5f};
 			const FTransform SpawnTransform{FRotator(), SpawnLocation, Scale};
-			GetWorld()->SpawnActor<ASphereDrop>(Drop, SpawnTransform);
+			ASphereDrop* Sphere{GetWorld()->SpawnActor<ASphereDrop>(Drop, SpawnTransform)};
+			if (Edible)
+			{
+				Sphere->EdibleComponent->ScorePoints = Edible->ScorePoints / NumDrops;
+			}
 		}
 	}
 }
 
 void UCustomDestructibleComponent::KillActor() const
 {
-	SpawnSpheres();
 	if (DestructionSmoke)
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), DestructionSmoke, GetOwner()->GetActorLocation(),
 		                                         FRotator::ZeroRotator, FVector(SmokeScale));
 	}
-	GetOwner()->SetLifeSpan(0.001f);
+	if(bSpawnSphereDrops)
+	{
+		SpawnSpheres();
+	}else
+	{
+		Cast<AFrogGameCharacter>(GetWorld()->GetFirstPlayerController()->GetCharacter())->Consume(GetOwner());
+	}
 }

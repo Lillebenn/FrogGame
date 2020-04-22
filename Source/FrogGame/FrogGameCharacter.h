@@ -264,6 +264,7 @@ private:
 	void Whirlwind();
 	void DoWhirlwind(float DeltaTime);
 	void EndWhirlwind();
+	void Consume_Impl(AActor* OtherActor);
 	bool bUsingWhirlwind{false};
 	UPROPERTY(EditAnywhere, Category = "Character | Whirlwind")
 	TSubclassOf<AActor> BPWhirlwindPFX;

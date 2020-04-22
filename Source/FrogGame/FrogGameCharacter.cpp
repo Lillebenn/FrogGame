@@ -1,6 +1,8 @@
 // Copyright 1998-2019 Epic Games, Inc. All Rights Reserved.
 
 #include "FrogGameCharacter.h"
+
+#include "CustomDestructibleComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/BoxComponent.h"
@@ -222,61 +224,60 @@ void AFrogGameCharacter::FilterOccludedObjects()
 	TArray<AActor*> TempArray{PotentialTargets};
 	for (AActor* Target : TempArray)
 	{
-		if (Target->Implements<UEdible>())
+		const UEdibleComponent* Edible{Target->FindComponentByClass<UEdibleComponent>()};
+		if (!Edible)
 		{
-			const UEdibleComponent* SizeInfo{
-				Cast<UEdibleComponent>(Target->GetComponentByClass(UEdibleComponent::StaticClass()))
-			};
-			if (!SizeInfo)
+			UE_LOG(LogTemp, Warning, TEXT("Missing reference to UEdibleComponent!"));
+			continue;
+		}
+		if (!Edible->bAllowSuction)
+		{
+			continue;
+		}
+		// this needs to happen during tick to filter out actors that shouldn't be sucked in
+		// probably easiest to stop checking a target once it succeeds the check
+		const ETraceTypeQuery InTypeQuery{UCollisionProfile::Get()->ConvertToTraceType(ECC_Visibility)};
+		const TArray<AActor*> Array;
+		FHitResult Hit;
+		const bool Success{
+			UKismetSystemLibrary::LineTraceSingle(GetWorld(), GetActorLocation(), Target->GetActorLocation(),
+			                                      InTypeQuery,
+			                                      false, Array, EDrawDebugTrace::None, Hit, true)
+		};
+		if (!Success)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s failed trace."), *Target->GetName())
+		}
+		// if hit actor is the same as target, no occluding actor was found
+		const auto ImplementsEdible{
+			Hit.GetActor() ? Hit.GetActor()->GetComponentByClass(UEdibleComponent::StaticClass()) : nullptr
+		};
+		if (Hit.GetActor() == Target || ImplementsEdible)
+		{
+			AEdibleObject* EdibleObject{Cast<AEdibleObject>(Target)};
+			if (Edible)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Missing reference to UEdibleComponent!"));
-				continue;
+				EdibleObject->StaticMesh->SetSimulatePhysics(false);
 			}
-			// this needs to happen during tick to filter out actors that shouldn't be sucked in
-			// probably easiest to stop checking a target once it succeeds the check
-			const ETraceTypeQuery InTypeQuery{UCollisionProfile::Get()->ConvertToTraceType(ECC_Visibility)};
-			const TArray<AActor*> Array;
-			FHitResult Hit;
-			const bool Success{
-				UKismetSystemLibrary::LineTraceSingle(GetWorld(), GetActorLocation(), Target->GetActorLocation(),
-				                                      InTypeQuery,
-				                                      false, Array, EDrawDebugTrace::None, Hit, true)
-			};
-			if (!Success)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s failed trace."), *Target->GetName())
-			}
-			// if hit actor is the same as target, no occluding actor was found
-			const bool ImplementsEdible{Hit.GetActor() ? Hit.GetActor()->Implements<UEdible>() : false};
-			if (Hit.GetActor() == Target || ImplementsEdible)
-			{
-				AEdibleObject* Edible{Cast<AEdibleObject>(Target)};
-				if (Edible)
-				{
-					Edible->StaticMesh->SetSimulatePhysics(false);
-				}
-				UEdibleComponent* EdibleComponent{
-					Cast<UEdibleComponent>(Target->GetComponentByClass(UEdibleComponent::StaticClass()))
-				};
-				UE_LOG(LogTemp, Warning, TEXT("Added %s to WhirlwindAffectedActors map."), *Target->GetName())
-				IEdible::Execute_IgnorePawnCollision(Target);
-				IEdible::Execute_PauseAI(Target, true); // TODO: Needs testing
-				// Parent the object to an invisible object at the pivot point
-				// Rotate the entire actor in the X axis
-				FVector2D FrogXY{Target->GetActorLocation() - GetActorLocation()};
-				EdibleComponent->PivotDistance = FrogXY.Size();
-				FVector Pivot{GetActorLocation() + GetActorForwardVector() * EdibleComponent->PivotDistance};
+			UEdibleComponent* EdibleComponent{Target->FindComponentByClass<UEdibleComponent>()};
+			UE_LOG(LogTemp, Warning, TEXT("Added %s to WhirlwindAffectedActors map."), *Target->GetName())
+			EdibleComponent->IgnorePawnCollision();
+			//IEdible::Execute_PauseAI(Target, true); // TODO: Needs testing
+			// Parent the object to an invisible object at the pivot point
+			// Rotate the entire actor in the X axis
+			FVector2D FrogXY{Target->GetActorLocation() - GetActorLocation()};
+			EdibleComponent->PivotDistance = FrogXY.Size();
+			FVector Pivot{GetActorLocation() + GetActorForwardVector() * EdibleComponent->PivotDistance};
 
-				EdibleComponent->Parent = GetWorld()->SpawnActor<AActor>(PivotActor, Pivot, FRotator());
-				if (EdibleComponent->Parent)
-				{
-					FAttachmentTransformRules InRule{EAttachmentRule::KeepWorld, false};
-					Target->AttachToActor(EdibleComponent->Parent, InRule);
-				}
-
-				WhirlwindAffectedActors.Add(Target);
-				PotentialTargets.Remove(Target);
+			EdibleComponent->Parent = GetWorld()->SpawnActor<AActor>(PivotActor, Pivot, FRotator());
+			if (EdibleComponent->Parent)
+			{
+				FAttachmentTransformRules InRule{EAttachmentRule::KeepWorld, false};
+				Target->AttachToActor(EdibleComponent->Parent, InRule);
 			}
+
+			WhirlwindAffectedActors.Add(Target);
+			PotentialTargets.Remove(Target);
 		}
 	}
 }
@@ -304,12 +305,11 @@ void AFrogGameCharacter::DoWhirlwind(float DeltaTime)
 	TArray<AActor*> TempArray{WhirlwindAffectedActors};
 	for (auto Actor : TempArray)
 	{
-		if (!Actor->Implements<UEdible>())
+		auto EdibleComponent{Actor->FindComponentByClass<UEdibleComponent>()};
+		if (!EdibleComponent)
 		{
 			continue;
 		}
-		auto EdibleComponent{Cast<UEdibleComponent>(Actor->GetComponentByClass(UEdibleComponent::StaticClass()))};
-
 		float& PivotDistance{EdibleComponent->PivotDistance};
 		PivotDistance -= SuctionSpeed * DeltaTime;
 		if (PivotDistance <= EatDistance)
@@ -317,11 +317,18 @@ void AFrogGameCharacter::DoWhirlwind(float DeltaTime)
 			Consume(Actor);
 			continue;
 		}
+		FVector NewScale;
 		if (PivotDistance != 0.f)
 		{
-			const FVector NewScale{
-				ISaveable::Execute_GetStartTransform(Actor).GetScale3D() * PivotDistance / WhirlwindRange
-			};
+			if (Actor->Implements<USaveable>())
+			{
+				NewScale = ISaveable::Execute_GetStartTransform(Actor).GetScale3D() * PivotDistance / WhirlwindRange;
+			}
+			else
+			{
+				NewScale = Actor->GetActorScale() - FVector(PivotDistance / WhirlwindRange) * DeltaTime;
+				// Idk if this gives desired result
+			}
 			Actor->SetActorScale3D(NewScale);
 		}
 
@@ -360,48 +367,45 @@ void AFrogGameCharacter::EndWhirlwind()
 		{
 			Edible->StaticMesh->SetSimulatePhysics(true);
 		}
-		auto EdibleComp{Cast<UEdibleComponent>(Actor->GetComponentByClass(UEdibleComponent::StaticClass()))};
+		auto EdibleComp{Actor->FindComponentByClass<UEdibleComponent>()};
 		if (EdibleComp->Parent)
 		{
 			EdibleComp->Parent->Destroy();
 		}
-		IEdible::Execute_PauseAI(Actor, false);
+		if (Actor->Implements<UEdible>())
+		{
+			IEdible::Execute_PauseAI(Actor, false);
+		}
 	}
 	WhirlwindAffectedActors.Empty();
 
 	UE_LOG(LogTemp, Warning, TEXT("Stopped using whirlwind."))
 }
 
-void AFrogGameCharacter::Consume(AActor* OtherActor)
+void AFrogGameCharacter::Consume_Impl(AActor* OtherActor)
 {
-	if (!OtherActor)
-	{
-		return;
-	}
-	const UEdibleComponent* Edible{
-		Cast<UEdibleComponent>(OtherActor->GetComponentByClass(UEdibleComponent::StaticClass()))
-	};
+	const UEdibleComponent* Edible{OtherActor->FindComponentByClass<UEdibleComponent>()};
 	if (Edible)
 	{
 		UpdateCurrentScore(Edible->ScorePoints);
 		UpdatePowerPoints(Edible->PowerPoints);
-		UE_LOG(LogTemp, Warning, TEXT("Destroying %s"), *OtherActor->GetName())
+		//UE_LOG(LogTemp, Warning, TEXT("Destroying %s"), *OtherActor->GetName())
+		OtherActor->SetLifeSpan(0.001f);
+	}
+}
+
+void AFrogGameCharacter::Consume(AActor* OtherActor)
+{
+	if (OtherActor)
+	{
+		Consume_Impl(OtherActor);
 		WhirlwindAffectedActors.Remove(OtherActor);
-		OtherActor->Destroy();
 	}
 }
 
 void AFrogGameCharacter::Consume(ASphereDrop* Sphere)
 {
-	const UEdibleComponent* Edible{
-		Cast<UEdibleComponent>(Sphere->GetComponentByClass(UEdibleComponent::StaticClass()))
-	};
-	if (Edible)
-	{
-		UpdateCurrentScore(Edible->ScorePoints);
-		UpdatePowerPoints(Edible->PowerPoints);
-		Sphere->Destroy();
-	}
+	Consume_Impl(Sphere);
 }
 
 void AFrogGameCharacter::PunchAnimNotify()
@@ -783,7 +787,7 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 	ShockwaveCollider->GetOverlappingActors(OverlappingActors);
 	for (auto Actor : OverlappingActors)
 	{
-		if (Actor->Implements<UEdible>())
+		if (Actor->GetComponentByClass(UCustomDestructibleComponent::StaticClass()))
 		{
 			Actor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
 		}

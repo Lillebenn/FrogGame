@@ -22,6 +22,8 @@ public:
 	class UStaticMeshComponent* StaticMesh;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UCustomDestructibleComponent* DestructibleComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	class UEdibleComponent* EdibleComponent;
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;

@@ -27,8 +27,7 @@ public:
 	bool IsDisabled();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void OnDisabled();
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	void IgnorePawnCollision();
+
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void DisableActor();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)

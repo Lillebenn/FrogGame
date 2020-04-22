@@ -7,7 +7,7 @@
 
 AEdibleObject::AEdibleObject()
 {
-	EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
+	EdibleComponent->bAllowSuction = true;
 }
 
 void AEdibleObject::Tick(float DeltaTime)
@@ -20,11 +20,7 @@ bool AEdibleObject::IsDisabled_Implementation()
 	return bShouldDestroy;
 }
 
-void AEdibleObject::IgnorePawnCollision_Implementation()
-{
-	StaticMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-	StaticMesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
-}
+
 
 // Custom behaviour when saving or loading
 void AEdibleObject::ActorSaveDataSaved_Implementation()
