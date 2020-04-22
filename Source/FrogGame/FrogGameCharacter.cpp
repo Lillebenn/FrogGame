@@ -102,6 +102,7 @@ void AFrogGameCharacter::BeginPlay()
 	// Setting Hud trackers to 0 at the start.
 	CurrentScore = 0;
 	CurrentPowerPoints = 0.f;
+	FrogHealth = 1000.f;
 
 	ConstructNeutralModeSettings();
 	// Setup the default whirlwind swirl settings

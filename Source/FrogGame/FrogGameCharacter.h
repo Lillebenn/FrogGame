@@ -98,16 +98,25 @@ public:
 		CurrentScore = CurrentScore + Score;
 	}
 
+	/** Accessor Function for Current PowerPoints */
 	UFUNCTION(BlueprintCallable, Category = "Character | PowerMode")
 	float GetCurrentPowerPoints() const
 	{
 		return CurrentPowerPoints;
 	}
 
+	/** Accessor Function for Current Frog Mode */
 	UFUNCTION(BlueprintCallable, Category = "Character | PowerMode")
 	bool GetCurrentFrogState() const
 	{
 		return bPowerMode;
+	}
+
+	/** Accessor Function for Current Health */
+	UFUNCTION(BlueprintCallable, Category = "Character | Health")
+	float GetCurrentFrogHeatlh() const
+	{
+		return FrogHealth;
 	}
 
 	/**
