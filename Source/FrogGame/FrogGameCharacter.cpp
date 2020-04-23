@@ -161,8 +161,6 @@ void AFrogGameCharacter::ConstructNeutralModeSettings()
 	NeutralModeSettings.MaxWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
 	NeutralModeSettings.JumpZHeight = GetCharacterMovement()->JumpZVelocity;
 	NeutralModeSettings.GravityScale = GetCharacterMovement()->GravityScale;
-	NeutralModeSettings.SmokeTrailZPos = SmokeTrailOffset.Z;
-	NeutralModeSettings.SmokeTrailScale = SmokeTrailScale.X;
 }
 
 void AFrogGameCharacter::AttachedActorsSetup()
@@ -171,7 +169,7 @@ void AFrogGameCharacter::AttachedActorsSetup()
 	{
 		PunchVolumeActor = GetWorld()->SpawnActor<AActor>(PunchVolumeType);
 		PunchVolumeActor->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
-		PunchVolume = Cast<UBoxComponent>(PunchVolumeActor->GetComponentByClass(UBoxComponent::StaticClass()));
+		PunchVolume = PunchVolumeActor->FindComponentByClass<UBoxComponent>();
 		PunchVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnAttackOverlap);
 	}
 	if (ShockwaveActor)
@@ -179,11 +177,10 @@ void AFrogGameCharacter::AttachedActorsSetup()
 		auto Actor{GetWorld()->SpawnActor<AActor>(ShockwaveActor)};
 		Actor->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
 		Actor->SetActorRelativeLocation(FVector(0.f, 0.f, -10.f));
-		ShockwaveCollider = Cast<USphereComponent>(Actor->GetComponentByClass(USphereComponent::StaticClass()));
+		ShockwaveCollider = Actor->FindComponentByClass<USphereComponent>();
 		ShockwaveColliderRadius = ShockwaveCollider->GetUnscaledSphereRadius();
 		ShockwaveCollider->SetCollisionProfileName(TEXT("NoCollision"));
-		ShockwaveSmoke = Cast<UParticleSystemComponent>(
-			Actor->GetComponentByClass(UParticleSystemComponent::StaticClass()));
+		ShockwaveSmoke = Actor->FindComponentByClass<UParticleSystemComponent>();
 	}
 }
 
@@ -212,10 +209,6 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 		Orientation.Pitch = 0.f;
 
 		SetActorRotation(Orientation);
-	}
-	if (GetVelocity().IsZero() || GetCharacterMovement()->IsFalling())
-	{
-		DisableSmokeTrail();
 	}
 }
 
@@ -639,8 +632,6 @@ void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSetti
 	GetCharacterMovement()->MaxWalkSpeed = CharacterSettings.MaxWalkSpeed;
 	GetCharacterMovement()->GravityScale = CharacterSettings.GravityScale;
 	GetCharacterMovement()->JumpZVelocity = CharacterSettings.JumpZHeight;
-	SmokeTrailOffset = FVector(0.f, 0.f, CharacterSettings.SmokeTrailZPos);
-	SmokeTrailScale = FVector(CharacterSettings.SmokeTrailScale);
 }
 
 void AFrogGameCharacter::DeactivatePowerMode()
@@ -725,35 +716,11 @@ void AFrogGameCharacter::DisableWhirlwindPfx()
 	}
 }
 
-void AFrogGameCharacter::SpawnSmokeTrail()
-{
-	if (!CurrentSmokeTrail)
-	{
-		CurrentSmokeTrail = GetWorld()->SpawnActor<AActor>(SmokeTrailChild);
-		const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
-		CurrentSmokeTrail->AttachToActor(this, InRule);
-		CurrentSmokeTrail->SetActorScale3D(SmokeTrailScale);
-		CurrentSmokeTrail->SetActorRelativeLocation(SmokeTrailOffset);
-	}
-}
-
-void AFrogGameCharacter::DisableSmokeTrail()
-{
-	if (CurrentSmokeTrail)
-	{
-		CurrentSmokeTrail->SetLifeSpan(1.f);
-		CurrentSmokeTrail->GetComponentByClass(UParticleSystemComponent::StaticClass())->Deactivate();
-		CurrentSmokeTrail->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-		CurrentSmokeTrail = nullptr;
-	}
-}
-
 void AFrogGameCharacter::Jump()
 {
 	InitialZValue = GetActorLocation().Z;
 	bFirstJump = true;
 	Super::Jump();
-	DisableSmokeTrail();
 	ShockwaveCollider->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
 	ShockwaveCollider->SetSphereRadius(ShockwaveColliderRadius);
 }
@@ -769,7 +736,7 @@ void AFrogGameCharacter::MoveForward(float Value)
 		{
 			Value = -0.5f;
 		}
-		SpawnSmokeTrail();
+
 		// get forward vector
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 		AddMovementInput(Direction, Value);
@@ -787,7 +754,7 @@ void AFrogGameCharacter::MoveRight(float Value)
 		{
 			Value = -0.5f;
 		}
-		SpawnSmokeTrail();
+
 		// get right vector 
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 		// add movement in that direction

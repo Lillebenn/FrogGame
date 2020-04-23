@@ -81,6 +81,7 @@ void UCustomDestructibleComponent::KillActor() const
 	if(bSpawnSphereDrops)
 	{
 		SpawnSpheres();
+		GetOwner()->SetLifeSpan(0.001f);
 	}else
 	{
 		Cast<AFrogGameCharacter>(GetWorld()->GetFirstPlayerController()->GetCharacter())->Consume(GetOwner());
