@@ -707,10 +707,10 @@ void AFrogGameCharacter::SpawnWhirlwindPfx()
 	{
 		WhirlwindPFX = GetWorld()->SpawnActor<AActor>(BPWhirlwindPFX);
 		const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
-		WhirlwindPFX->AttachToComponent(GetMesh(), InRule, TEXT("joint1"));
+		WhirlwindPFX->AttachToComponent(GetMesh(), InRule, TEXT("joint6"));
 
-		WhirlwindPFX->SetActorRelativeRotation(FRotator(-90.f, 0.f, 0.f));
-		WhirlwindPFX->SetActorRelativeLocation(FVector(300.f, -100.f, 0.f));
+		WhirlwindPFX->SetActorRelativeRotation(FRotator(-90.f, -45.f, 0.f));
+		WhirlwindPFX->SetActorRelativeLocation(FVector(225.f, -75.f, 0.f));
 
 		//WhirlwindPFX->SetActorRelativeScale3D(FVector(0.1f));
 	}
