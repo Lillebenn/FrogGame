@@ -28,7 +28,7 @@ public:
 	AActor* Parent{nullptr};
 	float AngleAxis{2.f};
 	float PivotDistance;
-	
+	bool bConsumed{false};
 	void IgnorePawnCollision() const;
 protected:
 	// Called when the game starts

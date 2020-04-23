@@ -96,6 +96,8 @@ public:
 	void UpdateCurrentScore(const int Score)
 	{
 		CurrentScore = CurrentScore + Score;
+		UE_LOG(LogTemp, Warning, TEXT("Score gained: %d"), Score);
+		UE_LOG(LogTemp, Warning, TEXT("Current score: %d"), CurrentScore);
 	}
 
 	/** Accessor Function for Current PowerPoints */
@@ -184,7 +186,7 @@ public:
 	float DrainSpeed{-0.075f};
 	// The frogs health
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | Health")
-	float FrogHealth{ 1000.f };
+	float FrogHealth{1000.f};
 
 	UPROPERTY(EditAnywhere, Category = "Character | Shockwave")
 	TSubclassOf<AActor> ShockwaveActor;
@@ -261,12 +263,14 @@ protected:
 	// APawn interface
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
-
+	UFUNCTION(BlueprintImplementableEvent)
+	void WhirlwindEvent(bool bStarted);
 private:
 
 	float ShockwaveColliderRadius;
 	bool bFirstJump{false};
-
+	void Attack();
+	void EndAttack();
 	void ConstructNeutralModeSettings();
 	void AttachedActorsSetup();
 	void FilterOccludedObjects();
