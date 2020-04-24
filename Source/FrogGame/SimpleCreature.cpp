@@ -20,7 +20,7 @@ ASimpleCreature::ASimpleCreature()
 
 	CreatureMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Creature Mesh"));
 	CreatureMesh->SetCollisionProfileName(TEXT("EdibleProfile"));
-
+	CreatureMesh->SetReceivesDecals(false);
 	RootComponent = CreatureMesh;
 	EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
 	DestructibleComponent = CreateDefaultSubobject<UCustomDestructibleComponent>(TEXT("Destructible"));

@@ -16,7 +16,7 @@ ASphereDrop::ASphereDrop()
 
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	StaticMesh->SetCollisionProfileName(TEXT("SphereDrop"));
-
+	StaticMesh->SetReceivesDecals(false);
 	EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
 	RootComponent = StaticMesh;
 }

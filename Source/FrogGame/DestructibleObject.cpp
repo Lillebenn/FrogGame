@@ -17,6 +17,8 @@ ADestructibleObject::ADestructibleObject()
 	RootComponent = StaticMesh;
 	DestructibleComponent = CreateDefaultSubobject<UCustomDestructibleComponent>(TEXT("Destructible"));
 	EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
+	StaticMesh->SetReceivesDecals(false);
+
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 }

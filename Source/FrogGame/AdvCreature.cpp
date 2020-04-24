@@ -19,6 +19,7 @@ AAdvCreature::AAdvCreature()
 	PrimaryActorTick.bCanEverTick = false;
 	EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
 	DestructibleComponent = CreateDefaultSubobject<UCustomDestructibleComponent>(TEXT("Destructible"));
+	GetMesh()->SetReceivesDecals(false);
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
