@@ -19,6 +19,7 @@ AAdvCreature::AAdvCreature()
 	PrimaryActorTick.bCanEverTick = false;
 	EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
 	DestructibleComponent = CreateDefaultSubobject<UCustomDestructibleComponent>(TEXT("Destructible"));
+	GetMesh()->SetReceivesDecals(false);
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
@@ -76,12 +77,6 @@ void AAdvCreature::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 bool AAdvCreature::IsDisabled_Implementation()
 {
 	return bShouldDestroy;
-}
-
-void AAdvCreature::IgnorePawnCollision_Implementation()
-{
-	GetMesh()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 }
 
 void AAdvCreature::DisableActor_Implementation()

@@ -20,7 +20,7 @@ ASimpleCreature::ASimpleCreature()
 
 	CreatureMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Creature Mesh"));
 	CreatureMesh->SetCollisionProfileName(TEXT("EdibleProfile"));
-
+	CreatureMesh->SetReceivesDecals(false);
 	RootComponent = CreatureMesh;
 	EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
 	DestructibleComponent = CreateDefaultSubobject<UCustomDestructibleComponent>(TEXT("Destructible"));
@@ -35,13 +35,6 @@ bool ASimpleCreature::IsDisabled_Implementation()
 {
 	return bShouldDestroy;
 }
-
-void ASimpleCreature::IgnorePawnCollision_Implementation()
-{
-	CreatureMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-	CreatureMesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
-}
-
 // Called when the game starts or when spawned
 void ASimpleCreature::BeginPlay()
 {

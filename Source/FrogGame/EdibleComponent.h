@@ -16,6 +16,8 @@ public:
 	// Sets default values for this component's properties
 	UEdibleComponent();
 
+	UPROPERTY(EditAnywhere, Category = Edible)
+	bool bAllowSuction{false};
 	// Amount of Points earned towards getting powermode gained when eating this object.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Edible)
 	float PowerPoints{0.1f};
@@ -26,6 +28,8 @@ public:
 	AActor* Parent{nullptr};
 	float AngleAxis{2.f};
 	float PivotDistance;
+	bool bConsumed{false};
+	void IgnorePawnCollision() const;
 protected:
 	// Called when the game starts
 	void BeginPlay() override;

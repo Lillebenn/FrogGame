@@ -1,6 +1,8 @@
 // Copyright 1998-2019 Epic Games, Inc. All Rights Reserved.
 
 #include "FrogGameCharacter.h"
+
+#include "CustomDestructibleComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/BoxComponent.h"
@@ -118,11 +120,9 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	// Set up gameplay key bindings
 	check(PlayerInputComponent);
 
-	PlayerInputComponent->BindAction("Whirlwind", IE_Pressed, this, &AFrogGameCharacter::Whirlwind);
-	PlayerInputComponent->BindAction("Whirlwind", IE_Released, this, &AFrogGameCharacter::EndWhirlwind);
+	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AFrogGameCharacter::Attack);
+	PlayerInputComponent->BindAction("Attack", IE_Released, this, &AFrogGameCharacter::EndAttack);
 
-	PlayerInputComponent->BindAction("Punch", IE_Pressed, this, &AFrogGameCharacter::Punch);
-	PlayerInputComponent->BindAction("Punch", IE_Released, this, &AFrogGameCharacter::StopPunch);
 
 	// This is here for test purposes, will activate when the powerbar is filled up.
 	PlayerInputComponent->BindAction("PowerMode", IE_Pressed, this, &AFrogGameCharacter::PowerMode);
@@ -148,6 +148,7 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindAction("PauseMenu", IE_Pressed, this, &AFrogGameCharacter::OpenPauseMenu);
 }
 
+
 void AFrogGameCharacter::ConstructNeutralModeSettings()
 {
 	NeutralModeSettings.Mesh = GetMesh()->SkeletalMesh;
@@ -160,8 +161,6 @@ void AFrogGameCharacter::ConstructNeutralModeSettings()
 	NeutralModeSettings.MaxWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
 	NeutralModeSettings.JumpZHeight = GetCharacterMovement()->JumpZVelocity;
 	NeutralModeSettings.GravityScale = GetCharacterMovement()->GravityScale;
-	NeutralModeSettings.SmokeTrailZPos = SmokeTrailOffset.Z;
-	NeutralModeSettings.SmokeTrailScale = SmokeTrailScale.X;
 }
 
 void AFrogGameCharacter::AttachedActorsSetup()
@@ -170,7 +169,7 @@ void AFrogGameCharacter::AttachedActorsSetup()
 	{
 		PunchVolumeActor = GetWorld()->SpawnActor<AActor>(PunchVolumeType);
 		PunchVolumeActor->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
-		PunchVolume = Cast<UBoxComponent>(PunchVolumeActor->GetComponentByClass(UBoxComponent::StaticClass()));
+		PunchVolume = PunchVolumeActor->FindComponentByClass<UBoxComponent>();
 		PunchVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnAttackOverlap);
 	}
 	if (ShockwaveActor)
@@ -178,11 +177,10 @@ void AFrogGameCharacter::AttachedActorsSetup()
 		auto Actor{GetWorld()->SpawnActor<AActor>(ShockwaveActor)};
 		Actor->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
 		Actor->SetActorRelativeLocation(FVector(0.f, 0.f, -10.f));
-		ShockwaveCollider = Cast<USphereComponent>(Actor->GetComponentByClass(USphereComponent::StaticClass()));
+		ShockwaveCollider = Actor->FindComponentByClass<USphereComponent>();
 		ShockwaveColliderRadius = ShockwaveCollider->GetUnscaledSphereRadius();
 		ShockwaveCollider->SetCollisionProfileName(TEXT("NoCollision"));
-		ShockwaveSmoke = Cast<UParticleSystemComponent>(
-			Actor->GetComponentByClass(UParticleSystemComponent::StaticClass()));
+		ShockwaveSmoke = Actor->FindComponentByClass<UParticleSystemComponent>();
 	}
 }
 
@@ -212,10 +210,6 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 
 		SetActorRotation(Orientation);
 	}
-	if (GetVelocity().IsZero() || GetCharacterMovement()->IsFalling())
-	{
-		DisableSmokeTrail();
-	}
 }
 
 void AFrogGameCharacter::FilterOccludedObjects()
@@ -223,61 +217,60 @@ void AFrogGameCharacter::FilterOccludedObjects()
 	TArray<AActor*> TempArray{PotentialTargets};
 	for (AActor* Target : TempArray)
 	{
-		if (Target->Implements<UEdible>())
+		const UEdibleComponent* Edible{Target->FindComponentByClass<UEdibleComponent>()};
+		if (!Edible)
 		{
-			const UEdibleComponent* SizeInfo{
-				Cast<UEdibleComponent>(Target->GetComponentByClass(UEdibleComponent::StaticClass()))
-			};
-			if (!SizeInfo)
+			UE_LOG(LogTemp, Warning, TEXT("Missing reference to UEdibleComponent!"));
+			continue;
+		}
+		if (!Edible->bAllowSuction)
+		{
+			continue;
+		}
+		// this needs to happen during tick to filter out actors that shouldn't be sucked in
+		// probably easiest to stop checking a target once it succeeds the check
+		const ETraceTypeQuery InTypeQuery{UCollisionProfile::Get()->ConvertToTraceType(ECC_Visibility)};
+		const TArray<AActor*> Array;
+		FHitResult Hit;
+		const bool Success{
+			UKismetSystemLibrary::LineTraceSingle(GetWorld(), GetActorLocation(), Target->GetActorLocation(),
+			                                      InTypeQuery,
+			                                      false, Array, EDrawDebugTrace::None, Hit, true)
+		};
+		if (!Success)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s failed trace."), *Target->GetName())
+		}
+		// if hit actor is the same as target, no occluding actor was found
+		const auto ImplementsEdible{
+			Hit.GetActor() ? Hit.GetActor()->GetComponentByClass(UEdibleComponent::StaticClass()) : nullptr
+		};
+		if (Hit.GetActor() == Target || ImplementsEdible)
+		{
+			AEdibleObject* EdibleObject{Cast<AEdibleObject>(Target)};
+			if (Edible)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Missing reference to UEdibleComponent!"));
-				continue;
+				EdibleObject->StaticMesh->SetSimulatePhysics(false);
 			}
-			// this needs to happen during tick to filter out actors that shouldn't be sucked in
-			// probably easiest to stop checking a target once it succeeds the check
-			const ETraceTypeQuery InTypeQuery{UCollisionProfile::Get()->ConvertToTraceType(ECC_Visibility)};
-			const TArray<AActor*> Array;
-			FHitResult Hit;
-			const bool Success{
-				UKismetSystemLibrary::LineTraceSingle(GetWorld(), GetActorLocation(), Target->GetActorLocation(),
-				                                      InTypeQuery,
-				                                      false, Array, EDrawDebugTrace::None, Hit, true)
-			};
-			if (!Success)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s failed trace."), *Target->GetName())
-			}
-			// if hit actor is the same as target, no occluding actor was found
-			const bool ImplementsEdible{Hit.GetActor() ? Hit.GetActor()->Implements<UEdible>() : false};
-			if (Hit.GetActor() == Target || ImplementsEdible)
-			{
-				AEdibleObject* Edible{Cast<AEdibleObject>(Target)};
-				if (Edible)
-				{
-					Edible->StaticMesh->SetSimulatePhysics(false);
-				}
-				UEdibleComponent* EdibleComponent{
-					Cast<UEdibleComponent>(Target->GetComponentByClass(UEdibleComponent::StaticClass()))
-				};
-				UE_LOG(LogTemp, Warning, TEXT("Added %s to WhirlwindAffectedActors map."), *Target->GetName())
-				IEdible::Execute_IgnorePawnCollision(Target);
-				IEdible::Execute_PauseAI(Target, true); // TODO: Needs testing
-				// Parent the object to an invisible object at the pivot point
-				// Rotate the entire actor in the X axis
-				FVector2D FrogXY{Target->GetActorLocation() - GetActorLocation()};
-				EdibleComponent->PivotDistance = FrogXY.Size();
-				FVector Pivot{GetActorLocation() + GetActorForwardVector() * EdibleComponent->PivotDistance};
+			UEdibleComponent* EdibleComponent{Target->FindComponentByClass<UEdibleComponent>()};
+			//UE_LOG(LogTemp, Warning, TEXT("Added %s to WhirlwindAffectedActors map."), *Target->GetName())
+			EdibleComponent->IgnorePawnCollision();
+			//IEdible::Execute_PauseAI(Target, true); // TODO: Needs testing
+			// Parent the object to an invisible object at the pivot point
+			// Rotate the entire actor in the X axis
+			FVector2D FrogXY{Target->GetActorLocation() - GetActorLocation()};
+			EdibleComponent->PivotDistance = FrogXY.Size();
+			FVector Pivot{GetActorLocation() + GetActorForwardVector() * EdibleComponent->PivotDistance};
 
-				EdibleComponent->Parent = GetWorld()->SpawnActor<AActor>(PivotActor, Pivot, FRotator());
-				if (EdibleComponent->Parent)
-				{
-					FAttachmentTransformRules InRule{EAttachmentRule::KeepWorld, false};
-					Target->AttachToActor(EdibleComponent->Parent, InRule);
-				}
-
-				WhirlwindAffectedActors.Add(Target);
-				PotentialTargets.Remove(Target);
+			EdibleComponent->Parent = GetWorld()->SpawnActor<AActor>(PivotActor, Pivot, FRotator());
+			if (EdibleComponent->Parent)
+			{
+				FAttachmentTransformRules InRule{EAttachmentRule::KeepWorld, false};
+				Target->AttachToActor(EdibleComponent->Parent, InRule);
 			}
+
+			WhirlwindAffectedActors.Add(Target);
+			PotentialTargets.Remove(Target);
 		}
 	}
 }
@@ -289,6 +282,7 @@ void AFrogGameCharacter::Whirlwind()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Using whirlwind!"))
 		bUsingWhirlwind = true;
+		WhirlwindEvent(true);
 		WhirlwindVolume->SetCollisionProfileName(TEXT("Whirlwind"));
 		SpawnWhirlwindPfx();
 		GetCharacterMovement()->bOrientRotationToMovement = false;
@@ -305,12 +299,11 @@ void AFrogGameCharacter::DoWhirlwind(float DeltaTime)
 	TArray<AActor*> TempArray{WhirlwindAffectedActors};
 	for (auto Actor : TempArray)
 	{
-		if (!Actor->Implements<UEdible>())
+		auto EdibleComponent{Actor->FindComponentByClass<UEdibleComponent>()};
+		if (!EdibleComponent)
 		{
 			continue;
 		}
-		auto EdibleComponent{Cast<UEdibleComponent>(Actor->GetComponentByClass(UEdibleComponent::StaticClass()))};
-
 		float& PivotDistance{EdibleComponent->PivotDistance};
 		PivotDistance -= SuctionSpeed * DeltaTime;
 		if (PivotDistance <= EatDistance)
@@ -318,11 +311,18 @@ void AFrogGameCharacter::DoWhirlwind(float DeltaTime)
 			Consume(Actor);
 			continue;
 		}
+		FVector NewScale;
 		if (PivotDistance != 0.f)
 		{
-			const FVector NewScale{
-				ISaveable::Execute_GetStartTransform(Actor).GetScale3D() * PivotDistance / WhirlwindRange
-			};
+			if (Actor->Implements<USaveable>())
+			{
+				NewScale = ISaveable::Execute_GetStartTransform(Actor).GetScale3D() * PivotDistance / WhirlwindRange;
+			}
+			else
+			{
+				NewScale = Actor->GetActorScale() - FVector(PivotDistance / WhirlwindRange) * DeltaTime;
+				// Idk if this gives desired result
+			}
 			Actor->SetActorScale3D(NewScale);
 		}
 
@@ -347,12 +347,12 @@ void AFrogGameCharacter::DoWhirlwind(float DeltaTime)
 	}
 }
 
-
 void AFrogGameCharacter::EndWhirlwind()
 {
 	bUsingWhirlwind = false;
 	WhirlwindVolume->SetCollisionProfileName(TEXT("NoCollision"));
 	DisableWhirlwindPfx();
+	WhirlwindEvent(false);
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->MaxWalkSpeed = NeutralModeSettings.MaxWalkSpeed;
 	for (const auto Actor : WhirlwindAffectedActors)
@@ -361,95 +361,43 @@ void AFrogGameCharacter::EndWhirlwind()
 		{
 			Edible->StaticMesh->SetSimulatePhysics(true);
 		}
-		auto EdibleComp{Cast<UEdibleComponent>(Actor->GetComponentByClass(UEdibleComponent::StaticClass()))};
+		auto EdibleComp{Actor->FindComponentByClass<UEdibleComponent>()};
 		if (EdibleComp->Parent)
 		{
 			EdibleComp->Parent->Destroy();
 		}
-		IEdible::Execute_PauseAI(Actor, false);
+		if (Actor->Implements<UEdible>())
+		{
+			IEdible::Execute_PauseAI(Actor, false);
+		}
 	}
 	WhirlwindAffectedActors.Empty();
 
 	UE_LOG(LogTemp, Warning, TEXT("Stopped using whirlwind."))
 }
 
-void AFrogGameCharacter::Consume(AActor* OtherActor)
+void AFrogGameCharacter::Attack()
 {
-	if (!OtherActor)
+	if (bPowerMode)
 	{
-		return;
+		Punch();
 	}
-	const UEdibleComponent* Edible{
-		Cast<UEdibleComponent>(OtherActor->GetComponentByClass(UEdibleComponent::StaticClass()))
-	};
-	if (Edible)
+	else
 	{
-		UpdateCurrentScore(Edible->ScorePoints);
-		UpdatePowerPoints(Edible->PowerPoints);
-		UE_LOG(LogTemp, Warning, TEXT("Destroying %s"), *OtherActor->GetName())
-		WhirlwindAffectedActors.Remove(OtherActor);
-		OtherActor->Destroy();
+		Whirlwind();
 	}
 }
 
-void AFrogGameCharacter::Consume(ASphereDrop* Sphere)
+void AFrogGameCharacter::EndAttack()
 {
-	const UEdibleComponent* Edible{
-		Cast<UEdibleComponent>(Sphere->GetComponentByClass(UEdibleComponent::StaticClass()))
-	};
-	if (Edible)
+	if (bPowerMode)
 	{
-		UpdateCurrentScore(Edible->ScorePoints);
-		UpdatePowerPoints(Edible->PowerPoints);
-		Sphere->Destroy();
+		StopPunch();
 	}
-}
-
-void AFrogGameCharacter::PunchAnimNotify()
-{
-	UE_LOG(LogTemp, Warning, TEXT("Punching! Current Punch is %d"), CurrentPunch)
-	const FAttachmentTransformRules InRule{EAttachmentRule::KeepRelative, false};
-
-	switch (CurrentPunch)
+	else
 	{
-	case 0:
-		if (UpperCut)
-		{
-			PunchParticle->SetTemplate(UpperCut);
-		}
-		PunchParticle->AttachToComponent(GetMesh(), InRule,
-		                                 TEXT("r_hand_end_j"));
-		PunchParticle->SetRelativeLocation(UpperCutOffset);
-		break;
-	case 1:
-		if (PunchOne)
-		{
-			PunchParticle->SetTemplate(PunchOne);
-		}
-		PunchParticle->AttachToComponent(GetMesh(), InRule,
-		                                 TEXT("r_hand_end_j"));
-		PunchParticle->SetRelativeLocation(PunchOneOffset);
-		break;
-	case 2:
-		if (PunchTwo)
-		{
-			PunchParticle->SetTemplate(PunchTwo);
-		}
-		PunchParticle->AttachToComponent(GetMesh(), InRule,
-		                                 TEXT("l_hand_end_j"));
-		PunchParticle->SetRelativeLocation(PunchTwoOffset);
-		break;
-	default:
-		break;
+		EndWhirlwind();
 	}
-	PunchParticle->Activate(true);
-	ApplyDamage();
-	bPunchMove = false;
-}
-
-void AFrogGameCharacter::PunchReset()
-{
-	CurrentPunch = 0;
 }
 
 void AFrogGameCharacter::Punch()
@@ -504,6 +452,81 @@ void AFrogGameCharacter::DoPunch()
 	}
 	bIsPunching = true;
 	bPunchMove = true;
+}
+
+void AFrogGameCharacter::PunchAnimNotify()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Punching! Current Punch is %d"), CurrentPunch)
+	const FAttachmentTransformRules InRule{EAttachmentRule::KeepRelative, false};
+
+	switch (CurrentPunch)
+	{
+	case 0:
+		if (UpperCut)
+		{
+			PunchParticle->SetTemplate(UpperCut);
+		}
+		PunchParticle->AttachToComponent(GetMesh(), InRule,
+		                                 TEXT("r_hand_end_j"));
+		PunchParticle->SetRelativeLocation(UpperCutOffset);
+		break;
+	case 1:
+		if (PunchOne)
+		{
+			PunchParticle->SetTemplate(PunchOne);
+		}
+		PunchParticle->AttachToComponent(GetMesh(), InRule,
+		                                 TEXT("r_hand_end_j"));
+		PunchParticle->SetRelativeLocation(PunchOneOffset);
+		break;
+	case 2:
+		if (PunchTwo)
+		{
+			PunchParticle->SetTemplate(PunchTwo);
+		}
+		PunchParticle->AttachToComponent(GetMesh(), InRule,
+		                                 TEXT("l_hand_end_j"));
+		PunchParticle->SetRelativeLocation(PunchTwoOffset);
+		break;
+	default:
+		break;
+	}
+	PunchParticle->Activate(true);
+	ApplyDamage();
+	bPunchMove = false;
+}
+
+void AFrogGameCharacter::PunchReset()
+{
+	CurrentPunch = 0;
+}
+
+void AFrogGameCharacter::Consume_Impl(AActor* OtherActor)
+{
+	UEdibleComponent* Edible{OtherActor->FindComponentByClass<UEdibleComponent>()};
+	const bool bCanConsume{Edible ? !Edible->bConsumed : false};
+	if (bCanConsume)
+	{
+		Edible->bConsumed = true;
+		UpdateCurrentScore(Edible->ScorePoints);
+		UpdatePowerPoints(Edible->PowerPoints);
+		UE_LOG(LogTemp, Warning, TEXT("Destroying %s"), *OtherActor->GetName())
+		OtherActor->SetLifeSpan(0.001f);
+	}
+}
+
+void AFrogGameCharacter::Consume(AActor* OtherActor)
+{
+	if (OtherActor)
+	{
+		Consume_Impl(OtherActor);
+		WhirlwindAffectedActors.Remove(OtherActor);
+	}
+}
+
+void AFrogGameCharacter::Consume(ASphereDrop* Sphere)
+{
+	Consume_Impl(Sphere);
 }
 
 void AFrogGameCharacter::ApplyDamage()
@@ -585,10 +608,13 @@ void AFrogGameCharacter::OnWhirlwindEndOverlap(UPrimitiveComponent* OverlappedCo
 
 void AFrogGameCharacter::PowerMode()
 {
-	if (CurrentPowerPoints >= MaxPowerPoints / 10.f)
+	if (CurrentPowerPoints >= MaxPowerPoints / 10.f && !bPowerMode)
 	{
 		bPowerMode = true;
-		EndWhirlwind();
+		if (bUsingWhirlwind)
+		{
+			EndWhirlwind();
+		}
 		SetPlayerModel(PowerModeSettings);
 		CurrentMode = ECharacterMode::Power;
 	}
@@ -606,8 +632,6 @@ void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSetti
 	GetCharacterMovement()->MaxWalkSpeed = CharacterSettings.MaxWalkSpeed;
 	GetCharacterMovement()->GravityScale = CharacterSettings.GravityScale;
 	GetCharacterMovement()->JumpZVelocity = CharacterSettings.JumpZHeight;
-	SmokeTrailOffset = FVector(0.f, 0.f, CharacterSettings.SmokeTrailZPos);
-	SmokeTrailScale = FVector(CharacterSettings.SmokeTrailScale);
 }
 
 void AFrogGameCharacter::DeactivatePowerMode()
@@ -674,10 +698,12 @@ void AFrogGameCharacter::SpawnWhirlwindPfx()
 	{
 		WhirlwindPFX = GetWorld()->SpawnActor<AActor>(BPWhirlwindPFX);
 		const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
-		WhirlwindPFX->AttachToActor(this, InRule);
-		WhirlwindPFX->SetActorRelativeRotation(FRotator(-90.f, 0.f, 0.f));
-		WhirlwindPFX->SetActorRelativeLocation(FVector(5.f, 6.f, -2.f));
-		WhirlwindPFX->SetActorRelativeScale3D(FVector(0.1f, 0.1f, 0.1f));
+		WhirlwindPFX->AttachToComponent(GetMesh(), InRule, TEXT("joint6"));
+
+		WhirlwindPFX->SetActorRelativeRotation(FRotator(-90.f, -45.f, 0.f));
+		WhirlwindPFX->SetActorRelativeLocation(FVector(225.f, -75.f, 0.f));
+
+		//WhirlwindPFX->SetActorRelativeScale3D(FVector(0.1f));
 	}
 }
 
@@ -690,35 +716,11 @@ void AFrogGameCharacter::DisableWhirlwindPfx()
 	}
 }
 
-void AFrogGameCharacter::SpawnSmokeTrail()
-{
-	if (!CurrentSmokeTrail)
-	{
-		CurrentSmokeTrail = GetWorld()->SpawnActor<AActor>(SmokeTrailChild);
-		const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
-		CurrentSmokeTrail->AttachToActor(this, InRule);
-		CurrentSmokeTrail->SetActorScale3D(SmokeTrailScale);
-		CurrentSmokeTrail->SetActorRelativeLocation(SmokeTrailOffset);
-	}
-}
-
-void AFrogGameCharacter::DisableSmokeTrail()
-{
-	if (CurrentSmokeTrail)
-	{
-		CurrentSmokeTrail->SetLifeSpan(1.f);
-		CurrentSmokeTrail->GetComponentByClass(UParticleSystemComponent::StaticClass())->Deactivate();
-		CurrentSmokeTrail->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-		CurrentSmokeTrail = nullptr;
-	}
-}
-
 void AFrogGameCharacter::Jump()
 {
 	InitialZValue = GetActorLocation().Z;
 	bFirstJump = true;
 	Super::Jump();
-	DisableSmokeTrail();
 	ShockwaveCollider->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
 	ShockwaveCollider->SetSphereRadius(ShockwaveColliderRadius);
 }
@@ -734,7 +736,7 @@ void AFrogGameCharacter::MoveForward(float Value)
 		{
 			Value = -0.5f;
 		}
-		SpawnSmokeTrail();
+
 		// get forward vector
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 		AddMovementInput(Direction, Value);
@@ -752,7 +754,7 @@ void AFrogGameCharacter::MoveRight(float Value)
 		{
 			Value = -0.5f;
 		}
-		SpawnSmokeTrail();
+
 		// get right vector 
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 		// add movement in that direction
@@ -784,7 +786,7 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 	ShockwaveCollider->GetOverlappingActors(OverlappingActors);
 	for (auto Actor : OverlappingActors)
 	{
-		if (Actor->Implements<UEdible>())
+		if (Actor->GetComponentByClass(UCustomDestructibleComponent::StaticClass()))
 		{
 			Actor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
 		}

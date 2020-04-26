@@ -4,6 +4,7 @@
 #include "EdibleComponent.h"
 #include "Engine/World.h"
 #include "FrogGameCharacter.h"
+#include "Components/SkeletalMeshComponent.h"
 
 // Sets default values for this component's properties
 UEdibleComponent::UEdibleComponent()
@@ -15,6 +16,21 @@ UEdibleComponent::UEdibleComponent()
 	// ...
 }
 
+
+void UEdibleComponent::IgnorePawnCollision() const
+{
+	UStaticMeshComponent* StaticMesh{GetOwner()->FindComponentByClass<UStaticMeshComponent>()};
+	if (StaticMesh)
+	{
+		StaticMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+		StaticMesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	}
+	else if (USkeletalMeshComponent* SkeletalMesh = GetOwner()->FindComponentByClass<USkeletalMeshComponent>())
+	{
+		SkeletalMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+		SkeletalMesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	}
+}
 
 // Called when the game starts
 void UEdibleComponent::BeginPlay()
@@ -33,4 +49,3 @@ void UEdibleComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 	// ...
 }
-

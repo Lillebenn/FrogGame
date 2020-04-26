@@ -24,6 +24,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Destructible)
 	float FlyAwayForce{750000.f};
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Destructible)
+	bool bSpawnSphereDrops{true};
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Destructible, meta = (EditCondition = "bSpawnSphereDrops"))
 	int32 NumDrops{5};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Destructible)
 	class UParticleSystem* DestructionSmoke;

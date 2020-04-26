@@ -30,10 +30,7 @@ struct FCharacterSettings
 	float BoomRange{1400.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float MaxWalkSpeed{1600.f};
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float SmokeTrailZPos{-25.f};
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float SmokeTrailScale{0.25f};
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float JumpZHeight{2000.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
@@ -96,6 +93,8 @@ public:
 	void UpdateCurrentScore(const int Score)
 	{
 		CurrentScore = CurrentScore + Score;
+		UE_LOG(LogTemp, Warning, TEXT("Score gained: %d"), Score);
+		UE_LOG(LogTemp, Warning, TEXT("Current score: %d"), CurrentScore);
 	}
 
 	/** Accessor Function for Current PowerPoints */
@@ -184,7 +183,7 @@ public:
 	float DrainSpeed{-0.075f};
 	// The frogs health
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | Health")
-	float FrogHealth{ 1000.f };
+	float FrogHealth{1000.f};
 
 	UPROPERTY(EditAnywhere, Category = "Character | Shockwave")
 	TSubclassOf<AActor> ShockwaveActor;
@@ -250,10 +249,6 @@ protected:
 	 */
 	void LookUpAtRate(float Rate);
 	void SpawnWhirlwindPfx();
-	/**
-	 * Spawn a child actor that is JUST the particle emitter and set the lifetime of that to 1s when movement is stopped
-	 */
-	void SpawnSmokeTrail();
 
 	void Jump() override;
 	float InitialZValue;
@@ -261,18 +256,21 @@ protected:
 	// APawn interface
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
-
+	UFUNCTION(BlueprintImplementableEvent)
+	void WhirlwindEvent(bool bStarted);
 private:
 
 	float ShockwaveColliderRadius;
 	bool bFirstJump{false};
-
+	void Attack();
+	void EndAttack();
 	void ConstructNeutralModeSettings();
 	void AttachedActorsSetup();
 	void FilterOccludedObjects();
 	void Whirlwind();
 	void DoWhirlwind(float DeltaTime);
 	void EndWhirlwind();
+	void Consume_Impl(AActor* OtherActor);
 	bool bUsingWhirlwind{false};
 	UPROPERTY(EditAnywhere, Category = "Character | Whirlwind")
 	TSubclassOf<AActor> BPWhirlwindPFX;
@@ -284,13 +282,6 @@ private:
 	TArray<AActor*> WhirlwindAffectedActors;
 	UPROPERTY()
 	TArray<AActor*> PotentialTargets;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Character | Particles")
-	TSubclassOf<AActor> SmokeTrailChild;
-	UPROPERTY()
-	AActor* CurrentSmokeTrail;
-	FVector SmokeTrailOffset{0.f, 0.f, -15.f};
-	FVector SmokeTrailScale{0.5f, 0.5f, 0.5f};
 
 	/** Uses fist to punch something, can only be used in power mode **/
 	void Punch();
@@ -320,7 +311,6 @@ private:
 	void SetPlayerModel(const FCharacterSettings& CharacterSettings);
 	void PowerDrain(float DeltaTime);
 	void DeactivatePowerMode();
-	void DisableSmokeTrail();
 	void DisableWhirlwindPfx();
 
 public:

@@ -21,15 +21,13 @@ public:
 	AEdibleObject();
 	void Tick(float DeltaTime) override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	class UEdibleComponent* EdibleComponent;
+
 	bool bShouldDestroy{false};
 
 	FTransform StartTransform;
 
 	// Interface stuff
 	bool IsDisabled_Implementation() override;
-	void IgnorePawnCollision_Implementation() override;
 	void ActorSaveDataSaved_Implementation() override;
 	void ActorSaveDataLoaded_Implementation() override;
 

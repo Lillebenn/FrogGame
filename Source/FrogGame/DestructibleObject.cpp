@@ -7,7 +7,6 @@
 #include "Edible.h"
 #include "FrogGameCharacter.h"
 #include "Engine/StaticMesh.h"
-#include "SphereDrop.h"
 
 
 // Sets default values
@@ -17,6 +16,9 @@ ADestructibleObject::ADestructibleObject()
 	StaticMesh->SetCollisionProfileName(TEXT("Edible"));
 	RootComponent = StaticMesh;
 	DestructibleComponent = CreateDefaultSubobject<UCustomDestructibleComponent>(TEXT("Destructible"));
+	EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
+	StaticMesh->SetReceivesDecals(false);
+
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 }
@@ -69,8 +71,8 @@ void ADestructibleObject::ActivatePhysics()
 	StaticMesh->SetMassOverrideInKg(NAME_None, 100.f);
 	StaticMesh->SetSimulatePhysics(true);
 	StaticMesh->SetNotifyRigidBodyCollision(true);
-	StaticMesh->SetCollisionResponseToChannel(ECC_Camera, ECollisionResponse::ECR_Ignore);
-	StaticMesh->SetCollisionResponseToChannel(ECC_Pawn, ECollisionResponse::ECR_Ignore);
+	StaticMesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	StaticMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 }
 
 void ADestructibleObject::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
