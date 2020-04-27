@@ -66,6 +66,7 @@ void UCustomDestructibleComponent::SpawnSpheres() const
 			if (Edible)
 			{
 				Sphere->EdibleComponent->ScorePoints = Edible->ScorePoints / NumDrops;
+				Sphere->EdibleComponent->PowerPoints = Edible->PowerPoints / NumDrops;
 			}
 		}
 	}

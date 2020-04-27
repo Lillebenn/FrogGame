@@ -41,9 +41,9 @@ struct FCharacterSettings
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float SmokeTrailScale{0.25f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	FVector WaterTrailOffset{0.f};
+	FVector WaterBreakOffset{0.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float WaterTrailScale{1.f};
+	float WaterBreakScale{1.f};
 };
 
 enum class ECharacterMode
@@ -152,6 +152,10 @@ public:
 	class UParticleSystem* PunchTwo;
 	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles")
 	class UParticleSystem* UpperCut;
+	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles")
+	class UParticleSystem* WaterShockwave;
+	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles")
+	class UParticleSystem* LandShockwave;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
 	FVector PunchOneOffset{25, 50, 0};
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
@@ -196,7 +200,7 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Character | Shockwave")
 	TSubclassOf<AActor> ShockwaveActor;
 	UPROPERTY()
-	UParticleSystemComponent* ShockwaveSmoke;
+	UParticleSystemComponent* ShockwavePFX;
 	UPROPERTY()
 	USphereComponent* ShockwaveCollider;
 	UPROPERTY(EditAnywhere, Category = "Character | Shockwave")
@@ -236,7 +240,7 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	uint8 CurrentPunch{0};
 	bool bPunchMove{false};
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character)
 	bool bIsInWater{false};
 
 	UPROPERTY()
@@ -273,11 +277,11 @@ protected:
 	FVector SmokeTrailScale{0.5f, 0.5f, 0.5f};
 	FRotator SmokeTrailRot{0.f};
 	UPROPERTY(EditDefaultsOnly, Category = "Character | Particles")
-	TSubclassOf<AActor> WaterTrailChild;
+	TSubclassOf<AActor> WaterBreakChild;
 	UPROPERTY(EditAnywhere, Category = "Character | Particles")
-	FVector WaterTrailOffset{0.f};
-	FVector WaterTrailScale{1.f, 1.f, 1.f};
-	FRotator WaterTrailRot{0.f, -90.f, 0.f};
+	FVector WaterBreakOffset{0.f};
+	FVector WaterBreakScale{1.f, 1.f, 1.f};
+	FRotator WaterBreakRot{0.f, -90.f, 0.f};
 	UPROPERTY()
 	AActor* CurrentTrail;
 	UPROPERTY(EditAnywhere, Category = "Character | Particles")

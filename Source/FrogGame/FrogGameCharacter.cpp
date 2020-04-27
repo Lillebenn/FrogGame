@@ -166,8 +166,8 @@ void AFrogGameCharacter::ConstructNeutralModeSettings()
 	NeutralModeSettings.GravityScale = GetCharacterMovement()->GravityScale;
 	NeutralModeSettings.SmokeTrailZPos = SmokeTrailOffset.Z;
 	NeutralModeSettings.SmokeTrailScale = SmokeTrailScale.X;
-	NeutralModeSettings.WaterTrailOffset = WaterTrailOffset;
-	NeutralModeSettings.WaterTrailScale = WaterTrailScale.X;
+	NeutralModeSettings.WaterBreakOffset = WaterBreakOffset;
+	NeutralModeSettings.WaterBreakScale = WaterBreakScale.X;
 }
 
 void AFrogGameCharacter::AttachedActorsSetup()
@@ -187,7 +187,7 @@ void AFrogGameCharacter::AttachedActorsSetup()
 		ShockwaveCollider = Actor->FindComponentByClass<USphereComponent>();
 		ShockwaveColliderRadius = ShockwaveCollider->GetUnscaledSphereRadius();
 		ShockwaveCollider->SetCollisionProfileName(TEXT("NoCollision"));
-		ShockwaveSmoke = Actor->FindComponentByClass<UParticleSystemComponent>();
+		ShockwavePFX = Actor->FindComponentByClass<UParticleSystemComponent>();
 	}
 }
 
@@ -605,7 +605,10 @@ void AFrogGameCharacter::OnEndOverlap(UPrimitiveComponent* OverlappedComp, AActo
 		{
 			bIsInWater = false;
 			DisableTrail();
-			WaterFloor->SetRelativeLocation(FVector(0, 0, -200.f));
+			if(WaterFloor)
+			{
+				WaterFloor->SetRelativeLocation(FVector(0, 0, -200.f));
+			}
 		}
 		WaterFloor = nullptr;
 	}
@@ -701,8 +704,8 @@ void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSetti
 	GetCharacterMovement()->JumpZVelocity = CharacterSettings.JumpZHeight;
 	SmokeTrailOffset.Z = CharacterSettings.SmokeTrailZPos;
 	SmokeTrailScale = FVector(CharacterSettings.SmokeTrailScale);
-	WaterTrailOffset = CharacterSettings.WaterTrailOffset;
-	WaterTrailScale = FVector(CharacterSettings.WaterTrailScale);
+	WaterBreakOffset = CharacterSettings.WaterBreakOffset;
+	WaterBreakScale = FVector(CharacterSettings.WaterBreakScale);
 }
 
 
@@ -798,7 +801,7 @@ void AFrogGameCharacter::MoveForward(float Value)
 		}
 		if (bIsInWater)
 		{
-			SpawnTrail(WaterTrailChild, WaterTrailOffset, WaterTrailScale, WaterTrailRot);
+			SpawnTrail(WaterBreakChild, WaterBreakOffset, WaterBreakScale, WaterBreakRot);
 		}
 		// get forward vector
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
@@ -819,7 +822,7 @@ void AFrogGameCharacter::MoveRight(float Value)
 		}
 		if (bIsInWater)
 		{
-			SpawnTrail(WaterTrailChild, WaterTrailOffset, WaterTrailScale, WaterTrailRot);
+			SpawnTrail(WaterBreakChild, WaterBreakOffset, WaterBreakScale, WaterBreakRot);
 		}
 		// get right vector 
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
@@ -833,9 +836,25 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
 	// use this event to add shockwave etc
-	if (bFirstJump && !bIsInWater)
+	if (bFirstJump)
 	{
-		ShockwaveSmoke->Activate(true);
+		if (bIsInWater)
+		{
+			if(WaterShockwave)
+			{
+				ShockwavePFX->SetTemplate(WaterShockwave);
+				ShockwavePFX->SetRelativeScale3D(FVector(0.15f));
+			}
+		}
+		else
+		{
+			if(LandShockwave)
+			{
+				ShockwavePFX->SetTemplate(LandShockwave);
+				ShockwavePFX->SetRelativeScale3D(FVector(0.05f));
+			}
+		}
+		ShockwavePFX->Activate(true);
 		const float ZDiff{GetActorLocation().Z - InitialZValue};
 		if (ZDiff < 0.f)
 		{
@@ -871,7 +890,7 @@ void AFrogGameCharacter::TestTrail()
 	{
 		bTestTrail = true;
 
-		SpawnTrail(WaterTrailChild, WaterTrailOffset, WaterTrailScale, WaterTrailRot);
+		SpawnTrail(WaterBreakChild, WaterBreakOffset, WaterBreakScale, WaterBreakRot);
 	}
 }
 
