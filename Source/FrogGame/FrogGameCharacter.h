@@ -41,7 +41,7 @@ struct FCharacterSettings
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float SmokeTrailScale{0.25f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float WaterTrailZPos{0.f};
+	FVector WaterTrailOffset{0.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float WaterTrailScale{1.f};
 };

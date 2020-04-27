@@ -166,7 +166,7 @@ void AFrogGameCharacter::ConstructNeutralModeSettings()
 	NeutralModeSettings.GravityScale = GetCharacterMovement()->GravityScale;
 	NeutralModeSettings.SmokeTrailZPos = SmokeTrailOffset.Z;
 	NeutralModeSettings.SmokeTrailScale = SmokeTrailScale.X;
-	NeutralModeSettings.WaterTrailZPos = WaterTrailOffset.Z;
+	NeutralModeSettings.WaterTrailOffset = WaterTrailOffset;
 	NeutralModeSettings.WaterTrailScale = WaterTrailScale.X;
 }
 
@@ -502,7 +502,10 @@ void AFrogGameCharacter::PunchAnimNotify()
 	default:
 		break;
 	}
-	PunchParticle->Activate(true);
+	if (HitActors.Num() > 0)
+	{
+		PunchParticle->Activate(true);
+	}
 	ApplyDamage();
 	bPunchMove = false;
 }
@@ -698,7 +701,7 @@ void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSetti
 	GetCharacterMovement()->JumpZVelocity = CharacterSettings.JumpZHeight;
 	SmokeTrailOffset.Z = CharacterSettings.SmokeTrailZPos;
 	SmokeTrailScale = FVector(CharacterSettings.SmokeTrailScale);
-	WaterTrailOffset.Z = CharacterSettings.WaterTrailZPos;
+	WaterTrailOffset = CharacterSettings.WaterTrailOffset;
 	WaterTrailScale = FVector(CharacterSettings.WaterTrailScale);
 }
 
