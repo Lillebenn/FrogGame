@@ -274,9 +274,8 @@ protected:
 	FRotator SmokeTrailRot{0.f};
 	UPROPERTY(EditDefaultsOnly, Category = "Character | Particles")
 	TSubclassOf<AActor> WaterTrailChild;
-	float WaterTrailZOffset{0.f};
 	UPROPERTY(EditAnywhere, Category = "Character | Particles")
-	FVector2D WaterTrailXYOffset{0.f};
+	FVector WaterTrailOffset{0.f};
 	FVector WaterTrailScale{1.f, 1.f, 1.f};
 	FRotator WaterTrailRot{0.f, -90.f, 0.f};
 	UPROPERTY()

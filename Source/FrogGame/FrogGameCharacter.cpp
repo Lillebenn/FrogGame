@@ -166,7 +166,7 @@ void AFrogGameCharacter::ConstructNeutralModeSettings()
 	NeutralModeSettings.GravityScale = GetCharacterMovement()->GravityScale;
 	NeutralModeSettings.SmokeTrailZPos = SmokeTrailOffset.Z;
 	NeutralModeSettings.SmokeTrailScale = SmokeTrailScale.X;
-	NeutralModeSettings.WaterTrailZPos = WaterTrailZOffset;
+	NeutralModeSettings.WaterTrailZPos = WaterTrailOffset.Z;
 	NeutralModeSettings.WaterTrailScale = WaterTrailScale.X;
 }
 
@@ -698,7 +698,7 @@ void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSetti
 	GetCharacterMovement()->JumpZVelocity = CharacterSettings.JumpZHeight;
 	SmokeTrailOffset.Z = CharacterSettings.SmokeTrailZPos;
 	SmokeTrailScale = FVector(CharacterSettings.SmokeTrailScale);
-	WaterTrailZOffset = CharacterSettings.WaterTrailZPos;
+	WaterTrailOffset.Z = CharacterSettings.WaterTrailZPos;
 	WaterTrailScale = FVector(CharacterSettings.WaterTrailScale);
 }
 
@@ -795,8 +795,7 @@ void AFrogGameCharacter::MoveForward(float Value)
 		}
 		if (bIsInWater)
 		{
-			const FVector Offset{WaterTrailXYOffset, WaterTrailZOffset};
-			SpawnTrail(WaterTrailChild, Offset, WaterTrailScale, WaterTrailRot);
+			SpawnTrail(WaterTrailChild, WaterTrailOffset, WaterTrailScale, WaterTrailRot);
 		}
 		// get forward vector
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
@@ -817,9 +816,7 @@ void AFrogGameCharacter::MoveRight(float Value)
 		}
 		if (bIsInWater)
 		{
-			const FVector Offset{WaterTrailXYOffset, WaterTrailZOffset};
-
-			SpawnTrail(WaterTrailChild, Offset, WaterTrailScale, WaterTrailRot);
+			SpawnTrail(WaterTrailChild, WaterTrailOffset, WaterTrailScale, WaterTrailRot);
 		}
 		// get right vector 
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
@@ -870,9 +867,8 @@ void AFrogGameCharacter::TestTrail()
 	else
 	{
 		bTestTrail = true;
-		const FVector Offset{WaterTrailXYOffset, WaterTrailZOffset};
 
-		SpawnTrail(WaterTrailChild, Offset, WaterTrailScale, WaterTrailRot);
+		SpawnTrail(WaterTrailChild, WaterTrailOffset, WaterTrailScale, WaterTrailRot);
 	}
 }
 
