@@ -259,7 +259,7 @@ void AFrogGameCharacter::FilterOccludedObjects()
 		if (Hit.GetActor() == Target || ImplementsEdible)
 		{
 			AEdibleObject* EdibleObject{Cast<AEdibleObject>(Target)};
-			if (Edible)
+			if (EdibleObject)
 			{
 				EdibleObject->StaticMesh->SetSimulatePhysics(false);
 			}
