@@ -10,6 +10,7 @@
 #include "FrogGameInstance.h"
 #include "FrogGameCharacter.h"
 #include "EdibleComponent.h"
+#include "Components/CapsuleComponent.h"
 
 
 // Sets default values
@@ -17,11 +18,11 @@ ASimpleCreature::ASimpleCreature()
 {
 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
-
+	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("Capsule Component"));
 	CreatureMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Creature Mesh"));
 	CreatureMesh->SetCollisionProfileName(TEXT("EdibleProfile"));
 	CreatureMesh->SetReceivesDecals(false);
-	RootComponent = CreatureMesh;
+	RootComponent = CapsuleComponent;
 	EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
 	DestructibleComponent = CreateDefaultSubobject<UCustomDestructibleComponent>(TEXT("Destructible"));
 	MovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComponent"));
