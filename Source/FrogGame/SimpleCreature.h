@@ -12,6 +12,8 @@ UCLASS(Abstract)
 class FROGGAME_API ASimpleCreature : public APawn, public IEdible, public ISaveable
 {
 	GENERATED_BODY()
+	UPROPERTY(EditAnywhere, Category = "Collision")
+	class UCapsuleComponent* CapsuleComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UStaticMeshComponent* CreatureMesh;
 
