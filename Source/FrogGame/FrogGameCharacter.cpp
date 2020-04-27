@@ -48,6 +48,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	Movement->AirControl = 0.2f;
 	Movement->MaxAcceleration = 18000.f;
 
+
 	WhirlwindVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxTrace"));
 	WhirlwindVolume->SetupAttachment(RootComponent);
 	WhirlwindVolume->SetCollisionProfileName(TEXT("NoCollision"));
@@ -97,6 +98,7 @@ void AFrogGameCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnOverlap);
+	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnEndOverlap);
 	WhirlwindVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindBeginOverlap);
 	WhirlwindVolume->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindEndOverlap);
 	WhirlwindRange = WhirlwindVolume->GetScaledBoxExtent().X;
@@ -378,13 +380,16 @@ void AFrogGameCharacter::EndWhirlwind()
 
 void AFrogGameCharacter::Attack()
 {
-	if (bPowerMode)
+	if(!bIsInWater)
 	{
-		Punch();
-	}
-	else
-	{
-		Whirlwind();
+		if (bPowerMode)
+		{
+			Punch();
+		}
+		else
+		{
+			Whirlwind();
+		}
 	}
 }
 
@@ -557,10 +562,39 @@ void AFrogGameCharacter::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
                                    UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
                                    const FHitResult& SweepResult)
 {
-	if (OtherActor != nullptr && OtherActor != this && OtherActor->IsA(SmallDestructible) && OtherComp != nullptr)
+	if (OtherActor != nullptr && OtherActor != this && OtherComp != nullptr)
 	{
-		// TODO: Maybe do a different function if we don't want shit to fly around
-		OtherActor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
+		if (OtherActor->IsA(SmallDestructible))
+		{
+			// TODO: Maybe do a different function if we don't want shit to fly around
+			OtherActor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
+		}
+		else if (OtherComp->ComponentHasTag(TEXT("Water")))
+		{
+			WaterFloor = OtherActor->FindComponentByClass<UBoxComponent>();
+			bIsInWater = true;
+			if (bPowerMode && WaterFloor)
+			{
+				WaterFloor->SetRelativeLocation(FVector(0, 0, -75.f));
+			}
+			EndAttack();
+		}
+	}
+}
+
+void AFrogGameCharacter::OnEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+                                      UPrimitiveComponent* OtherComp,
+                                      int32 OtherBodyIndex)
+{
+	if (OtherActor != nullptr && OtherActor != this && OtherComp != nullptr)
+	{
+		if (OtherComp->ComponentHasTag(TEXT("Water")))
+		{
+			bIsInWater = false;
+
+			WaterFloor->SetRelativeLocation(FVector(0, 0, -200.f));
+		}
+		WaterFloor = nullptr;
 	}
 }
 
@@ -615,12 +649,32 @@ void AFrogGameCharacter::PowerMode()
 		{
 			EndWhirlwind();
 		}
+		if (WaterFloor && bIsInWater)
+		{
+			WaterFloor->SetRelativeLocation(FVector(0.f, 0.f, -75.f));
+		}
 		SetPlayerModel(PowerModeSettings);
 		CurrentMode = ECharacterMode::Power;
 	}
 }
 
-void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSettings)
+void AFrogGameCharacter::DeactivatePowerMode()
+{
+	bPowerMode = false;
+	SetPlayerModel(NeutralModeSettings);
+	DisableWhirlwindPfx();
+	CurrentMode = ECharacterMode::Neutral;
+	if (WaterFloor && bIsInWater)
+	{
+		WaterFloor->SetRelativeLocation(FVector(0.f, 0.f, -200.f));
+	}
+	if (PunchVolume)
+	{
+		PunchVolume->SetCollisionProfileName(TEXT("NoCollision"));
+	}
+}
+
+void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSettings) const
 {
 	GetMesh()->SetAnimInstanceClass(CharacterSettings.AnimBP);
 	GetMesh()->SetSkeletalMesh(CharacterSettings.Mesh);
@@ -634,18 +688,6 @@ void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSetti
 	GetCharacterMovement()->JumpZVelocity = CharacterSettings.JumpZHeight;
 }
 
-void AFrogGameCharacter::DeactivatePowerMode()
-{
-	bPowerMode = false;
-	SetPlayerModel(NeutralModeSettings);
-	DisableWhirlwindPfx();
-	CurrentMode = ECharacterMode::Neutral;
-
-	if (PunchVolume)
-	{
-		PunchVolume->SetCollisionProfileName(TEXT("NoCollision"));
-	}
-}
 
 void AFrogGameCharacter::UpdatePowerPoints(float Points)
 {

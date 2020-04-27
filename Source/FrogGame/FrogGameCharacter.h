@@ -228,6 +228,11 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	uint8 CurrentPunch{0};
 	bool bPunchMove{false};
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool bIsInWater{false};
+	
+	UPROPERTY()
+	UBoxComponent* WaterFloor;
 protected:
 
 	void BeginPlay() override;
@@ -292,6 +297,9 @@ private:
 	void OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	               int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 	UFUNCTION()
+	void OnEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	                           int32 OtherBodyIndex);
+	UFUNCTION()
 	void OnAttackOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                     int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 	UFUNCTION()
@@ -308,7 +316,7 @@ private:
 	void LoadGame();
 	/** Changing to PowerMode **/
 	void PowerMode();
-	void SetPlayerModel(const FCharacterSettings& CharacterSettings);
+	void SetPlayerModel(const FCharacterSettings& CharacterSettings) const;
 	void PowerDrain(float DeltaTime);
 	void DeactivatePowerMode();
 	void DisableWhirlwindPfx();
