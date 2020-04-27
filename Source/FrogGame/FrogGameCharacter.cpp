@@ -380,16 +380,13 @@ void AFrogGameCharacter::EndWhirlwind()
 
 void AFrogGameCharacter::Attack()
 {
-	if(!bIsInWater)
+	if (bPowerMode && !bIsInWater)
 	{
-		if (bPowerMode)
-		{
-			Punch();
-		}
-		else
-		{
-			Whirlwind();
-		}
+		Punch();
+	}
+	else
+	{
+		Whirlwind();
 	}
 }
 
@@ -573,11 +570,14 @@ void AFrogGameCharacter::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 		{
 			WaterFloor = OtherActor->FindComponentByClass<UBoxComponent>();
 			bIsInWater = true;
-			if (bPowerMode && WaterFloor)
+			if (bPowerMode)
 			{
-				WaterFloor->SetRelativeLocation(FVector(0, 0, -75.f));
+				if(WaterFloor)
+				{
+					WaterFloor->SetRelativeLocation(FVector(0, 0, -75.f));
+				}
+				EndAttack();
 			}
-			EndAttack();
 		}
 	}
 }
