@@ -605,7 +605,7 @@ void AFrogGameCharacter::OnEndOverlap(UPrimitiveComponent* OverlappedComp, AActo
 		{
 			bIsInWater = false;
 			DisableTrail();
-			if(WaterFloor)
+			if (WaterFloor)
 			{
 				WaterFloor->SetRelativeLocation(FVector(0, 0, -200.f));
 			}
@@ -840,7 +840,7 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 	{
 		if (bIsInWater)
 		{
-			if(WaterShockwave)
+			if (WaterShockwave)
 			{
 				ShockwavePFX->SetTemplate(WaterShockwave);
 				ShockwavePFX->SetRelativeScale3D(FVector(0.15f));
@@ -848,7 +848,7 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 		}
 		else
 		{
-			if(LandShockwave)
+			if (LandShockwave)
 			{
 				ShockwavePFX->SetTemplate(LandShockwave);
 				ShockwavePFX->SetRelativeScale3D(FVector(0.05f));
