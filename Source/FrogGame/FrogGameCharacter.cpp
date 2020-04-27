@@ -797,10 +797,6 @@ void AFrogGameCharacter::MoveForward(float Value)
 		{
 			SpawnTrail(WaterTrailChild, WaterTrailOffset, WaterTrailScale, WaterTrailRot);
 		}
-		else
-		{
-			SpawnTrail(SmokeTrailChild, SmokeTrailOffset, SmokeTrailScale, SmokeTrailRot);
-		}
 		// get forward vector
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 		AddMovementInput(Direction, Value);
@@ -821,10 +817,6 @@ void AFrogGameCharacter::MoveRight(float Value)
 		if (bIsInWater)
 		{
 			SpawnTrail(WaterTrailChild, WaterTrailOffset, WaterTrailScale, WaterTrailRot);
-		}
-		else
-		{
-			SpawnTrail(SmokeTrailChild, SmokeTrailOffset, SmokeTrailScale, SmokeTrailRot);
 		}
 		// get right vector 
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);

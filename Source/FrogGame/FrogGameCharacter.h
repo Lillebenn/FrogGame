@@ -73,8 +73,7 @@ class AFrogGameCharacter : public ACharacter
 	class UParticleSystemComponent* PunchParticle;
 
 
-	UPROPERTY()
-	FCharacterSettings NeutralModeSettings;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character | PowerMode", meta = (AllowPrivateAccess =
 		"true"))
 	FCharacterSettings PowerModeSettings;
@@ -143,7 +142,8 @@ public:
 	float CurrentTargetScore{0.f};
 
 	ECharacterMode CurrentMode{ECharacterMode::Neutral};
-
+		UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FCharacterSettings NeutralModeSettings;
 	void Consume(AActor* OtherActor);
 	void Consume(ASphereDrop* Sphere);
 	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles")
