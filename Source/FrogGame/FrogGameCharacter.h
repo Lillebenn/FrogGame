@@ -73,7 +73,8 @@ class AFrogGameCharacter : public ACharacter
 	class UParticleSystemComponent* PunchParticle;
 
 
-
+	UPROPERTY()
+	FCharacterSettings NeutralModeSettings;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character | PowerMode", meta = (AllowPrivateAccess =
 		"true"))
 	FCharacterSettings PowerModeSettings;
@@ -142,8 +143,7 @@ public:
 	float CurrentTargetScore{0.f};
 
 	ECharacterMode CurrentMode{ECharacterMode::Neutral};
-		UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FCharacterSettings NeutralModeSettings;
+
 	void Consume(AActor* OtherActor);
 	void Consume(ASphereDrop* Sphere);
 	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles")
@@ -274,7 +274,9 @@ protected:
 	FRotator SmokeTrailRot{0.f};
 	UPROPERTY(EditDefaultsOnly, Category = "Character | Particles")
 	TSubclassOf<AActor> WaterTrailChild;
-	FVector WaterTrailOffset{15.f, 0.f, 0.f};
+	float WaterTrailZOffset{0.f};
+	UPROPERTY(EditAnywhere, Category = "Character | Particles")
+	FVector2D WaterTrailXYOffset{0.f};
 	FVector WaterTrailScale{1.f, 1.f, 1.f};
 	FRotator WaterTrailRot{0.f, -90.f, 0.f};
 	UPROPERTY()
@@ -282,7 +284,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Character | Particles")
 	bool bTestTrail{false};
 	void TestTrail();
-	void SpawnTrail(TSubclassOf<AActor> TrailType, FVector Offset, FVector Scale, const FRotator Rotation);
+	void SpawnTrail(TSubclassOf<AActor> TrailType, FVector Offset, FVector Scale, FRotator Rotation);
 
 	void DisableTrail();
 	// APawn interface
@@ -359,5 +361,3 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };
-
-

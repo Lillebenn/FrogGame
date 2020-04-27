@@ -166,7 +166,7 @@ void AFrogGameCharacter::ConstructNeutralModeSettings()
 	NeutralModeSettings.GravityScale = GetCharacterMovement()->GravityScale;
 	NeutralModeSettings.SmokeTrailZPos = SmokeTrailOffset.Z;
 	NeutralModeSettings.SmokeTrailScale = SmokeTrailScale.X;
-	NeutralModeSettings.WaterTrailZPos = WaterTrailOffset.Z;
+	NeutralModeSettings.WaterTrailZPos = WaterTrailZOffset;
 	NeutralModeSettings.WaterTrailScale = WaterTrailScale.X;
 }
 
@@ -696,9 +696,9 @@ void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSetti
 	GetCharacterMovement()->MaxWalkSpeed = CharacterSettings.MaxWalkSpeed;
 	GetCharacterMovement()->GravityScale = CharacterSettings.GravityScale;
 	GetCharacterMovement()->JumpZVelocity = CharacterSettings.JumpZHeight;
-	SmokeTrailOffset = FVector(0.f, 0.f, CharacterSettings.SmokeTrailZPos);
+	SmokeTrailOffset.Z = CharacterSettings.SmokeTrailZPos;
 	SmokeTrailScale = FVector(CharacterSettings.SmokeTrailScale);
-	WaterTrailOffset = FVector(0.f, 0.f, CharacterSettings.WaterTrailZPos);
+	WaterTrailZOffset = CharacterSettings.WaterTrailZPos;
 	WaterTrailScale = FVector(CharacterSettings.WaterTrailScale);
 }
 
@@ -795,7 +795,8 @@ void AFrogGameCharacter::MoveForward(float Value)
 		}
 		if (bIsInWater)
 		{
-			SpawnTrail(WaterTrailChild, WaterTrailOffset, WaterTrailScale, WaterTrailRot);
+			const FVector Offset{WaterTrailXYOffset, WaterTrailZOffset};
+			SpawnTrail(WaterTrailChild, Offset, WaterTrailScale, WaterTrailRot);
 		}
 		// get forward vector
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
@@ -816,7 +817,9 @@ void AFrogGameCharacter::MoveRight(float Value)
 		}
 		if (bIsInWater)
 		{
-			SpawnTrail(WaterTrailChild, WaterTrailOffset, WaterTrailScale, WaterTrailRot);
+			const FVector Offset{WaterTrailXYOffset, WaterTrailZOffset};
+
+			SpawnTrail(WaterTrailChild, Offset, WaterTrailScale, WaterTrailRot);
 		}
 		// get right vector 
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
@@ -867,7 +870,9 @@ void AFrogGameCharacter::TestTrail()
 	else
 	{
 		bTestTrail = true;
-		SpawnTrail(WaterTrailChild, WaterTrailOffset, WaterTrailScale, WaterTrailRot);
+		const FVector Offset{WaterTrailXYOffset, WaterTrailZOffset};
+
+		SpawnTrail(WaterTrailChild, Offset, WaterTrailScale, WaterTrailRot);
 	}
 }
 
