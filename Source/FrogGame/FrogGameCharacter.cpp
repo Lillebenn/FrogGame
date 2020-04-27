@@ -135,6 +135,7 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindAction("StopPowerMode", IE_Pressed, this, &AFrogGameCharacter::DeactivatePowerMode);
 	PlayerInputComponent->BindAction("TestSave", IE_Pressed, this, &AFrogGameCharacter::SaveGame);
 	PlayerInputComponent->BindAction("TestLoad", IE_Pressed, this, &AFrogGameCharacter::LoadGame);
+	PlayerInputComponent->BindAction("TestTrail", IE_Pressed, this, &AFrogGameCharacter::TestTrail);
 #endif
 	PlayerInputComponent->BindAxis("MoveForward", this, &AFrogGameCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AFrogGameCharacter::MoveRight);
@@ -216,7 +217,7 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 
 		SetActorRotation(Orientation);
 	}
-	if (GetVelocity().IsZero() || GetCharacterMovement()->IsFalling())
+	if ((GetVelocity().IsZero() || GetCharacterMovement()->IsFalling()) && !bTestTrail)
 	{
 		DisableTrail();
 	}
@@ -862,6 +863,20 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 		}
 	}
 	ShockwaveCollider->SetCollisionProfileName(TEXT("NoCollision"));
+}
+
+void AFrogGameCharacter::TestTrail()
+{
+	if (bTestTrail)
+	{
+		bTestTrail = false;
+		DisableTrail();
+	}
+	else
+	{
+		bTestTrail = true;
+		SpawnTrail(WaterTrailChild, WaterTrailOffset, WaterTrailScale, WaterTrailRot);
+	}
 }
 
 void AFrogGameCharacter::SpawnTrail(const TSubclassOf<AActor> TrailType, const FVector Offset, const FVector Scale,

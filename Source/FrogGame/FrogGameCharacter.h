@@ -274,12 +274,14 @@ protected:
 	FRotator SmokeTrailRot{0.f};
 	UPROPERTY(EditDefaultsOnly, Category = "Character | Particles")
 	TSubclassOf<AActor> WaterTrailChild;
-	FVector WaterTrailOffset{0.f, 0.f, 0.f};
+	FVector WaterTrailOffset{15.f, 0.f, 0.f};
 	FVector WaterTrailScale{1.f, 1.f, 1.f};
 	FRotator WaterTrailRot{0.f, -90.f, 0.f};
 	UPROPERTY()
 	AActor* CurrentTrail;
-
+	UPROPERTY(EditAnywhere, Category = "Character | Particles")
+	bool bTestTrail{false};
+	void TestTrail();
 	void SpawnTrail(TSubclassOf<AActor> TrailType, FVector Offset, FVector Scale, const FRotator Rotation);
 
 	void DisableTrail();
@@ -357,3 +359,5 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };
+
+
