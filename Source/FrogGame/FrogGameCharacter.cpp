@@ -48,6 +48,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	Movement->AirControl = 0.2f;
 	Movement->MaxAcceleration = 18000.f;
 
+
 	WhirlwindVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxTrace"));
 	WhirlwindVolume->SetupAttachment(RootComponent);
 	WhirlwindVolume->SetCollisionProfileName(TEXT("NoCollision"));
@@ -97,6 +98,7 @@ void AFrogGameCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnOverlap);
+	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnEndOverlap);
 	WhirlwindVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindBeginOverlap);
 	WhirlwindVolume->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindEndOverlap);
 	WhirlwindRange = WhirlwindVolume->GetScaledBoxExtent().X;
@@ -133,6 +135,7 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindAction("StopPowerMode", IE_Pressed, this, &AFrogGameCharacter::DeactivatePowerMode);
 	PlayerInputComponent->BindAction("TestSave", IE_Pressed, this, &AFrogGameCharacter::SaveGame);
 	PlayerInputComponent->BindAction("TestLoad", IE_Pressed, this, &AFrogGameCharacter::LoadGame);
+	PlayerInputComponent->BindAction("TestTrail", IE_Pressed, this, &AFrogGameCharacter::TestTrail);
 #endif
 	PlayerInputComponent->BindAxis("MoveForward", this, &AFrogGameCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AFrogGameCharacter::MoveRight);
@@ -161,6 +164,10 @@ void AFrogGameCharacter::ConstructNeutralModeSettings()
 	NeutralModeSettings.MaxWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
 	NeutralModeSettings.JumpZHeight = GetCharacterMovement()->JumpZVelocity;
 	NeutralModeSettings.GravityScale = GetCharacterMovement()->GravityScale;
+	NeutralModeSettings.SmokeTrailZPos = SmokeTrailOffset.Z;
+	NeutralModeSettings.SmokeTrailScale = SmokeTrailScale.X;
+	NeutralModeSettings.WaterTrailZPos = WaterTrailOffset.Z;
+	NeutralModeSettings.WaterTrailScale = WaterTrailScale.X;
 }
 
 void AFrogGameCharacter::AttachedActorsSetup()
@@ -209,6 +216,10 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 		Orientation.Pitch = 0.f;
 
 		SetActorRotation(Orientation);
+	}
+	if ((GetVelocity().IsZero() || GetCharacterMovement()->IsFalling()) && !bTestTrail)
+	{
+		DisableTrail();
 	}
 }
 
@@ -378,7 +389,7 @@ void AFrogGameCharacter::EndWhirlwind()
 
 void AFrogGameCharacter::Attack()
 {
-	if (bPowerMode)
+	if (bPowerMode && !bIsInWater)
 	{
 		Punch();
 	}
@@ -557,10 +568,43 @@ void AFrogGameCharacter::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
                                    UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
                                    const FHitResult& SweepResult)
 {
-	if (OtherActor != nullptr && OtherActor != this && OtherActor->IsA(SmallDestructible) && OtherComp != nullptr)
+	if (OtherActor != nullptr && OtherActor != this && OtherComp != nullptr)
 	{
-		// TODO: Maybe do a different function if we don't want shit to fly around
-		OtherActor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
+		if (OtherActor->IsA(SmallDestructible))
+		{
+			// TODO: Maybe do a different function if we don't want shit to fly around
+			OtherActor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
+		}
+		else if (OtherComp->ComponentHasTag(TEXT("Water")))
+		{
+			WaterFloor = OtherActor->FindComponentByClass<UBoxComponent>();
+			bIsInWater = true;
+			DisableTrail();
+			if (bPowerMode)
+			{
+				if (WaterFloor)
+				{
+					WaterFloor->SetRelativeLocation(FVector(0, 0, -75.f));
+				}
+				EndAttack();
+			}
+		}
+	}
+}
+
+void AFrogGameCharacter::OnEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+                                      UPrimitiveComponent* OtherComp,
+                                      int32 OtherBodyIndex)
+{
+	if (OtherActor != nullptr && OtherActor != this && OtherComp != nullptr)
+	{
+		if (OtherComp->ComponentHasTag(TEXT("Water")))
+		{
+			bIsInWater = false;
+			DisableTrail();
+			WaterFloor->SetRelativeLocation(FVector(0, 0, -200.f));
+		}
+		WaterFloor = nullptr;
 	}
 }
 
@@ -615,8 +659,28 @@ void AFrogGameCharacter::PowerMode()
 		{
 			EndWhirlwind();
 		}
+		if (WaterFloor && bIsInWater)
+		{
+			WaterFloor->SetRelativeLocation(FVector(0.f, 0.f, -75.f));
+		}
 		SetPlayerModel(PowerModeSettings);
 		CurrentMode = ECharacterMode::Power;
+	}
+}
+
+void AFrogGameCharacter::DeactivatePowerMode()
+{
+	bPowerMode = false;
+	SetPlayerModel(NeutralModeSettings);
+	DisableWhirlwindPfx();
+	CurrentMode = ECharacterMode::Neutral;
+	if (WaterFloor && bIsInWater)
+	{
+		WaterFloor->SetRelativeLocation(FVector(0.f, 0.f, -200.f));
+	}
+	if (PunchVolume)
+	{
+		PunchVolume->SetCollisionProfileName(TEXT("NoCollision"));
 	}
 }
 
@@ -632,20 +696,12 @@ void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSetti
 	GetCharacterMovement()->MaxWalkSpeed = CharacterSettings.MaxWalkSpeed;
 	GetCharacterMovement()->GravityScale = CharacterSettings.GravityScale;
 	GetCharacterMovement()->JumpZVelocity = CharacterSettings.JumpZHeight;
+	SmokeTrailOffset.Z = CharacterSettings.SmokeTrailZPos;
+	SmokeTrailScale = FVector(CharacterSettings.SmokeTrailScale);
+	WaterTrailOffset.Z = CharacterSettings.WaterTrailZPos;
+	WaterTrailScale = FVector(CharacterSettings.WaterTrailScale);
 }
 
-void AFrogGameCharacter::DeactivatePowerMode()
-{
-	bPowerMode = false;
-	SetPlayerModel(NeutralModeSettings);
-	DisableWhirlwindPfx();
-	CurrentMode = ECharacterMode::Neutral;
-
-	if (PunchVolume)
-	{
-		PunchVolume->SetCollisionProfileName(TEXT("NoCollision"));
-	}
-}
 
 void AFrogGameCharacter::UpdatePowerPoints(float Points)
 {
@@ -720,6 +776,7 @@ void AFrogGameCharacter::Jump()
 {
 	InitialZValue = GetActorLocation().Z;
 	bFirstJump = true;
+	DisableTrail();
 	Super::Jump();
 	ShockwaveCollider->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
 	ShockwaveCollider->SetSphereRadius(ShockwaveColliderRadius);
@@ -736,7 +793,10 @@ void AFrogGameCharacter::MoveForward(float Value)
 		{
 			Value = -0.5f;
 		}
-
+		if (bIsInWater)
+		{
+			SpawnTrail(WaterTrailChild, WaterTrailOffset, WaterTrailScale, WaterTrailRot);
+		}
 		// get forward vector
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 		AddMovementInput(Direction, Value);
@@ -754,7 +814,10 @@ void AFrogGameCharacter::MoveRight(float Value)
 		{
 			Value = -0.5f;
 		}
-
+		if (bIsInWater)
+		{
+			SpawnTrail(WaterTrailChild, WaterTrailOffset, WaterTrailScale, WaterTrailRot);
+		}
 		// get right vector 
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 		// add movement in that direction
@@ -767,7 +830,7 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
 	// use this event to add shockwave etc
-	if (bFirstJump)
+	if (bFirstJump && !bIsInWater)
 	{
 		ShockwaveSmoke->Activate(true);
 		const float ZDiff{GetActorLocation().Z - InitialZValue};
@@ -792,4 +855,44 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 		}
 	}
 	ShockwaveCollider->SetCollisionProfileName(TEXT("NoCollision"));
+}
+
+void AFrogGameCharacter::TestTrail()
+{
+	if (bTestTrail)
+	{
+		bTestTrail = false;
+		DisableTrail();
+	}
+	else
+	{
+		bTestTrail = true;
+
+		SpawnTrail(WaterTrailChild, WaterTrailOffset, WaterTrailScale, WaterTrailRot);
+	}
+}
+
+void AFrogGameCharacter::SpawnTrail(const TSubclassOf<AActor> TrailType, const FVector Offset, const FVector Scale,
+                                    const FRotator Rotation)
+{
+	if (!CurrentTrail)
+	{
+		CurrentTrail = GetWorld()->SpawnActor<AActor>(TrailType);
+		const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
+		CurrentTrail->AttachToActor(this, InRule);
+		CurrentTrail->SetActorScale3D(Scale);
+		CurrentTrail->SetActorRelativeLocation(Offset);
+		CurrentTrail->SetActorRelativeRotation(Rotation);
+	}
+}
+
+void AFrogGameCharacter::DisableTrail()
+{
+	if (CurrentTrail)
+	{
+		CurrentTrail->SetLifeSpan(1.f);
+		CurrentTrail->GetComponentByClass(UParticleSystemComponent::StaticClass())->Deactivate();
+		CurrentTrail->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		CurrentTrail = nullptr;
+	}
 }

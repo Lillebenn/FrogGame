@@ -36,6 +36,14 @@ struct FCharacterSettings
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float GravityScale{3.f};
 	// Add other variables here based on what we change between modes.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float SmokeTrailZPos{-25.f};
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float SmokeTrailScale{0.25f};
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float WaterTrailZPos{0.f};
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float WaterTrailScale{1.f};
 };
 
 enum class ECharacterMode
@@ -228,6 +236,11 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	uint8 CurrentPunch{0};
 	bool bPunchMove{false};
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool bIsInWater{false};
+
+	UPROPERTY()
+	UBoxComponent* WaterFloor;
 protected:
 
 	void BeginPlay() override;
@@ -253,6 +266,26 @@ protected:
 	void Jump() override;
 	float InitialZValue;
 	void Landed(const FHitResult& Hit) override;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Character | Particles")
+	TSubclassOf<AActor> SmokeTrailChild;
+	FVector SmokeTrailOffset{0.f, 0.f, -15.f};
+	FVector SmokeTrailScale{0.5f, 0.5f, 0.5f};
+	FRotator SmokeTrailRot{0.f};
+	UPROPERTY(EditDefaultsOnly, Category = "Character | Particles")
+	TSubclassOf<AActor> WaterTrailChild;
+	UPROPERTY(EditAnywhere, Category = "Character | Particles")
+	FVector WaterTrailOffset{0.f};
+	FVector WaterTrailScale{1.f, 1.f, 1.f};
+	FRotator WaterTrailRot{0.f, -90.f, 0.f};
+	UPROPERTY()
+	AActor* CurrentTrail;
+	UPROPERTY(EditAnywhere, Category = "Character | Particles")
+	bool bTestTrail{false};
+	void TestTrail();
+	void SpawnTrail(TSubclassOf<AActor> TrailType, FVector Offset, FVector Scale, FRotator Rotation);
+
+	void DisableTrail();
 	// APawn interface
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
@@ -291,6 +324,9 @@ private:
 	UFUNCTION()
 	void OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	               int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	UFUNCTION()
+	void OnEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	                  int32 OtherBodyIndex);
 	UFUNCTION()
 	void OnAttackOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                     int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
