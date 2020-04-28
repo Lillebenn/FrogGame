@@ -40,6 +40,9 @@ struct FCharacterSettings
 	float SmokeTrailZPos{-25.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float SmokeTrailScale{0.25f};
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float SwimSpeed{2300.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FVector WaterBreakOffset{0.f};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
@@ -166,6 +169,7 @@ public:
 	bool bPowerMode{false};
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
 	bool bIsPunching{false};
+
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")
 	TSubclassOf<AActor> PunchVolumeType;
 	UPROPERTY()
@@ -190,13 +194,18 @@ public:
 	float CurrentPowerPoints;
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")
 	float MaxPowerPoints{1.f};
+	// How much less a power point should be worth during powermode, to stop the player from being in that mode indefinitely.
+	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")
+	float PowerPointsDivisor{3.f};
 	// How quickly the Power Mode bar drains
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")
 	float DrainSpeed{-0.075f};
 	// The frogs health
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | Health")
 	float FrogHealth{1000.f};
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Character)
+	float NeutralSwimSpeed{2300.f};
+	float WalkSpeed;
 	UPROPERTY(EditAnywhere, Category = "Character | Shockwave")
 	TSubclassOf<AActor> ShockwaveActor;
 	UPROPERTY()
@@ -331,6 +340,7 @@ private:
 	UFUNCTION()
 	void OnEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                  int32 OtherBodyIndex);
+	void Swim(bool bActivate);
 	UFUNCTION()
 	void OnAttackOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                     int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
