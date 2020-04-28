@@ -6,6 +6,7 @@
 #include "CustomDestructibleComponent.h"
 #include "Edible.h"
 #include "FrogGameCharacter.h"
+#include "FrogGameInstance.h"
 #include "Engine/StaticMesh.h"
 
 
@@ -28,6 +29,16 @@ void ADestructibleObject::BeginPlay()
 {
 	Super::BeginPlay();
 	StartTransform = GetTransform();
+}
+
+void ADestructibleObject::Destroyed()
+{
+	UFrogGameInstance* FrogInstance{Cast<UFrogGameInstance>(GetWorld()->GetGameInstance())};
+	if (FrogInstance)
+	{
+		FrogInstance->OnActorDestroyed(this);
+	}
+	Super::Destroyed();
 }
 
 // Called every frame

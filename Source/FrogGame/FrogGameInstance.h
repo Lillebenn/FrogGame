@@ -28,7 +28,7 @@ public:
 
 	void CreateCheckpoint();
 	void LoadCheckpoint() const;
-	void OnNewCheckpoint() const;
+	void NewCheckpoint() const;
 	/**
 	 * @brief Get all the save slot names in existence.
 	 * We assume UserIndex will always be 0, so we can simply get a list of all the save slot names to display and load in a UMG Widget.

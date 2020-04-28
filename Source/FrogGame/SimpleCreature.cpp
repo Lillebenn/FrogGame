@@ -49,6 +49,12 @@ void ASimpleCreature::BeginPlay()
 	StartTransform = GetTransform();
 }
 
+void ASimpleCreature::Destroyed()
+{
+	OnDisabled_Implementation();
+	Super::Destroyed();
+}
+
 // Called every frame
 void ASimpleCreature::Tick(float DeltaTime)
 {
@@ -71,7 +77,7 @@ void ASimpleCreature::DisableActor_Implementation()
 		AI->StopMovement();
 		AI->Destroy();
 	}
-	OnDisabled_Implementation();
+
 	bShouldDestroy = true;
 }
 
@@ -121,6 +127,7 @@ FTransform ASimpleCreature::GetStartTransform_Implementation()
 {
 	return StartTransform;
 }
+
 void ASimpleCreature::ActivatePhysics() const
 {
 	CapsuleComponent->SetMassOverrideInKg(NAME_None, 100.f);
@@ -128,6 +135,7 @@ void ASimpleCreature::ActivatePhysics() const
 	CapsuleComponent->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	CapsuleComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 }
+
 float ASimpleCreature::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
                                   AActor* DamageCauser)
 {

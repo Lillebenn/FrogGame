@@ -53,6 +53,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
+	void Destroyed() override;
 private:
 	UPROPERTY()
 	FTransform StartTransform;

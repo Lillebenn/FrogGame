@@ -36,11 +36,18 @@ void AAdvCreature::BeginPlay()
 	GetCapsuleComponent()->SetCollisionObjectType(ECC_GameTraceChannel1);
 }
 
+void AAdvCreature::Destroyed()
+{
+	OnDisabled_Implementation();
+	Super::Destroyed();
+}
+
 // Called every frame
 void AAdvCreature::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
+
 void AAdvCreature::ActivatePhysics() const
 {
 	GetCapsuleComponent()->SetMassOverrideInKg(NAME_None, 100.f);
@@ -48,6 +55,7 @@ void AAdvCreature::ActivatePhysics() const
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 }
+
 float AAdvCreature::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
                                AActor* DamageCauser)
 {
@@ -96,7 +104,7 @@ void AAdvCreature::DisableActor_Implementation()
 		AI->StopMovement();
 		AI->Destroy();
 	}
-	OnDisabled_Implementation();
+
 	bShouldDestroy = true;
 }
 

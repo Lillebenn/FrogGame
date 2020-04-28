@@ -104,10 +104,14 @@ public:
 	void UpdateCurrentScore(const int Score)
 	{
 		CurrentScore = CurrentScore + Score;
-		UE_LOG(LogTemp, Warning, TEXT("Score gained: %d"), Score);
-		UE_LOG(LogTemp, Warning, TEXT("Current score: %d"), CurrentScore);
+		if (CurrentScore >= CheckpointScoreReq && CurrentScore % CheckpointScoreReq == 0)
+		{
+			SaveGame();
+		}
 	}
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | Score")
+	int CheckpointScoreReq{500000};
 	/** Accessor Function for Current PowerPoints */
 	UFUNCTION(BlueprintCallable, Category = "Character | PowerMode")
 	float GetCurrentPowerPoints() const
@@ -124,7 +128,7 @@ public:
 
 	/** Accessor Function for Current Health */
 	UFUNCTION(BlueprintCallable, Category = "Character | Health")
-	float GetCurrentFrogHeatlh() const
+	float GetCurrentFrogHealth() const
 	{
 		return FrogHealth;
 	}
@@ -242,7 +246,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Character | Whirlwind")
 	TSubclassOf<AActor> PivotActor;
 	float WhirlwindRange;
-
+	UFUNCTION(BlueprintCallable)
+	void IncreaseGravity() const;
 	UFUNCTION(BlueprintCallable)
 	void PunchAnimNotify();
 	void PunchReset();
