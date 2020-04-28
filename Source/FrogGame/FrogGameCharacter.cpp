@@ -168,6 +168,7 @@ void AFrogGameCharacter::ConstructNeutralModeSettings()
 	NeutralModeSettings.SmokeTrailScale = SmokeTrailScale.X;
 	NeutralModeSettings.WaterBreakOffset = WaterBreakOffset;
 	NeutralModeSettings.WaterBreakScale = WaterBreakScale.X;
+	NeutralModeSettings.SwimSpeed = NeutralSwimSpeed;
 }
 
 void AFrogGameCharacter::AttachedActorsSetup()
@@ -419,7 +420,7 @@ void AFrogGameCharacter::Punch()
 {
 	if (bPowerMode && !bIsPunching)
 	{
-		GetWorld()->GetTimerManager().SetTimer(PunchRepeatTimer, this, &AFrogGameCharacter::DoPunch, 0.35f,
+		GetWorld()->GetTimerManager().SetTimer(PunchRepeatTimer, this, &AFrogGameCharacter::DoPunch, 0.5f,
 		                                       true, 0.f);
 	}
 }
@@ -508,9 +509,10 @@ void AFrogGameCharacter::PunchAnimNotify()
 	}
 	if (HitActors.Num() > 0)
 	{
-		PunchParticle->Activate(true);
 	}
+	PunchParticle->Activate(true);
 	ApplyDamage();
+	bIsPunching = false;
 	bPunchMove = false;
 }
 
@@ -575,8 +577,8 @@ void AFrogGameCharacter::StopPunch()
 	{
 		PunchVolume->SetCollisionProfileName(TEXT("NoCollision"));
 	}
-	bIsPunching = false;
 }
+
 
 void AFrogGameCharacter::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
                                    UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
@@ -592,16 +594,7 @@ void AFrogGameCharacter::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 		else if (OtherComp->ComponentHasTag(TEXT("Water")))
 		{
 			WaterFloor = OtherActor->FindComponentByClass<UBoxComponent>();
-			bIsInWater = true;
-			DisableTrail();
-			if (bPowerMode)
-			{
-				if (WaterFloor)
-				{
-					WaterFloor->SetRelativeLocation(FVector(0, 0, -75.f));
-				}
-				EndAttack();
-			}
+			Swim(true);
 		}
 	}
 }
@@ -614,17 +607,53 @@ void AFrogGameCharacter::OnEndOverlap(UPrimitiveComponent* OverlappedComp, AActo
 	{
 		if (OtherComp->ComponentHasTag(TEXT("Water")))
 		{
-			bIsInWater = false;
-			DisableTrail();
-			if (WaterFloor)
-			{
-				WaterFloor->SetRelativeLocation(FVector(0, 0, -200.f));
-			}
+			Swim(false);
 		}
 		WaterFloor = nullptr;
 	}
 }
 
+void AFrogGameCharacter::Swim(const bool bActivate)
+{
+	bIsInWater = bActivate;
+	DisableTrail();
+	WalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
+	if (bActivate)
+	{
+		float SwimSpeed{2300.f};
+		switch (CurrentMode)
+		{
+		case ECharacterMode::Neutral:
+			SwimSpeed = NeutralModeSettings.SwimSpeed;
+			break;
+		case ECharacterMode::Power:
+			SwimSpeed = PowerModeSettings.SwimSpeed;
+			break;
+		default:
+			break;
+		}
+		GetCharacterMovement()->MaxWalkSpeed = SwimSpeed;
+	}
+	else
+	{
+		GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+	}
+	if (bPowerMode)
+	{
+		if (WaterFloor)
+		{
+			if (bActivate)
+			{
+				WaterFloor->SetRelativeLocation(FVector(0, 0, -150.f));
+			}
+			else
+			{
+				WaterFloor->SetRelativeLocation(FVector(0, 0, -200.f));
+			}
+		}
+		EndAttack();
+	}
+}
 
 void AFrogGameCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
                                          UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
@@ -678,7 +707,7 @@ void AFrogGameCharacter::PowerMode()
 		}
 		if (WaterFloor && bIsInWater)
 		{
-			WaterFloor->SetRelativeLocation(FVector(0.f, 0.f, -75.f));
+			WaterFloor->SetRelativeLocation(FVector(0.f, 0.f, -150.f));
 		}
 		SetPlayerModel(PowerModeSettings);
 		CurrentMode = ECharacterMode::Power;
