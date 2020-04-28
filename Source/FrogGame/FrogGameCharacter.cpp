@@ -420,7 +420,7 @@ void AFrogGameCharacter::Punch()
 {
 	if (bPowerMode && !bIsPunching)
 	{
-		GetWorld()->GetTimerManager().SetTimer(PunchRepeatTimer, this, &AFrogGameCharacter::DoPunch, 0.5f,
+		GetWorld()->GetTimerManager().SetTimer(PunchRepeatTimer, this, &AFrogGameCharacter::DoPunch, 0.35f,
 		                                       true, 0.f);
 	}
 }
@@ -469,6 +469,7 @@ void AFrogGameCharacter::DoPunch()
 	bIsPunching = true;
 	bPunchMove = true;
 }
+
 
 void AFrogGameCharacter::PunchAnimNotify()
 {
@@ -827,6 +828,12 @@ void AFrogGameCharacter::Jump()
 	ShockwaveCollider->SetSphereRadius(ShockwaveColliderRadius);
 }
 
+void AFrogGameCharacter::IncreaseGravity() const
+{
+	const float CurrentGravityScale{GetCharacterMovement()->GravityScale};
+	GetCharacterMovement()->GravityScale = CurrentGravityScale * 3.f;
+}
+
 void AFrogGameCharacter::MoveForward(float Value)
 {
 	if ((Controller != nullptr) && (Value != 0.0f))
@@ -874,6 +881,14 @@ void AFrogGameCharacter::MoveRight(float Value)
 void AFrogGameCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
+	switch (CurrentMode)
+	{
+	case ECharacterMode::Neutral:
+		GetCharacterMovement()->GravityScale = NeutralModeSettings.GravityScale;
+		break;
+	case ECharacterMode::Power:
+		GetCharacterMovement()->GravityScale = PowerModeSettings.GravityScale;
+	}
 	// use this event to add shockwave etc
 	if (bFirstJump)
 	{

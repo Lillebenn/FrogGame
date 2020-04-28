@@ -242,7 +242,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Character | Whirlwind")
 	TSubclassOf<AActor> PivotActor;
 	float WhirlwindRange;
-
+	UFUNCTION(BlueprintCallable)
+	void IncreaseGravity() const;
 	UFUNCTION(BlueprintCallable)
 	void PunchAnimNotify();
 	void PunchReset();
