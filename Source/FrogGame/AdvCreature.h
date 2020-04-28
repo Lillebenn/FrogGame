@@ -27,6 +27,7 @@ public:
 
 	// Called every frame
 	void Tick(float DeltaTime) override;
+	void ActivatePhysics() const;
 	float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
 	                 AActor* DamageCauser) override;
 	FTimerHandle TimerHandle;

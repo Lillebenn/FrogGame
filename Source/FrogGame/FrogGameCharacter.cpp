@@ -381,6 +381,10 @@ void AFrogGameCharacter::EndWhirlwind()
 		{
 			IEdible::Execute_PauseAI(Actor, false);
 		}
+		if (Actor->Implements<USaveable>())
+		{
+			Actor->SetActorScale3D(ISaveable::Execute_GetStartTransform(Actor).GetScale3D());
+		}
 	}
 	WhirlwindAffectedActors.Empty();
 

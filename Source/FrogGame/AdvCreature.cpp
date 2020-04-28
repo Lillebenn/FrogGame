@@ -18,8 +18,11 @@ AAdvCreature::AAdvCreature()
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 	EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
+	EdibleComponent->bAllowSuction = true;
+
 	DestructibleComponent = CreateDefaultSubobject<UCustomDestructibleComponent>(TEXT("Destructible"));
 	GetMesh()->SetReceivesDecals(false);
+	GetMesh()->SetCollisionProfileName(TEXT("NoCollision"));
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
@@ -38,7 +41,13 @@ void AAdvCreature::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
-
+void AAdvCreature::ActivatePhysics() const
+{
+	GetCapsuleComponent()->SetMassOverrideInKg(NAME_None, 100.f);
+	GetCapsuleComponent()->SetSimulatePhysics(true);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+}
 float AAdvCreature::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
                                AActor* DamageCauser)
 {
@@ -56,8 +65,8 @@ float AAdvCreature::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 			{
 				DisableActor_Implementation();
 				// TODO: Maybe set mass to 2-300kg once it loses all health, so it flies away at a decent rate
-				GetMesh()->SetSimulatePhysics(true);
-				GetMesh()->AddImpulse(DestructibleComponent->CalculateImpulseVector(Frog));
+				ActivatePhysics();
+				GetCapsuleComponent()->AddImpulse(DestructibleComponent->CalculateImpulseVector(Frog));
 				GetWorld()->GetTimerManager().SetTimer(TimerHandle, DestructibleComponent,
 				                                       &UCustomDestructibleComponent::KillActor, 1.f,
 				                                       false);

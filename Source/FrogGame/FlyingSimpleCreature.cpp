@@ -10,16 +10,20 @@
 
 AFlyingSimpleCreature::AFlyingSimpleCreature()
 {
-	NavCollider = CreateDefaultSubobject<UCapsuleComponent>(TEXT("NavCollider"));
-	NavCollider->InitCapsuleSize(15.f, 80.0f);
-	NavCollider->SetCollisionProfileName(TEXT("EdibleProfile"));
-	RootComponent = NavCollider;
-	GetMesh()->SetupAttachment(RootComponent);
+	Nav = CreateDefaultSubobject<USphereComponent>(TEXT("NavCollider"));
+	Nav->InitSphereRadius(5.f);
+	Nav->SetCollisionProfileName(TEXT("NoCollision"));
+	Nav->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	Nav->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+	Nav->SetupAttachment(RootComponent);
+	Nav->bEditableWhenInherited = true;
 }
 
 void AFlyingSimpleCreature::BeginPlay()
 {
 	Super::BeginPlay();
+	Nav->SetRelativeLocation(FVector(
+		0.f, 0.f, -(Nav->GetScaledSphereRadius() + CapsuleComponent->GetScaledCapsuleHalfHeight())));
 }
 
 float AFlyingSimpleCreature::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
@@ -31,7 +35,6 @@ float AFlyingSimpleCreature::TakeDamage(float DamageAmount, FDamageEvent const& 
 	if (ActualDamage > 0.f)
 	{
 		AFrogGameCharacter* Frog{Cast<AFrogGameCharacter>(DamageCauser)};
-		// This needs to be more specific to the punches or we could just walk it to death
 		if (Frog)
 		{
 			float& CurrentHealth{DestructibleComponent->CurrentHealth};
@@ -40,11 +43,12 @@ float AFlyingSimpleCreature::TakeDamage(float DamageAmount, FDamageEvent const& 
 			{
 				DisableActor_Implementation();
 				// TODO: Maybe set mass to 2-300kg once it loses all health, so it flies away only when punched to death
-				NavCollider->SetCollisionProfileName(TEXT("BlockAllDynamic"));
-				NavCollider->SetCollisionObjectType(ECC_GameTraceChannel1);
-				NavCollider->SetSimulatePhysics(true);
-				NavCollider->AddImpulse(DestructibleComponent->CalculateImpulseVector(Frog));
-				GetWorld()->GetTimerManager().SetTimer(TimerHandle, DestructibleComponent, &UCustomDestructibleComponent::KillActor, 1.f,
+				Nav->SetCollisionProfileName(TEXT("BlockAllDynamic"));
+				Nav->SetCollisionObjectType(ECC_GameTraceChannel1);
+				Nav->SetSimulatePhysics(true);
+				Nav->AddImpulse(DestructibleComponent->CalculateImpulseVector(Frog));
+				GetWorld()->GetTimerManager().SetTimer(TimerHandle, DestructibleComponent,
+				                                       &UCustomDestructibleComponent::KillActor, 1.f,
 				                                       false);
 			}
 		}

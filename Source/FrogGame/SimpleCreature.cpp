@@ -19,11 +19,16 @@ ASimpleCreature::ASimpleCreature()
 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("Capsule Component"));
-	CreatureMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Creature Mesh"));
-	CreatureMesh->SetCollisionProfileName(TEXT("EdibleProfile"));
-	CreatureMesh->SetReceivesDecals(false);
+	CapsuleComponent->SetCollisionProfileName(TEXT("Edible"));
 	RootComponent = CapsuleComponent;
+
+	CreatureMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Creature Mesh"));
+	CreatureMesh->SetReceivesDecals(false);
+	CreatureMesh->SetCollisionProfileName(TEXT("NoCollision"));
+	CreatureMesh->SetupAttachment(RootComponent);
 	EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
+	EdibleComponent->bAllowSuction = true;
+
 	DestructibleComponent = CreateDefaultSubobject<UCustomDestructibleComponent>(TEXT("Destructible"));
 	MovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComponent"));
 
@@ -36,6 +41,7 @@ bool ASimpleCreature::IsDisabled_Implementation()
 {
 	return bShouldDestroy;
 }
+
 // Called when the game starts or when spawned
 void ASimpleCreature::BeginPlay()
 {
@@ -115,7 +121,13 @@ FTransform ASimpleCreature::GetStartTransform_Implementation()
 {
 	return StartTransform;
 }
-
+void ASimpleCreature::ActivatePhysics() const
+{
+	CapsuleComponent->SetMassOverrideInKg(NAME_None, 100.f);
+	CapsuleComponent->SetSimulatePhysics(true);
+	CapsuleComponent->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	CapsuleComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+}
 float ASimpleCreature::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
                                   AActor* DamageCauser)
 {
@@ -133,8 +145,8 @@ float ASimpleCreature::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 			{
 				DisableActor_Implementation();
 				// TODO: Maybe set mass to 2-300kg once it loses all health, so it flies away at a decent rate
-				CreatureMesh->SetSimulatePhysics(true);
-				CreatureMesh->AddImpulse(DestructibleComponent->CalculateImpulseVector(Frog));
+				ActivatePhysics();
+				CapsuleComponent->AddImpulse(DestructibleComponent->CalculateImpulseVector(Frog));
 				GetWorld()->GetTimerManager().SetTimer(TimerHandle, DestructibleComponent,
 				                                       &UCustomDestructibleComponent::KillActor, 1.f,
 				                                       false);
