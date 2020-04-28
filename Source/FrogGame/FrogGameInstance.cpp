@@ -187,7 +187,7 @@ void UFrogGameInstance::LoadCheckpoint() const
 	Checkpoint->SavedActors.Empty();
 }
 
-void UFrogGameInstance::OnNewCheckpoint() const
+void UFrogGameInstance::NewCheckpoint() const
 {
 	if (Checkpoint)
 	{

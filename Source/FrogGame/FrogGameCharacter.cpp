@@ -774,12 +774,21 @@ void AFrogGameCharacter::PowerDrain(float DeltaTime)
 void AFrogGameCharacter::SaveGame()
 {
 	UFrogGameInstance* GameInstance{Cast<UFrogGameInstance>(GetGameInstance())};
-	GameInstance->SaveCurrentToSlot();
+
+	if (GameInstance)
+	{
+		GameInstance->NewCheckpoint();
+	}
 }
 
 void AFrogGameCharacter::LoadGame()
 {
-	Cast<UFrogGameInstance>(GetGameInstance())->LoadCheckpoint();
+	UFrogGameInstance* GameInstance{Cast<UFrogGameInstance>(GetGameInstance())};
+
+	if (GameInstance)
+	{
+		GameInstance->LoadCheckpoint();
+	}
 }
 
 void AFrogGameCharacter::TurnAtRate(float Rate)
