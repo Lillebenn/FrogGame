@@ -190,6 +190,9 @@ public:
 	float CurrentPowerPoints;
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")
 	float MaxPowerPoints{1.f};
+	// How much less a power point should be worth during powermode, to stop the player from being in that mode indefinitely.
+	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")
+	float PowerPointsDivisor{3.f};
 	// How quickly the Power Mode bar drains
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")
 	float DrainSpeed{-0.075f};

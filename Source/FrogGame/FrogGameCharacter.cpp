@@ -527,7 +527,14 @@ void AFrogGameCharacter::Consume_Impl(AActor* OtherActor)
 	{
 		Edible->bConsumed = true;
 		UpdateCurrentScore(Edible->ScorePoints);
-		UpdatePowerPoints(Edible->PowerPoints);
+		if (bPowerMode)
+		{
+			UpdatePowerPoints(Edible->PowerPoints / PowerPointsDivisor);
+		}
+		else
+		{
+			UpdatePowerPoints(Edible->PowerPoints);
+		}
 		UE_LOG(LogTemp, Warning, TEXT("Destroying %s"), *OtherActor->GetName())
 		OtherActor->SetLifeSpan(0.001f);
 	}
@@ -719,7 +726,6 @@ void AFrogGameCharacter::UpdatePowerPoints(float Points)
 	if (CurrentPowerPoints >= MaxPowerPoints)
 	{
 		CurrentPowerPoints = MaxPowerPoints;
-		// TODO: Don't force the player into power mode
 		PowerMode();
 	}
 }
