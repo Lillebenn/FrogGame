@@ -31,7 +31,8 @@ class AFrogGameCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* WhirlwindVolume;
 
-	UPROPERTY (EditDefaultsOnly, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"), meta = (EditCondition="bIsDefaultPowerBlueprint"))
+	UPROPERTY (EditDefaultsOnly, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"), meta = (
+		EditCondition="bIsDefaultPowerBlueprint"))
 	class UAnimMontage* PunchMontage;
 	UPROPERTY (VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UParticleSystemComponent* PunchParticle;
@@ -127,23 +128,36 @@ public:
 
 	void Consume(AActor* OtherActor);
 	void Consume(ASphereDrop* Sphere);
-	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles", meta = (EditCondition="bIsDefaultPowerBlueprint"))
+	UPROPERTY (EditAnywhere, BlueprintReadWrite, Category = "Character | Particles", meta = (EditCondition=
+		"bIsDefaultPowerBlueprint"))
 	class UParticleSystem* PunchOne;
-	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles", meta = (EditCondition="bIsDefaultPowerBlueprint"))
+	UPROPERTY (EditAnywhere, BlueprintReadWrite, Category = "Character | Particles", meta = (EditCondition=
+		"bIsDefaultPowerBlueprint"))
 	class UParticleSystem* PunchTwo;
-	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles", meta = (EditCondition="bIsDefaultPowerBlueprint"))
+	UPROPERTY (EditAnywhere, BlueprintReadWrite, Category = "Character | Particles", meta = (EditCondition=
+		"bIsDefaultPowerBlueprint"))
 	class UParticleSystem* UpperCut;
-	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
+	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
 	class UParticleSystem* WaterShockwave;
-	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
+
+	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
 	class UParticleSystem* LandShockwave;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode", meta = (EditCondition="bIsDefaultPowerBlueprint"))
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode", meta = (EditCondition=
+		"bIsDefaultPowerBlueprint"))
 	FVector PunchOneOffset{5.f, 10.f, 0.f};
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode", meta = (EditCondition="bIsDefaultPowerBlueprint"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode", meta = (EditCondition=
+		"bIsDefaultPowerBlueprint"))
 	FVector PunchTwoOffset{-5.f, -5.f, -5.f};
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode", meta = (EditCondition="bIsDefaultPowerBlueprint"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode", meta = (EditCondition=
+		"bIsDefaultPowerBlueprint"))
 	FVector UpperCutOffset{15.f, 0.f, 0.f};
-	
+	FVector RegularBoxExtent;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode", meta = (EditCondition=
+		"bIsDefaultPowerBlueprint"))
+	FVector UpperCutBoxExtent{60.f, 30.f, 80.f};
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Character | PowerMode")
 	bool bPowerMode{false};
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
@@ -153,26 +167,30 @@ public:
 	TSubclassOf<AActor> PunchVolumeType;
 	UPROPERTY()
 	UBoxComponent* PunchVolume;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode", meta = (EditCondition="bIsDefaultPowerBlueprint"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode", meta = (EditCondition=
+		"bIsDefaultPowerBlueprint"))
 	TSubclassOf<class UCameraShake> PunchShake;
 	UPROPERTY()
 	TArray<AActor*> HitActors;
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode", meta = (EditCondition="bIsDefaultPowerBlueprint"))
-	float RightPunchVolumeYPosition{8.f};
+	float RightPunchVolumeYPosition{24.f};
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode", meta = (EditCondition="bIsDefaultPowerBlueprint"))
-	float LeftPunchVolumeYPosition{-15.f};
+	float LeftPunchVolumeYPosition{-45.f};
 	UPROPERTY()
 	AActor* PunchVolumeActor;
 	// How far the player should "dash" forward each punch. 0 = don't move at all, 1 = Equivalent to holding down W for roughly 0.2 ms. 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode", meta = (EditCondition="bIsDefaultPowerBlueprint"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode", meta = (EditCondition=
+		"bIsDefaultPowerBlueprint"))
 	float PunchForwardDistance{1.f};
 	// Amount of damage the punch will do on each hit.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode", meta = (EditCondition="bIsDefaultPowerBlueprint"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode", meta = (EditCondition=
+		"bIsDefaultPowerBlueprint"))
 	float PunchDamage{500.f};
-	
+
 	UPROPERTY(VisibleAnywhere, Category = "Character | PowerMode")
 	float CurrentPowerPoints{0.f};
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | PowerMode", meta = (EditCondition="bIsDefaultPowerBlueprint"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | PowerMode", meta = (EditCondition=
+		"bIsDefaultPowerBlueprint"))
 	float MaxPowerPoints{400.f};
 	// How much less a power point should be worth during powermode, to stop the player from being in that mode indefinitely.
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode", meta = (EditCondition="bIsDefaultPowerBlueprint"))
@@ -181,13 +199,20 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode", meta = (EditCondition="bIsDefaultPowerBlueprint"))
 	float DrainSpeed{-5.f};
 	// The frogs health
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | Health", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | Health", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
 	float FrogHealth{1000.f};
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Character)
 	float SwimSpeed{2300.f};
 	float WalkSpeed;
 	UPROPERTY(EditAnywhere, Category = "Character | Shockwave", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
 	TSubclassOf<AActor> ShockwaveActor;
+	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
+	float WaterShockwaveScale{0.15f};
+	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
+	float LandShockwaveScale{0.5f};
 	UPROPERTY()
 	UParticleSystemComponent* ShockwavePFX;
 	UPROPERTY()
@@ -202,23 +227,30 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Character | Score")
 	int CurrentScore;
 	// How close object has to be to be eaten (destroyed).
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
 	float EatDistance{150.f};
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
 	float ShrinkSpeed{0.01f};
 	// Blueprint for the Whirlwind mesh or something idk.
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
 	float WhirlwindWalkSpeed{600.f};
 	// How quickly the object reaches the player.
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
 	float SuctionSpeed{500.f};
 	// How rapidly the object rotates around the pivot of the whirlwind.
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
 	float RotationSpeed{10.f};
 	// How quickly the object reaches the middle of the whirlwind.
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
 	float InSpeed{30.f};
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
 	float MinRadius{5.f};
 	UPROPERTY(EditDefaultsOnly, Category = "Character | Whirlwind", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
 	TSubclassOf<AActor> PivotActor;
@@ -269,8 +301,9 @@ protected:
 	FRotator SmokeTrailRot{0.f};
 	UPROPERTY(EditDefaultsOnly, Category = "Character | Particles", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
 	TSubclassOf<AActor> WaterBreakChild;
-	UPROPERTY(EditAnywhere, Category = "Character | Particles", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
+	UPROPERTY(EditAnywhere, Category = "Character | Particles")
 	FVector WaterBreakOffset{0.f};
+	UPROPERTY(EditAnywhere, Category = "Character | Particles")
 	FVector WaterBreakScale{1.f, 1.f, 1.f};
 	FRotator WaterBreakRot{0.f, -90.f, 0.f};
 	UPROPERTY()
@@ -278,6 +311,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Character | Particles")
 	bool bTestTrail{false};
 	void TestTrail();
+	UFUNCTION()
+	void PauseMontage();
+	bool bShouldPauseMontage{false};
 	void SpawnTrail(TSubclassOf<AActor> TrailType, FVector Offset, FVector Scale, FRotator Rotation);
 
 	void DisableTrail();
@@ -286,7 +322,7 @@ protected:
 	// End of APawn interface
 	UFUNCTION(BlueprintImplementableEvent)
 	void WhirlwindEvent(bool bStarted);
-		UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION(BlueprintImplementableEvent)
 	void ActivatePowerupPFX();
 private:
 	float ShockwaveColliderRadius;
