@@ -125,7 +125,11 @@ public:
 	{
 		return bPowerMode;
 	}
-
+	UFUNCTION(BlueprintCallable, Category = "Character | PowerMode")
+	bool CanTransform() const
+	{
+		return CurrentPowerPoints >= MaxPowerPoints / 10.f;
+	}
 	/** Accessor Function for Current Health */
 	UFUNCTION(BlueprintCallable, Category = "Character | Health")
 	float GetCurrentFrogHealth() const
@@ -193,17 +197,18 @@ public:
 	float PunchForwardDistance{0.15f};
 	// Amount of damage the punch will do on each hit.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
-	float PunchDamage{50.f};
-	UPROPERTY(VisibleAnywhere, Category = "Character | PowerMode")
+	float PunchDamage{500.f};
+	float LastCheckpointPP{0.f};
+	UPROPERTY(VisibleAnywhere, SaveGame, Category = "Character | PowerMode")
 	float CurrentPowerPoints;
-	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | PowerMode")
 	float MaxPowerPoints{1.f};
 	// How much less a power point should be worth during powermode, to stop the player from being in that mode indefinitely.
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")
 	float PowerPointsDivisor{3.f};
 	// How quickly the Power Mode bar drains
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")
-	float DrainSpeed{-0.075f};
+	float DrainSpeed{-5.f};
 	// The frogs health
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | Health")
 	float FrogHealth{1000.f};
@@ -221,6 +226,7 @@ public:
 	// Blueprint type that should be destroyed when walking on top of it
 	UPROPERTY(EditDefaultsOnly, Category = Character)
 	TSubclassOf<class ADestructibleObject> SmallDestructible;
+	int LastCheckpointScore{0};
 	/** The Player's current score */
 	UPROPERTY(EditAnywhere, SaveGame, Category = "Character | Score")
 	int CurrentScore;
@@ -310,7 +316,7 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent)
 	void WhirlwindEvent(bool bStarted);
 private:
-
+	class UFrogGameInstance* GameInstance;
 	float ShockwaveColliderRadius;
 	bool bFirstJump{false};
 	void Attack();

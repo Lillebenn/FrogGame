@@ -29,10 +29,15 @@ public:
 	float AngleAxis{2.f};
 	float PivotDistance;
 	bool bConsumed{false};
+
+	// For checkpoint purposes, if we should reset to start transform.
+	bool bMoved{false};
+
 	void IgnorePawnCollision() const;
 protected:
 	// Called when the game starts
 	void BeginPlay() override;
+private:
 
 public:
 	// Called every frame

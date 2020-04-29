@@ -96,7 +96,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 void AFrogGameCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
+	GameInstance = Cast<UFrogGameInstance>(GetGameInstance());
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnOverlap);
 	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnEndOverlap);
 	WhirlwindVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindBeginOverlap);
@@ -316,6 +316,11 @@ void AFrogGameCharacter::DoWhirlwind(float DeltaTime)
 		{
 			continue;
 		}
+		if (!EdibleComponent->bMoved)
+		{
+			GameInstance->OnActorMoved(Actor);
+			EdibleComponent->bMoved = true;
+		}
 		float& PivotDistance{EdibleComponent->PivotDistance};
 		PivotDistance -= SuctionSpeed * DeltaTime;
 		if (PivotDistance <= EatDistance)
@@ -510,8 +515,8 @@ void AFrogGameCharacter::PunchAnimNotify()
 	}
 	if (HitActors.Num() > 0)
 	{
+		PunchParticle->Activate(true);
 	}
-	PunchParticle->Activate(true);
 	ApplyDamage();
 	bIsPunching = false;
 	bPunchMove = false;
@@ -773,22 +778,24 @@ void AFrogGameCharacter::PowerDrain(float DeltaTime)
 
 void AFrogGameCharacter::SaveGame()
 {
-	UFrogGameInstance* GameInstance{Cast<UFrogGameInstance>(GetGameInstance())};
-
 	if (GameInstance)
 	{
 		GameInstance->NewCheckpoint();
+		LastCheckpointScore = CurrentScore;
+		LastCheckpointPP = CurrentPowerPoints;
 	}
 }
 
 void AFrogGameCharacter::LoadGame()
 {
-	UFrogGameInstance* GameInstance{Cast<UFrogGameInstance>(GetGameInstance())};
-
+	EndAttack();
 	if (GameInstance)
 	{
 		GameInstance->LoadCheckpoint();
 	}
+	bFirstJump = false;
+	CurrentScore = LastCheckpointScore;
+	CurrentPowerPoints = LastCheckpointPP;
 }
 
 void AFrogGameCharacter::TurnAtRate(float Rate)

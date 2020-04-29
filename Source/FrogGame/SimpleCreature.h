@@ -39,6 +39,8 @@ public:
 
 
 	FTransform GetStartTransform_Implementation() override;
+	void ResetTransforms_Implementation() override;
+
 	void ActivatePhysics() const;
 	bool bShouldDestroy{false};
 

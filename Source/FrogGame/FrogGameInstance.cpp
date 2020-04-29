@@ -110,10 +110,7 @@ void UFrogGameInstance::SaveActors(const FString& SaveSlotName) const
 		SaveSlot->SavedActors.Add(SaveData(Actor));
 		ISaveable::Execute_ActorSaveDataSaved(Actor);
 	}
-	//if (AFrogGameCharacter* Froggy{Cast<AFrogGameCharacter>(GetWorld()->GetFirstPlayerController()->GetCharacter())})
-	//{
-	//	SaveSlot->PlayerCharacter = SaveData(Froggy);
-	//}
+
 	// Execute some player logic when saving here if you want
 	if (!UGameplayStatics::SaveGameToSlot(SaveSlot, SaveSlotName, 0))
 	{
@@ -139,6 +136,13 @@ void UFrogGameInstance::LoadActors(UFrogSaveGame* SaveGame) const
 			ISaveable::Execute_ActorSaveDataLoaded(NewActor);
 		}
 	}
+	for (AActor* Actor : SaveGame->MovedActors)
+	{
+		if (Actor)
+		{
+			ISaveable::Execute_ResetTransforms(Actor);
+		}
+	}
 	// Load data to the frog character here.
 	AFrogGameCharacter* Froggy{Cast<AFrogGameCharacter>(GetWorld()->GetFirstPlayerController()->GetCharacter())};
 	if (Froggy)
@@ -152,16 +156,19 @@ void UFrogGameInstance::LoadActors(UFrogSaveGame* SaveGame) const
 }
 
 
-
 FActorSaveData UFrogGameInstance::SaveData(AActor* Actor)
 {
 	FActorSaveData ActorRecord;
 	ActorRecord.ActorClass = Actor->GetClass()->GetPathName();
 	ActorRecord.ActorName = FName(*Actor->GetName());
-	ActorRecord.ActorTransform = Actor->GetTransform();
-	FVector Location{Actor->GetActorLocation()};
-	//UE_LOG(LogTemp, Warning, TEXT("%f, %f, %f"), Location.X, Location.Y, Location.Z);
-
+	if (Actor->Implements<USaveable>())
+	{
+		ActorRecord.ActorTransform = ISaveable::Execute_GetStartTransform(Actor);
+	}
+	else
+	{
+		ActorRecord.ActorTransform = Actor->GetTransform();
+	}
 	FMemoryWriter MemoryWriter(ActorRecord.ActorData, true);
 	FSaveGameArchive Ar(MemoryWriter);
 	Actor->Serialize(Ar);
@@ -206,5 +213,13 @@ void UFrogGameInstance::OnActorDestroyed(AActor* Actor) const
 	{
 		Checkpoint->SavedActors.Add(SaveData(Actor));
 		ISaveable::Execute_ActorSaveDataSaved(Actor);
+	}
+}
+
+void UFrogGameInstance::OnActorMoved(AActor* Actor) const
+{
+	if (Checkpoint)
+	{
+		Checkpoint->MovedActors.Add(Actor);
 	}
 }

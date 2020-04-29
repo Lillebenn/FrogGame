@@ -108,6 +108,15 @@ FTransform ADestructibleObject::GetStartTransform_Implementation()
 	return StartTransform;
 }
 
+void ADestructibleObject::ResetTransforms_Implementation()
+{
+	StaticMesh->SetSimulatePhysics(false);
+	StaticMesh->SetNotifyRigidBodyCollision(false);
+	StaticMesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Block);
+	StaticMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+	SetActorTransform(StartTransform);
+}
+
 // Custom behaviour when saving or loading
 void ADestructibleObject::ActorSaveDataSaved_Implementation()
 {

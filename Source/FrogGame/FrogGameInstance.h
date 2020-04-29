@@ -25,6 +25,7 @@ public:
 
 
 	void OnActorDestroyed(AActor* Actor) const;
+	void OnActorMoved(AActor* Actor) const;
 
 	void CreateCheckpoint();
 	void LoadCheckpoint() const;
