@@ -129,6 +129,15 @@ FTransform ASimpleCreature::GetStartTransform_Implementation()
 	return StartTransform;
 }
 
+void ASimpleCreature::ResetTransforms_Implementation()
+{
+	CapsuleComponent->SetSimulatePhysics(false);
+	CapsuleComponent->SetNotifyRigidBodyCollision(false);
+	CapsuleComponent->SetCollisionResponseToChannel(ECC_Camera, ECR_Block);
+	CapsuleComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+	SetActorTransform(StartTransform);
+}
+
 void ASimpleCreature::ActivatePhysics() const
 {
 	CapsuleComponent->SetMassOverrideInKg(NAME_None, 100.f);

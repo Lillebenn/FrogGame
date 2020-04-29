@@ -54,6 +54,7 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = Basic)
 	uint32 UserIndex{0};
 
+	TArray<AActor*> MovedActors;
 	TArray<FActorSaveData> SavedActors;
 	FActorSaveData PlayerCharacter;
 };

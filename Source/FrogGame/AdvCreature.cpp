@@ -145,6 +145,15 @@ FTransform AAdvCreature::GetStartTransform_Implementation()
 	return StartTransform;
 }
 
+void AAdvCreature::ResetTransforms_Implementation()
+{
+	GetCapsuleComponent()->SetSimulatePhysics(false);
+	GetCapsuleComponent()->SetNotifyRigidBodyCollision(false);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Block);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+	SetActorTransform(StartTransform);
+}
+
 void AAdvCreature::ActorSaveDataSaved_Implementation()
 {
 }
