@@ -13,7 +13,6 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "FrogGameInstance.h"
 #include "Edible.h"
 #include "EdibleObject.h"
 #include "SimpleCreature.h"
@@ -26,8 +25,6 @@ AFrogGameCharacter::AFrogGameCharacter()
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(13.f, 13.0f);
-
-	PowerModeSettings.CapsuleSize = FVector2D(10.f, 24.0f);
 
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
@@ -64,39 +61,41 @@ AFrogGameCharacter::AFrogGameCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	// Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
-	// Power mode punch volumes need to be changed once we get the correct mesh
-	// Creates a collision boxes and attaches them to the characters right hand.
-	PunchParticle = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Punch Particle"));
-	PunchParticle->SetAutoActivate(false);
-	PunchParticle->SetupAttachment(GetMesh());
-	// PowerModeSettings defaults
-	PowerModeSettings.MaxWalkSpeed = 1600.f;
-	PowerModeSettings.JumpZHeight = 2000.f;
-	PowerModeSettings.MeshScale = 0.3f;
-	const ConstructorHelpers::FObjectFinder<USkeletalMesh> SkeletalMesh(
+
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SkelMesh(
 		TEXT("/Game/Models/Player/Player_Powered/sk_frog2.sk_frog2"));
-	if (SkeletalMesh.Object)
+	if (SkelMesh.Object)
 	{
-		PowerModeSettings.Mesh = SkeletalMesh.Object;
+		GetMesh()->SetSkeletalMesh(SkelMesh.Object);
 	}
+		PunchParticle = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Punch Particle"));
+	PunchParticle->SetAutoActivate(false);
+	PunchParticle->SetupAttachment(GetMesh(),TEXT("r_hand_end_j"));
+	FireEyeOne = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Fire Eye 1"));
+	FireEyeOne->SetAutoActivate(false);
+	FireEyeOne->SetupAttachment(GetMesh(), TEXT("head_j"));
+	FireEyeTwo = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Fire Eye 2"));
+	FireEyeTwo->SetAutoActivate(false);
+	FireEyeTwo->SetupAttachment(GetMesh(), TEXT("head_j"));
+	PowerUpParticle = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("PowerUp Particle"));
+	PowerUpParticle->SetAutoActivate(false);
+	PowerUpParticle->SetupAttachment(RootComponent);
 	const ConstructorHelpers::FObjectFinder<UAnimMontage> AnimPunchMontage(
 		TEXT("/Game/Models/Player/Player_Powered/PunchingMontage"));
 	if (AnimPunchMontage.Object)
 	{
 		PunchMontage = AnimPunchMontage.Object;
 	}
-	//const ConstructorHelpers::FClassFinder<UAnimInstance> AnimInstance(TEXT("/Game/Models/Player/Player_Powered/animBP_PoweredFrog"));
-	//if(AnimInstance.Class)
-	//{
-	//	PowerModeSettings.AnimBP = AnimInstance.Class;
-	//}
+	NeutralModeBP = this->StaticClass();
 }
 
 
 void AFrogGameCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	GameInstance = Cast<UFrogGameInstance>(GetGameInstance());
+
+	SetupSettingsCopies();
+
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnOverlap);
 	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnEndOverlap);
 	WhirlwindVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindBeginOverlap);
@@ -108,11 +107,34 @@ void AFrogGameCharacter::BeginPlay()
 	CurrentPowerPoints = 0.f;
 	FrogHealth = 1000.f;
 
-	ConstructNeutralModeSettings();
 	// Setup the default whirlwind swirl settings
 	DefaultWhirlwindSwirl.DefaultLinearUpSpeed = SuctionSpeed;
 	DefaultWhirlwindSwirl.DefaultAngularSpeed = RotationSpeed;
 	DefaultWhirlwindSwirl.DefaultLinearInSpeed = InSpeed;
+}
+
+void AFrogGameCharacter::SetupSettingsCopies()
+{
+	NeutralModeSettings = DuplicateObject(this, GetOuter());
+	PowerModeSettings = PowerModeBP.GetDefaultObject();
+	FireEyeOne->SetTemplate(PowerModeSettings->FireEyeOne->Template);
+	FireEyeTwo->SetTemplate(PowerModeSettings->FireEyeTwo->Template);
+	PunchMontage = PowerModeSettings->PunchMontage;
+	PunchDamage = PowerModeSettings->PunchDamage;
+	PunchForwardDistance = PowerModeSettings->PunchForwardDistance;
+	PunchOne = PowerModeSettings->PunchOne;
+	PunchOneOffset = PowerModeSettings->PunchOneOffset;
+	PunchTwo = PowerModeSettings->PunchTwo;
+	PunchTwoOffset = PowerModeSettings->PunchTwoOffset;
+	UpperCut = PowerModeSettings->UpperCut;
+	UpperCutOffset = PowerModeSettings->UpperCutOffset;
+	PunchVolumeType = PowerModeSettings->PunchVolumeType;
+	PunchShake = PowerModeSettings->PunchShake;
+	RightPunchVolumeYPosition = PowerModeSettings->RightPunchVolumeYPosition;
+	LeftPunchVolumeYPosition = PowerModeSettings->LeftPunchVolumeYPosition;
+	MaxPowerPoints = PowerModeSettings->MaxPowerPoints;
+	PowerPointsDivisor = PowerModeSettings->PowerPointsDivisor;
+	DrainSpeed = PowerModeSettings->DrainSpeed;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -133,9 +155,8 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	//PlayerInputComponent->BindAction("Jump", IE_Released, this, &AFrogGameCharacter::ExecuteJump);
 #if WITH_EDITOR
 	PlayerInputComponent->BindAction("StopPowerMode", IE_Pressed, this, &AFrogGameCharacter::DeactivatePowerMode);
-	PlayerInputComponent->BindAction("TestSave", IE_Pressed, this, &AFrogGameCharacter::SaveGame);
-	PlayerInputComponent->BindAction("TestLoad", IE_Pressed, this, &AFrogGameCharacter::LoadGame);
 	PlayerInputComponent->BindAction("TestTrail", IE_Pressed, this, &AFrogGameCharacter::TestTrail);
+	PlayerInputComponent->BindAction("ParticleTest", IE_Pressed,this, &AFrogGameCharacter::PauseMontage);
 #endif
 	PlayerInputComponent->BindAxis("MoveForward", this, &AFrogGameCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AFrogGameCharacter::MoveRight);
@@ -152,25 +173,6 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 }
 
 
-void AFrogGameCharacter::ConstructNeutralModeSettings()
-{
-	NeutralModeSettings.Mesh = GetMesh()->SkeletalMesh;
-	NeutralModeSettings.AnimBP = GetMesh()->GetAnimInstance()->GetClass();
-	FVector2D Capsule;
-	GetCapsuleComponent()->GetUnscaledCapsuleSize(Capsule.X, Capsule.Y);
-	NeutralModeSettings.CapsuleSize = Capsule;
-	NeutralModeSettings.MeshScale = GetMesh()->GetRelativeScale3D().X;
-	NeutralModeSettings.BoomRange = CameraBoom->TargetArmLength;
-	NeutralModeSettings.MaxWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
-	NeutralModeSettings.JumpZHeight = GetCharacterMovement()->JumpZVelocity;
-	NeutralModeSettings.GravityScale = GetCharacterMovement()->GravityScale;
-	NeutralModeSettings.SmokeTrailZPos = SmokeTrailOffset.Z;
-	NeutralModeSettings.SmokeTrailScale = SmokeTrailScale.X;
-	NeutralModeSettings.WaterBreakOffset = WaterBreakOffset;
-	NeutralModeSettings.WaterBreakScale = WaterBreakScale.X;
-	NeutralModeSettings.SwimSpeed = NeutralSwimSpeed;
-}
-
 void AFrogGameCharacter::AttachedActorsSetup()
 {
 	if (PunchVolumeType)
@@ -179,6 +181,7 @@ void AFrogGameCharacter::AttachedActorsSetup()
 		PunchVolumeActor->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
 		PunchVolume = PunchVolumeActor->FindComponentByClass<UBoxComponent>();
 		PunchVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnAttackOverlap);
+		RegularBoxExtent = PunchVolume->GetUnscaledBoxExtent();
 	}
 	if (ShockwaveActor)
 	{
@@ -267,6 +270,7 @@ void AFrogGameCharacter::FilterOccludedObjects()
 			UEdibleComponent* EdibleComponent{Target->FindComponentByClass<UEdibleComponent>()};
 			//UE_LOG(LogTemp, Warning, TEXT("Added %s to WhirlwindAffectedActors map."), *Target->GetName())
 			EdibleComponent->IgnorePawnCollision();
+			EdibleComponent->SetInitialTransform();
 			//IEdible::Execute_PauseAI(Target, true); // TODO: Needs testing
 			// Parent the object to an invisible object at the pivot point
 			// Rotate the entire actor in the X axis
@@ -316,11 +320,6 @@ void AFrogGameCharacter::DoWhirlwind(float DeltaTime)
 		{
 			continue;
 		}
-		if (!EdibleComponent->bMoved)
-		{
-			GameInstance->OnActorMoved(Actor);
-			EdibleComponent->bMoved = true;
-		}
 		float& PivotDistance{EdibleComponent->PivotDistance};
 		PivotDistance -= SuctionSpeed * DeltaTime;
 		if (PivotDistance <= EatDistance)
@@ -328,18 +327,11 @@ void AFrogGameCharacter::DoWhirlwind(float DeltaTime)
 			Consume(Actor);
 			continue;
 		}
-		FVector NewScale;
 		if (PivotDistance != 0.f)
 		{
-			if (Actor->Implements<USaveable>())
-			{
-				NewScale = ISaveable::Execute_GetStartTransform(Actor).GetScale3D() * PivotDistance / WhirlwindRange;
-			}
-			else
-			{
-				NewScale = Actor->GetActorScale() - FVector(PivotDistance / WhirlwindRange) * DeltaTime;
-				// Idk if this gives desired result
-			}
+			const FVector NewScale = EdibleComponent->GetInitialTransform().GetScale3D() * PivotDistance /
+				WhirlwindRange;
+
 			Actor->SetActorScale3D(NewScale);
 		}
 
@@ -371,7 +363,7 @@ void AFrogGameCharacter::EndWhirlwind()
 	DisableWhirlwindPfx();
 	WhirlwindEvent(false);
 	GetCharacterMovement()->bOrientRotationToMovement = true;
-	GetCharacterMovement()->MaxWalkSpeed = NeutralModeSettings.MaxWalkSpeed;
+	GetCharacterMovement()->MaxWalkSpeed = NeutralModeSettings->GetCharacterMovement()->MaxWalkSpeed;
 	for (const auto Actor : WhirlwindAffectedActors)
 	{
 		if (auto Edible = Cast<AEdibleObject>(Actor))
@@ -387,10 +379,8 @@ void AFrogGameCharacter::EndWhirlwind()
 		{
 			IEdible::Execute_PauseAI(Actor, false);
 		}
-		if (Actor->Implements<USaveable>())
-		{
-			Actor->SetActorScale3D(ISaveable::Execute_GetStartTransform(Actor).GetScale3D());
-		}
+
+		Actor->SetActorScale3D(EdibleComp->GetInitialTransform().GetScale3D());
 	}
 	WhirlwindAffectedActors.Empty();
 
@@ -439,7 +429,7 @@ void AFrogGameCharacter::DoPunch()
 	{
 		CurrentPunch = 2;
 	}
-	FVector BoxExtent{FVector(30.f, 15.f, 25.f)};
+	FVector BoxExtent{RegularBoxExtent};
 	switch (CurrentPunch)
 	{
 	case 0:
@@ -453,8 +443,8 @@ void AFrogGameCharacter::DoPunch()
 	case 2:
 		PlayAnimMontage(PunchMontage, 1, TEXT("UpperCut"));
 		PunchVolumePosition.Y = RightPunchVolumeYPosition;
-		BoxExtent = FVector(20.f, 15.f, 40.f);
-		PunchVolumePosition.Z = 30.f;
+		BoxExtent = UpperCutBoxExtent;
+		PunchVolumePosition.Z = 60.f;
 		break;
 	default:
 		break;
@@ -516,6 +506,11 @@ void AFrogGameCharacter::PunchAnimNotify()
 	if (HitActors.Num() > 0)
 	{
 		PunchParticle->Activate(true);
+	}
+	if(bShouldPauseMontage)
+	{
+		PunchParticle->Activate(true);
+		GetMesh()->GetAnimInstance()->Montage_Pause(GetMesh()->GetAnimInstance()->GetCurrentActiveMontage());
 	}
 	ApplyDamage();
 	bIsPunching = false;
@@ -626,19 +621,17 @@ void AFrogGameCharacter::Swim(const bool bActivate)
 	WalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
 	if (bActivate)
 	{
-		float SwimSpeed{2300.f};
 		switch (CurrentMode)
 		{
 		case ECharacterMode::Neutral:
-			SwimSpeed = NeutralModeSettings.SwimSpeed;
+			GetCharacterMovement()->MaxWalkSpeed = NeutralModeSettings->SwimSpeed;
 			break;
 		case ECharacterMode::Power:
-			SwimSpeed = PowerModeSettings.SwimSpeed;
+			GetCharacterMovement()->MaxWalkSpeed = PowerModeSettings->SwimSpeed;
 			break;
 		default:
 			break;
 		}
-		GetCharacterMovement()->MaxWalkSpeed = SwimSpeed;
 	}
 	else
 	{
@@ -715,17 +708,24 @@ void AFrogGameCharacter::PowerMode()
 		{
 			WaterFloor->SetRelativeLocation(FVector(0.f, 0.f, -150.f));
 		}
-		SetPlayerModel(PowerModeSettings);
 		CurrentMode = ECharacterMode::Power;
+		SetPlayerModel(PowerModeSettings);
+		PowerUpParticle->Activate(true);
+		FireEyeOne->Activate();
+		FireEyeTwo->Activate();
 	}
 }
 
 void AFrogGameCharacter::DeactivatePowerMode()
 {
 	bPowerMode = false;
-	SetPlayerModel(NeutralModeSettings);
-	DisableWhirlwindPfx();
+	EndAttack();
 	CurrentMode = ECharacterMode::Neutral;
+	SetPlayerModel(NeutralModeSettings);
+	FireEyeOne->Deactivate();
+	FireEyeTwo->Deactivate();
+	DisableWhirlwindPfx();
+	HitActors.Empty();
 	if (WaterFloor && bIsInWater)
 	{
 		WaterFloor->SetRelativeLocation(FVector(0.f, 0.f, -200.f));
@@ -736,22 +736,37 @@ void AFrogGameCharacter::DeactivatePowerMode()
 	}
 }
 
-void AFrogGameCharacter::SetPlayerModel(const FCharacterSettings& CharacterSettings)
+void AFrogGameCharacter::SetPlayerModel(AFrogGameCharacter* CharacterSettings)
 {
-	GetMesh()->SetAnimInstanceClass(CharacterSettings.AnimBP);
-	GetMesh()->SetSkeletalMesh(CharacterSettings.Mesh);
-
-	GetCapsuleComponent()->SetCapsuleSize(CharacterSettings.CapsuleSize.X, CharacterSettings.CapsuleSize.Y);
-	const FVector Offset{0, 0, -CharacterSettings.CapsuleSize.Y};
-	GetMesh()->SetRelativeLocation(Offset);
-	GetMesh()->SetRelativeScale3D(FVector(CharacterSettings.MeshScale));
-	GetCharacterMovement()->MaxWalkSpeed = CharacterSettings.MaxWalkSpeed;
-	GetCharacterMovement()->GravityScale = CharacterSettings.GravityScale;
-	GetCharacterMovement()->JumpZVelocity = CharacterSettings.JumpZHeight;
-	SmokeTrailOffset.Z = CharacterSettings.SmokeTrailZPos;
-	SmokeTrailScale = FVector(CharacterSettings.SmokeTrailScale);
-	WaterBreakOffset = CharacterSettings.WaterBreakOffset;
-	WaterBreakScale = FVector(CharacterSettings.WaterBreakScale);
+	GetMesh()->SetAnimInstanceClass(CharacterSettings->GetMesh()->GetAnimClass());
+	GetMesh()->SetSkeletalMesh(CharacterSettings->GetMesh()->SkeletalMesh);
+	UCapsuleComponent* Capsule{CharacterSettings->GetCapsuleComponent()};
+	const float ScaledHalfHeight{Capsule->GetScaledCapsuleHalfHeight()};
+	GetCapsuleComponent()->SetCapsuleSize(Capsule->GetUnscaledCapsuleRadius(),
+	                                      Capsule->GetUnscaledCapsuleHalfHeight());
+	GetMesh()->SetRelativeLocation(CharacterSettings->GetMesh()->GetRelativeLocation());
+	SetActorScale3D(FVector(Capsule->GetRelativeScale3D()));
+	if (CurrentMode == ECharacterMode::Neutral)
+	{
+		const float ScaledCapsuleHalfHeightDiff{
+			ScaledHalfHeight
+			- GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()
+		};
+		UE_LOG(LogTemp, Error, TEXT("%f"), ScaledCapsuleHalfHeightDiff)
+		SetActorLocation(GetActorLocation() + FVector(0.f, 0.f, -ScaledCapsuleHalfHeightDiff));
+	}
+	UCharacterMovementComponent* MovementComponent{CharacterSettings->GetCharacterMovement()};
+	GetCharacterMovement()->MaxWalkSpeed = MovementComponent->MaxWalkSpeed;
+	GetCharacterMovement()->GravityScale = MovementComponent->GravityScale;
+	GetCharacterMovement()->JumpZVelocity = MovementComponent->JumpZVelocity;
+	SmokeTrailOffset.Z = CharacterSettings->SmokeTrailOffset.Z;
+	SmokeTrailScale = CharacterSettings->SmokeTrailScale;
+	WaterBreakOffset = CharacterSettings->WaterBreakOffset;
+	WaterBreakScale = CharacterSettings->WaterBreakScale;
+	FireEyeOne->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform,
+	                              CharacterSettings->FireEyeOne->GetAttachSocketName());
+	FireEyeTwo->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform,
+	                              CharacterSettings->FireEyeTwo->GetAttachSocketName());
 }
 
 
@@ -775,28 +790,6 @@ void AFrogGameCharacter::PowerDrain(float DeltaTime)
 	}
 }
 
-
-void AFrogGameCharacter::SaveGame()
-{
-	if (GameInstance)
-	{
-		GameInstance->NewCheckpoint();
-		LastCheckpointScore = CurrentScore;
-		LastCheckpointPP = CurrentPowerPoints;
-	}
-}
-
-void AFrogGameCharacter::LoadGame()
-{
-	EndAttack();
-	if (GameInstance)
-	{
-		GameInstance->LoadCheckpoint();
-	}
-	bFirstJump = false;
-	CurrentScore = LastCheckpointScore;
-	CurrentPowerPoints = LastCheckpointPP;
-}
 
 void AFrogGameCharacter::TurnAtRate(float Rate)
 {
@@ -900,10 +893,10 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 	switch (CurrentMode)
 	{
 	case ECharacterMode::Neutral:
-		GetCharacterMovement()->GravityScale = NeutralModeSettings.GravityScale;
+		GetCharacterMovement()->GravityScale = NeutralModeSettings->GetCharacterMovement()->GravityScale;
 		break;
 	case ECharacterMode::Power:
-		GetCharacterMovement()->GravityScale = PowerModeSettings.GravityScale;
+		GetCharacterMovement()->GravityScale = PowerModeSettings->GetCharacterMovement()->GravityScale;
 	}
 	// use this event to add shockwave etc
 	if (bFirstJump)
@@ -913,7 +906,7 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 			if (WaterShockwave)
 			{
 				ShockwavePFX->SetTemplate(WaterShockwave);
-				ShockwavePFX->SetRelativeScale3D(FVector(0.15f));
+				ShockwavePFX->SetRelativeScale3D(FVector(WaterShockwaveScale));
 			}
 		}
 		else
@@ -921,7 +914,7 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 			if (LandShockwave)
 			{
 				ShockwavePFX->SetTemplate(LandShockwave);
-				ShockwavePFX->SetRelativeScale3D(FVector(0.05f));
+				ShockwavePFX->SetRelativeScale3D(FVector(LandShockwaveScale));
 			}
 		}
 		ShockwavePFX->Activate(true);
@@ -961,6 +954,15 @@ void AFrogGameCharacter::TestTrail()
 		bTestTrail = true;
 
 		SpawnTrail(WaterBreakChild, WaterBreakOffset, WaterBreakScale, WaterBreakRot);
+	}
+}
+
+void AFrogGameCharacter::PauseMontage()
+{
+	bShouldPauseMontage = !bShouldPauseMontage;
+	if(!bShouldPauseMontage)
+	{
+		GetMesh()->GetAnimInstance()->Montage_Resume(GetMesh()->GetAnimInstance()->GetCurrentActiveMontage());
 	}
 }
 

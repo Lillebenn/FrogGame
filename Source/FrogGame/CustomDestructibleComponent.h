@@ -19,13 +19,13 @@ public:
 	TSubclassOf<class ASphereDrop> Drop;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Destructible)
 	float MaxHealth{100.f};
-	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, SaveGame, Category = Destructible)
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = Destructible)
 	float CurrentHealth;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Destructible)
 	float FlyAwayForce{750000.f};
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Destructible)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Destructible)
 	bool bSpawnSphereDrops{true};
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = Destructible, meta = (EditCondition = "bSpawnSphereDrops"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Destructible, meta = (EditCondition = "bSpawnSphereDrops"))
 	int32 NumDrops{5};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Destructible)
 	class UParticleSystem* DestructionSmoke;

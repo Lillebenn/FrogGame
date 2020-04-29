@@ -31,16 +31,9 @@ void AAdvCreature::BeginPlay()
 {
 	Super::BeginPlay();
 
-
-	StartTransform = GetTransform();
 	GetCapsuleComponent()->SetCollisionObjectType(ECC_GameTraceChannel1);
 }
 
-void AAdvCreature::Destroyed()
-{
-	OnDisabled_Implementation();
-	Super::Destroyed();
-}
 
 // Called every frame
 void AAdvCreature::Tick(float DeltaTime)
@@ -125,35 +118,3 @@ void AAdvCreature::PauseAI_Implementation(bool bPause)
 	}
 }
 
-void AAdvCreature::OnDisabled_Implementation()
-{
-	UFrogGameInstance* FrogInstance{Cast<UFrogGameInstance>(GetWorld()->GetGameInstance())};
-	if (FrogInstance)
-	{
-		FrogInstance->OnActorDestroyed(this);
-	}
-}
-
-
-// Custom behaviour when saving or loading
-void AAdvCreature::ActorSaveDataLoaded_Implementation()
-{
-}
-
-FTransform AAdvCreature::GetStartTransform_Implementation()
-{
-	return StartTransform;
-}
-
-void AAdvCreature::ResetTransforms_Implementation()
-{
-	GetCapsuleComponent()->SetSimulatePhysics(false);
-	GetCapsuleComponent()->SetNotifyRigidBodyCollision(false);
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Block);
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
-	SetActorTransform(StartTransform);
-}
-
-void AAdvCreature::ActorSaveDataSaved_Implementation()
-{
-}

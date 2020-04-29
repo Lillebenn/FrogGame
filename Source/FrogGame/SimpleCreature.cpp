@@ -47,14 +47,8 @@ bool ASimpleCreature::IsDisabled_Implementation()
 void ASimpleCreature::BeginPlay()
 {
 	Super::BeginPlay();
-	StartTransform = GetTransform();
 }
 
-void ASimpleCreature::Destroyed()
-{
-	OnDisabled_Implementation();
-	Super::Destroyed();
-}
 
 // Called every frame
 void ASimpleCreature::Tick(float DeltaTime)
@@ -105,38 +99,6 @@ UStaticMeshComponent* ASimpleCreature::GetMesh()
 }
 
 
-void ASimpleCreature::OnDisabled_Implementation()
-{
-	UFrogGameInstance* FrogInstance{Cast<UFrogGameInstance>(GetWorld()->GetGameInstance())};
-	if (FrogInstance)
-	{
-		FrogInstance->OnActorDestroyed(this);
-	}
-}
-
-// Custom behaviour when saving or loading
-void ASimpleCreature::ActorSaveDataLoaded_Implementation()
-{
-}
-
-void ASimpleCreature::ActorSaveDataSaved_Implementation()
-{
-}
-
-
-FTransform ASimpleCreature::GetStartTransform_Implementation()
-{
-	return StartTransform;
-}
-
-void ASimpleCreature::ResetTransforms_Implementation()
-{
-	CapsuleComponent->SetSimulatePhysics(false);
-	CapsuleComponent->SetNotifyRigidBodyCollision(false);
-	CapsuleComponent->SetCollisionResponseToChannel(ECC_Camera, ECR_Block);
-	CapsuleComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
-	SetActorTransform(StartTransform);
-}
 
 void ASimpleCreature::ActivatePhysics() const
 {

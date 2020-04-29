@@ -16,6 +16,16 @@ UEdibleComponent::UEdibleComponent()
 	// ...
 }
 
+FTransform UEdibleComponent::GetInitialTransform() const
+{
+	return InitialTransform;
+}
+
+void UEdibleComponent::SetInitialTransform()
+{
+	InitialTransform = GetOwner()->GetActorTransform();
+}
+
 
 void UEdibleComponent::IgnorePawnCollision() const
 {
