@@ -30,6 +30,7 @@ ASimpleCreature::ASimpleCreature()
 	EdibleComponent->bAllowSuction = true;
 
 	DestructibleComponent = CreateDefaultSubobject<UCustomDestructibleComponent>(TEXT("Destructible"));
+	PawnMovementComponent = CreateDefaultSubobject<UPawnMovementComponent>(TEXT("PawnMovementComponent"));
 	MovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComponent"));
 
 
