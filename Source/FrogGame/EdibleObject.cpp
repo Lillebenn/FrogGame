@@ -20,20 +20,6 @@ bool AEdibleObject::IsDisabled_Implementation()
 	return bShouldDestroy;
 }
 
-
-
-// Custom behaviour when saving or loading
-void AEdibleObject::ActorSaveDataSaved_Implementation()
-{
-}
-
-void AEdibleObject::ActorSaveDataLoaded_Implementation()
-{
-}
-
-
-
-
 void AEdibleObject::BeginPlay()
 {
 	Super::BeginPlay();

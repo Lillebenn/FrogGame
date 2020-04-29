@@ -22,5 +22,4 @@ void AFrogGameMode::BeginPlay()
 			CurrentWidget->AddToViewport();
 		}
 	}
-	Cast<UFrogGameInstance>(GetGameInstance())->CreateCheckpoint();
 }

@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "DestructibleObject.h"
-#include "GameFramework/Actor.h"
 #include "Edible.h"
 #include "EdibleObject.generated.h"
 
@@ -28,11 +27,10 @@ public:
 
 	// Interface stuff
 	bool IsDisabled_Implementation() override;
-	void ActorSaveDataSaved_Implementation() override;
-	void ActorSaveDataLoaded_Implementation() override;
+
 
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
-private:
+
 };

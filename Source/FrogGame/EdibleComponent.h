@@ -24,21 +24,21 @@ public:
 	// Amount of Score granted for eating this edible.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Edible)
 	float ScorePoints{500.f};
+	FTransform GetInitialTransform() const;
+	void SetInitialTransform();
 	UPROPERTY()
 	AActor* Parent{nullptr};
 	float AngleAxis{2.f};
 	float PivotDistance;
 	bool bConsumed{false};
 
-	// For checkpoint purposes, if we should reset to start transform.
-	bool bMoved{false};
-
 	void IgnorePawnCollision() const;
 protected:
 	// Called when the game starts
 	void BeginPlay() override;
 private:
-
+		UPROPERTY()
+	FTransform InitialTransform;
 public:
 	// Called every frame
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
