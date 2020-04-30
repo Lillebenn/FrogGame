@@ -376,7 +376,8 @@ private:
 	void OpenPauseMenu();
 	/** Changing to PowerMode **/
 	void PowerMode();
-
+	FTimerHandle PowerModeDelay;
+	void ActivatePowerModel();
 	void SetPlayerModel(AFrogGameCharacter* CharacterSettings);
 	void SetupSettingsCopies();
 	void PowerDrain(float DeltaTime);

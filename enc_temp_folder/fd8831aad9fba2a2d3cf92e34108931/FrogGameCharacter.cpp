@@ -714,20 +714,21 @@ void AFrogGameCharacter::PowerMode()
 {
 	if ((CurrentPowerPoints >= MaxPowerPoints / 10.f || bInfinitePower) && !bPowerMode)
 	{
+		bPowerMode = true;
+		CurrentMode = ECharacterMode::Power;
+
 		if (bUsingWhirlwind)
 		{
 			EndWhirlwind();
 		}
 		PowerUpParticle->Activate(true);
 		ActivatePowerupPFX();
-		GetWorld()->GetTimerManager().SetTimer(PowerModeDelay, this, &AFrogGameCharacter::ActivatePowerModel, 0.35f);
+		GetWorld()->GetTimerManager().SetTimer(PowerModeDelay, this, &AFrogGameCharacter::ActivatePowerModel, 0.5f);
 	}
 }
 
 void AFrogGameCharacter::ActivatePowerModel()
 {
-	bPowerMode = true;
-	CurrentMode = ECharacterMode::Power;
 	if (WaterFloor && bIsInWater)
 	{
 		WaterFloor->SetRelativeLocation(FVector(0.f, 0.f, -150.f));
@@ -832,10 +833,10 @@ void AFrogGameCharacter::SpawnWhirlwindPfx()
 	{
 		WhirlwindPFX = GetWorld()->SpawnActor<AActor>(BPWhirlwindPFX);
 		const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
-		WhirlwindPFX->AttachToComponent(GetMesh(), InRule, TEXT("joint1"));
+		WhirlwindPFX->AttachToComponent(GetMesh(), InRule, TEXT("joint6"));
 
-		WhirlwindPFX->SetActorRelativeRotation(FRotator(-90.f, 0.f, 0.f));
-		WhirlwindPFX->SetActorRelativeLocation(FVector(325.f, -75.f, 0.f));
+		WhirlwindPFX->SetActorRelativeRotation(FRotator(-90.f, -45.f, 0.f));
+		WhirlwindPFX->SetActorRelativeLocation(FVector(225.f, -75.f, 0.f));
 
 		//WhirlwindPFX->SetActorRelativeScale3D(FVector(0.1f));
 	}
