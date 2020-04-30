@@ -68,7 +68,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	{
 		GetMesh()->SetSkeletalMesh(SkelMesh.Object);
 	}
-		PunchParticle = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Punch Particle"));
+	PunchParticle = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Punch Particle"));
 	PunchParticle->SetAutoActivate(false);
 	PunchParticle->SetupAttachment(GetMesh(),TEXT("r_hand_end_j"));
 	FireEyeOne = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Fire Eye 1"));
@@ -156,7 +156,7 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 #if WITH_EDITOR
 	PlayerInputComponent->BindAction("StopPowerMode", IE_Pressed, this, &AFrogGameCharacter::DeactivatePowerMode);
 	PlayerInputComponent->BindAction("TestTrail", IE_Pressed, this, &AFrogGameCharacter::TestTrail);
-	PlayerInputComponent->BindAction("ParticleTest", IE_Pressed,this, &AFrogGameCharacter::PauseMontage);
+	PlayerInputComponent->BindAction("ParticleTest", IE_Pressed, this, &AFrogGameCharacter::PauseMontage);
 #endif
 	PlayerInputComponent->BindAxis("MoveForward", this, &AFrogGameCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AFrogGameCharacter::MoveRight);
@@ -329,6 +329,8 @@ void AFrogGameCharacter::DoWhirlwind(float DeltaTime)
 		}
 		if (PivotDistance != 0.f)
 		{
+			UE_LOG(LogTemp, Warning, TEXT("%f"), PivotDistance / WhirlwindRange);
+
 			const FVector NewScale = EdibleComponent->GetInitialTransform().GetScale3D() * PivotDistance /
 				WhirlwindRange;
 
@@ -507,7 +509,7 @@ void AFrogGameCharacter::PunchAnimNotify()
 	{
 		PunchParticle->Activate(true);
 	}
-	if(bShouldPauseMontage)
+	if (bShouldPauseMontage)
 	{
 		PunchParticle->Activate(true);
 		GetMesh()->GetAnimInstance()->Montage_Pause(GetMesh()->GetAnimInstance()->GetCurrentActiveMontage());
@@ -960,7 +962,7 @@ void AFrogGameCharacter::TestTrail()
 void AFrogGameCharacter::PauseMontage()
 {
 	bShouldPauseMontage = !bShouldPauseMontage;
-	if(!bShouldPauseMontage)
+	if (!bShouldPauseMontage)
 	{
 		GetMesh()->GetAnimInstance()->Montage_Resume(GetMesh()->GetAnimInstance()->GetCurrentActiveMontage());
 	}
