@@ -157,6 +157,8 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindAction("StopPowerMode", IE_Pressed, this, &AFrogGameCharacter::DeactivatePowerMode);
 	PlayerInputComponent->BindAction("TestTrail", IE_Pressed, this, &AFrogGameCharacter::TestTrail);
 	PlayerInputComponent->BindAction("ParticleTest", IE_Pressed, this, &AFrogGameCharacter::PauseMontage);
+	PlayerInputComponent->BindAction("InfinitePower", IE_Pressed, this, &AFrogGameCharacter::InfinitePower);
+
 #endif
 	PlayerInputComponent->BindAxis("MoveForward", this, &AFrogGameCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AFrogGameCharacter::MoveRight);
@@ -329,10 +331,9 @@ void AFrogGameCharacter::DoWhirlwind(float DeltaTime)
 		}
 		if (PivotDistance != 0.f)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%f"), PivotDistance / WhirlwindRange);
-
-			const FVector NewScale = EdibleComponent->GetInitialTransform().GetScale3D() * PivotDistance /
-				WhirlwindRange;
+			//UE_LOG(LogTemp, Warning, TEXT("%f"), PivotDistance / WhirlwindRange);
+			const float ScaleMultiplier{FMath::Clamp(PivotDistance/WhirlwindRange, 0.f, 1.f)};
+			const FVector NewScale = EdibleComponent->GetInitialTransform().GetScale3D() * ScaleMultiplier;
 
 			Actor->SetActorScale3D(NewScale);
 		}
@@ -559,6 +560,15 @@ void AFrogGameCharacter::Consume(ASphereDrop* Sphere)
 	Consume_Impl(Sphere);
 }
 
+void AFrogGameCharacter::InfinitePower()
+{
+	bInfinitePower = !bInfinitePower;
+	if (bInfinitePower)
+	{
+		PowerMode();
+	}
+}
+
 void AFrogGameCharacter::ApplyDamage()
 {
 	for (auto Actor : HitActors)
@@ -699,7 +709,7 @@ void AFrogGameCharacter::OnWhirlwindEndOverlap(UPrimitiveComponent* OverlappedCo
 
 void AFrogGameCharacter::PowerMode()
 {
-	if (CurrentPowerPoints >= MaxPowerPoints / 10.f && !bPowerMode)
+	if ((CurrentPowerPoints >= MaxPowerPoints / 10.f || bInfinitePower) && !bPowerMode)
 	{
 		bPowerMode = true;
 		if (bUsingWhirlwind)
@@ -754,7 +764,6 @@ void AFrogGameCharacter::SetPlayerModel(AFrogGameCharacter* CharacterSettings)
 			ScaledHalfHeight
 			- GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()
 		};
-		UE_LOG(LogTemp, Error, TEXT("%f"), ScaledCapsuleHalfHeightDiff)
 		SetActorLocation(GetActorLocation() + FVector(0.f, 0.f, -ScaledCapsuleHalfHeightDiff));
 	}
 	UCharacterMovementComponent* MovementComponent{CharacterSettings->GetCharacterMovement()};
@@ -785,10 +794,13 @@ void AFrogGameCharacter::UpdatePowerPoints(float Points)
 void AFrogGameCharacter::PowerDrain(float DeltaTime)
 {
 	const float DrainPoints = (DeltaTime * DrainSpeed);
-	UpdatePowerPoints(DrainPoints);
-	if (CurrentPowerPoints <= 0.f)
+	if (!bInfinitePower)
 	{
-		DeactivatePowerMode();
+		UpdatePowerPoints(DrainPoints);
+		if (CurrentPowerPoints <= 0.f)
+		{
+			DeactivatePowerMode();
+		}
 	}
 }
 

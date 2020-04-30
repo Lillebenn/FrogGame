@@ -162,7 +162,10 @@ public:
 	bool bPowerMode{false};
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
 	bool bIsPunching{false};
-
+	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")
+	bool bInfinitePower{false};
+	UFUNCTION()
+	void InfinitePower();
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode", meta = (EditCondition="bIsDefaultPowerBlueprint"))
 	TSubclassOf<AActor> PunchVolumeType;
 	UPROPERTY()
