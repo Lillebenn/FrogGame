@@ -210,14 +210,11 @@ public:
 	float WalkSpeed;
 	UPROPERTY(EditAnywhere, Category = "Character | Shockwave", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
 	TSubclassOf<AActor> ShockwaveActor;
-	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles", meta = (EditCondition=
-		"!bIsDefaultPowerBlueprint"))
+	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Shockwave")
 	float WaterShockwaveScale{0.15f};
-	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles", meta = (EditCondition=
-		"!bIsDefaultPowerBlueprint"))
+	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Shockwave")
 	float LandShockwaveScale{0.5f};
-	UPROPERTY()
-	UParticleSystemComponent* ShockwavePFX;
+
 	UPROPERTY()
 	USphereComponent* ShockwaveCollider;
 	UPROPERTY(EditAnywhere, Category = "Character | Shockwave", meta = (EditCondition="!bIsDefaultPowerBlueprint"))

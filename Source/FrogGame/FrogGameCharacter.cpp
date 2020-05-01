@@ -80,6 +80,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	PowerUpParticle = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("PowerUp Particle"));
 	PowerUpParticle->SetAutoActivate(false);
 	PowerUpParticle->SetupAttachment(RootComponent);
+
 	const ConstructorHelpers::FObjectFinder<UAnimMontage> AnimPunchMontage(
 		TEXT("/Game/Models/Player/Player_Powered/PunchingMontage"));
 	if (AnimPunchMontage.Object)
@@ -117,9 +118,9 @@ void AFrogGameCharacter::SetupSettingsCopies()
 {
 	NeutralModeSettings = DuplicateObject(this, GetOuter());
 	PowerModeSettings = PowerModeBP.GetDefaultObject();
-	PowerUpParticle->SetTemplate(PowerModeSettings->PowerUpParticle->Template);
-	PowerUpParticle->SetRelativeScale3D(PowerModeSettings->PowerUpParticle->GetRelativeScale3D());
-	PowerUpParticle->SetRelativeLocation(PowerModeSettings->PowerUpParticle->GetRelativeLocation());
+	//PowerUpParticle->SetTemplate(PowerModeSettings->PowerUpParticle->Template);
+	//PowerUpParticle->SetRelativeScale3D(PowerModeSettings->PowerUpParticle->GetRelativeScale3D());
+	//PowerUpParticle->SetRelativeLocation(PowerModeSettings->PowerUpParticle->GetRelativeLocation());
 	FireEyeOne->SetTemplate(PowerModeSettings->FireEyeOne->Template);
 	FireEyeTwo->SetTemplate(PowerModeSettings->FireEyeTwo->Template);
 	PunchMontage = PowerModeSettings->PunchMontage;
@@ -192,11 +193,10 @@ void AFrogGameCharacter::AttachedActorsSetup()
 	{
 		auto Actor{GetWorld()->SpawnActor<AActor>(ShockwaveActor)};
 		Actor->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
-		Actor->SetActorRelativeLocation(FVector(0.f, 0.f, -10.f));
+		Actor->SetActorRelativeLocation(FVector(0.f, 0.f, -GetCapsuleComponent()->GetScaledCapsuleHalfHeight()));
 		ShockwaveCollider = Actor->FindComponentByClass<USphereComponent>();
 		ShockwaveColliderRadius = ShockwaveCollider->GetUnscaledSphereRadius();
 		ShockwaveCollider->SetCollisionProfileName(TEXT("NoCollision"));
-		ShockwavePFX = Actor->FindComponentByClass<UParticleSystemComponent>();
 	}
 }
 
@@ -779,6 +779,10 @@ void AFrogGameCharacter::SetPlayerModel(AFrogGameCharacter* CharacterSettings)
 	GetCharacterMovement()->MaxWalkSpeed = MovementComponent->MaxWalkSpeed;
 	GetCharacterMovement()->GravityScale = MovementComponent->GravityScale;
 	GetCharacterMovement()->JumpZVelocity = MovementComponent->JumpZVelocity;
+	WaterShockwaveScale = CharacterSettings->WaterShockwaveScale;
+	LandShockwaveScale = CharacterSettings->LandShockwaveScale;
+	auto Actor{ShockwaveCollider->GetOwner()};
+	Actor->SetActorRelativeScale3D(FVector(1.f / GetActorScale().Z));
 	SmokeTrailOffset.Z = CharacterSettings->SmokeTrailOffset.Z;
 	SmokeTrailScale = CharacterSettings->SmokeTrailScale;
 	WaterBreakOffset = CharacterSettings->WaterBreakOffset;
@@ -924,27 +928,29 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 	// use this event to add shockwave etc
 	if (bFirstJump)
 	{
+		FVector CapsuleHalfHeight{0.f};
+		CapsuleHalfHeight.Z = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+		const FVector Location{GetActorLocation() - CapsuleHalfHeight};
 		if (bIsInWater)
 		{
 			if (WaterShockwave)
 			{
-				ShockwavePFX->SetTemplate(WaterShockwave);
-				ShockwavePFX->SetRelativeScale3D(FVector(WaterShockwaveScale));
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WaterShockwave, Location,
+		                                         FRotator::ZeroRotator, FVector(WaterShockwaveScale));
 			}
 		}
 		else
 		{
 			if (LandShockwave)
 			{
-				ShockwavePFX->SetTemplate(LandShockwave);
-				ShockwavePFX->SetRelativeScale3D(FVector(LandShockwaveScale));
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), LandShockwave, Location,
+		                                         FRotator::ZeroRotator, FVector(LandShockwaveScale));
 			}
 		}
-		ShockwavePFX->Activate(true);
 		const float ZDiff{GetActorLocation().Z - InitialZValue};
 		if (ZDiff < 0.f)
 		{
-			const float AdditionalSize{FMath::Abs(ZDiff) * 0.05f};
+			const float AdditionalSize{FMath::Abs(ZDiff) * 0.15f};
 			const float NewSize{ShockwaveCollider->GetUnscaledSphereRadius() + AdditionalSize};
 			ShockwaveCollider->SetSphereRadius(NewSize);
 			if (ShockwaveShake)
