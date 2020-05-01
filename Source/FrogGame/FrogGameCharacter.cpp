@@ -68,25 +68,22 @@ AFrogGameCharacter::AFrogGameCharacter()
 	{
 		GetMesh()->SetSkeletalMesh(SkelMesh.Object);
 	}
-	PunchParticle = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Punch Particle"));
-	PunchParticle->SetAutoActivate(false);
-	PunchParticle->SetupAttachment(GetMesh(),TEXT("r_hand_end_j"));
 	FireEyeOne = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Fire Eye 1"));
 	FireEyeOne->SetAutoActivate(false);
 	FireEyeOne->SetupAttachment(GetMesh(), TEXT("head_j"));
 	FireEyeTwo = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Fire Eye 2"));
 	FireEyeTwo->SetAutoActivate(false);
 	FireEyeTwo->SetupAttachment(GetMesh(), TEXT("head_j"));
-	PowerUpParticle = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("PowerUp Particle"));
-	PowerUpParticle->SetAutoActivate(false);
-	PowerUpParticle->SetupAttachment(RootComponent);
+	PowerUpParticleSystem = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("PowerUp Particle"));
+	PowerUpParticleSystem->SetAutoActivate(false);
+	PowerUpParticleSystem->SetupAttachment(RootComponent);
 
-	const ConstructorHelpers::FObjectFinder<UAnimMontage> AnimPunchMontage(
-		TEXT("/Game/Models/Player/Player_Powered/PunchingMontage"));
-	if (AnimPunchMontage.Object)
-	{
-		PunchMontage = AnimPunchMontage.Object;
-	}
+	//const ConstructorHelpers::FObjectFinder<UAnimMontage> AnimPunchMontage(
+	//	TEXT("/Game/Models/Player/Player_Powered/PunchingMontage"));
+	//if (AnimPunchMontage.Object)
+	//{
+	//	PunchMontage = AnimPunchMontage.Object;
+	//}
 	NeutralModeBP = this->StaticClass();
 }
 
@@ -118,9 +115,7 @@ void AFrogGameCharacter::SetupSettingsCopies()
 {
 	NeutralModeSettings = DuplicateObject(this, GetOuter());
 	PowerModeSettings = PowerModeBP.GetDefaultObject();
-	//PowerUpParticle->SetTemplate(PowerModeSettings->PowerUpParticle->Template);
-	//PowerUpParticle->SetRelativeScale3D(PowerModeSettings->PowerUpParticle->GetRelativeScale3D());
-	//PowerUpParticle->SetRelativeLocation(PowerModeSettings->PowerUpParticle->GetRelativeLocation());
+
 	FireEyeOne->SetTemplate(PowerModeSettings->FireEyeOne->Template);
 	FireEyeTwo->SetTemplate(PowerModeSettings->FireEyeTwo->Template);
 	PunchMontage = PowerModeSettings->PunchMontage;
@@ -395,6 +390,7 @@ void AFrogGameCharacter::EndWhirlwind()
 
 void AFrogGameCharacter::Attack()
 {
+	bAttackHeld = true;
 	if (bPowerMode && !bIsInWater)
 	{
 		Punch();
@@ -407,6 +403,7 @@ void AFrogGameCharacter::Attack()
 
 void AFrogGameCharacter::EndAttack()
 {
+	bAttackHeld = false;
 	if (bPowerMode)
 	{
 		StopPunch();
@@ -421,15 +418,29 @@ void AFrogGameCharacter::Punch()
 {
 	if (bPowerMode && !bIsPunching)
 	{
-		GetWorld()->GetTimerManager().SetTimer(PunchRepeatTimer, this, &AFrogGameCharacter::DoPunch, 0.35f,
+		const float AnimDuration{PunchMontage->GetSectionLength(CurrentPunch) - 0.075f};
+		UE_LOG(LogTemp, Warning, TEXT("Section length: %f"), AnimDuration)
+		GetWorld()->GetTimerManager().SetTimer(PunchRepeatTimer, this, &AFrogGameCharacter::DoPunch, AnimDuration,
 		                                       true, 0.f);
+	}
+	else if (bIsPunching)
+	{
+		GetWorld()->GetTimerManager().SetTimer(NextPunchTimer, this, &AFrogGameCharacter::QueuedPunch, 0.15f);
 	}
 }
 
+void AFrogGameCharacter::QueuedPunch()
+{
+	DoPunch();
+	if(!bAttackHeld)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(PunchRepeatTimer);
+	}
+}
+
+
 void AFrogGameCharacter::DoPunch()
 {
-	GetWorld()->GetTimerManager().SetTimer(PunchResetHandle, this, &AFrogGameCharacter::PunchReset, 0.75f,
-	                                       false);
 	FVector PunchVolumePosition{PunchVolume->GetUnscaledBoxExtent().X, 0.f, -10.f};
 	if (GetCharacterMovement()->IsFalling())
 	{
@@ -469,64 +480,69 @@ void AFrogGameCharacter::DoPunch()
 	}
 	bIsPunching = true;
 	bPunchMove = true;
+	const float AnimDuration{PunchMontage->GetSectionLength(CurrentPunch) - 0.075f};
+
+	GetWorld()->GetTimerManager().SetTimer(PunchRepeatTimer, this, &AFrogGameCharacter::DoPunch, AnimDuration,
+	                                       true);
 }
 
 
-void AFrogGameCharacter::PunchAnimNotify()
+void AFrogGameCharacter::PunchOneAnimNotify()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Punching! Current Punch is %d"), CurrentPunch)
-	const FAttachmentTransformRules InRule{EAttachmentRule::KeepRelative, false};
-
-	switch (CurrentPunch)
-	{
-	case 0:
-		if (UpperCut)
-		{
-			PunchParticle->SetTemplate(UpperCut);
-		}
-		PunchParticle->AttachToComponent(GetMesh(), InRule,
-		                                 TEXT("r_hand_end_j"));
-		PunchParticle->SetRelativeLocation(UpperCutOffset);
-		break;
-	case 1:
-		if (PunchOne)
-		{
-			PunchParticle->SetTemplate(PunchOne);
-		}
-		PunchParticle->AttachToComponent(GetMesh(), InRule,
-		                                 TEXT("r_hand_end_j"));
-		PunchParticle->SetRelativeLocation(PunchOneOffset);
-		break;
-	case 2:
-		if (PunchTwo)
-		{
-			PunchParticle->SetTemplate(PunchTwo);
-		}
-		PunchParticle->AttachToComponent(GetMesh(), InRule,
-		                                 TEXT("l_hand_end_j"));
-		PunchParticle->SetRelativeLocation(PunchTwoOffset);
-		break;
-	default:
-		break;
-	}
 	if (HitActors.Num() > 0)
 	{
-		PunchParticle->Activate(true);
+		UGameplayStatics::SpawnEmitterAttached(PunchOne, GetMesh(), TEXT("r_hand_end_j"), PunchOneOffset,
+		                                       FRotator::ZeroRotator, FVector(0.05f));
+
+		ApplyDamage();
 	}
-	if (bShouldPauseMontage)
-	{
-		PunchParticle->Activate(true);
-		GetMesh()->GetAnimInstance()->Montage_Pause(GetMesh()->GetAnimInstance()->GetCurrentActiveMontage());
-	}
-	ApplyDamage();
-	bIsPunching = false;
 	bPunchMove = false;
 }
 
-void AFrogGameCharacter::PunchReset()
+void AFrogGameCharacter::PunchTwoAnimNotify()
 {
-	CurrentPunch = 0;
+	if (HitActors.Num() > 0)
+	{
+		UGameplayStatics::SpawnEmitterAttached(PunchTwo, GetMesh(), TEXT("l_hand_end_j"), PunchTwoOffset,
+		                                       FRotator::ZeroRotator, FVector(0.05f));
+		ApplyDamage();
+	}
+	bPunchMove = false;
 }
+
+void AFrogGameCharacter::UpperCutAnimNotify()
+{
+	if (HitActors.Num() > 0)
+	{
+		UGameplayStatics::SpawnEmitterAttached(UpperCut, GetMesh(), TEXT("r_hand_end_j"), UpperCutOffset,
+		                                       FRotator::ZeroRotator, FVector(0.05f));
+		ApplyDamage();
+	}
+	bPunchMove = false;
+}
+
+void AFrogGameCharacter::PunchResetNotify()
+{
+	if (!bIsPunching)
+	{
+		CurrentPunch = 0;
+	}
+}
+
+void AFrogGameCharacter::StopPunch()
+{
+	GetWorld()->GetTimerManager().ClearTimer(PunchRepeatTimer);
+	if (PunchVolume)
+	{
+		PunchVolume->SetCollisionProfileName(TEXT("NoCollision"));
+	}
+}
+
+void AFrogGameCharacter::PunchStopNotify()
+{
+	bIsPunching = false;
+}
+
 
 void AFrogGameCharacter::Consume_Impl(AActor* OtherActor)
 {
@@ -572,6 +588,7 @@ void AFrogGameCharacter::InfinitePower()
 	}
 }
 
+
 void AFrogGameCharacter::ApplyDamage()
 {
 	for (auto Actor : HitActors)
@@ -584,15 +601,6 @@ void AFrogGameCharacter::ApplyDamage()
 	}
 	HitActors.Empty();
 	PunchVolume->SetCollisionProfileName(TEXT("NoCollision"));
-}
-
-void AFrogGameCharacter::StopPunch()
-{
-	GetWorld()->GetTimerManager().ClearTimer(PunchRepeatTimer);
-	if (PunchVolume)
-	{
-		PunchVolume->SetCollisionProfileName(TEXT("NoCollision"));
-	}
 }
 
 
@@ -718,7 +726,7 @@ void AFrogGameCharacter::PowerMode()
 		{
 			EndWhirlwind();
 		}
-		PowerUpParticle->Activate(true);
+		PowerUpParticleSystem->Activate(true);
 		ActivatePowerupPFX();
 		GetWorld()->GetTimerManager().SetTimer(PowerModeDelay, this, &AFrogGameCharacter::ActivatePowerModel, 0.35f);
 	}
@@ -742,6 +750,7 @@ void AFrogGameCharacter::DeactivatePowerMode()
 	bPowerMode = false;
 	EndAttack();
 	CurrentMode = ECharacterMode::Neutral;
+	CurrentPunch = 0;
 	SetPlayerModel(NeutralModeSettings);
 	FireEyeOne->Deactivate();
 	FireEyeTwo->Deactivate();
@@ -857,7 +866,7 @@ void AFrogGameCharacter::DisableWhirlwindPfx()
 void AFrogGameCharacter::Jump()
 {
 	InitialZValue = GetActorLocation().Z;
-	bFirstJump = true;
+	bJumped = true;
 	DisableTrail();
 	Super::Jump();
 	ShockwaveCollider->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
@@ -866,9 +875,13 @@ void AFrogGameCharacter::Jump()
 
 void AFrogGameCharacter::IncreaseGravity() const
 {
-	const float CurrentGravityScale{GetCharacterMovement()->GravityScale};
-	GetCharacterMovement()->GravityScale = CurrentGravityScale * 3.f;
+	if (bJumped)
+	{
+		const float CurrentGravityScale{GetCharacterMovement()->GravityScale};
+		GetCharacterMovement()->GravityScale = CurrentGravityScale * 3.f;
+	}
 }
+
 
 void AFrogGameCharacter::MoveForward(float Value)
 {
@@ -926,7 +939,7 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 		GetCharacterMovement()->GravityScale = PowerModeSettings->GetCharacterMovement()->GravityScale;
 	}
 	// use this event to add shockwave etc
-	if (bFirstJump)
+	if (bJumped)
 	{
 		FVector CapsuleHalfHeight{0.f};
 		CapsuleHalfHeight.Z = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
@@ -936,7 +949,7 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 			if (WaterShockwave)
 			{
 				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WaterShockwave, Location,
-		                                         FRotator::ZeroRotator, FVector(WaterShockwaveScale));
+				                                         FRotator::ZeroRotator, FVector(WaterShockwaveScale));
 			}
 		}
 		else
@@ -944,7 +957,7 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 			if (LandShockwave)
 			{
 				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), LandShockwave, Location,
-		                                         FRotator::ZeroRotator, FVector(LandShockwaveScale));
+				                                         FRotator::ZeroRotator, FVector(LandShockwaveScale));
 			}
 		}
 		const float ZDiff{GetActorLocation().Z - InitialZValue};
@@ -958,6 +971,7 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 				GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayCameraShake(ShockwaveShake, 2);
 			}
 		}
+		bJumped = false;
 	}
 	TArray<AActor*> OverlappingActors;
 	ShockwaveCollider->GetOverlappingActors(OverlappingActors);

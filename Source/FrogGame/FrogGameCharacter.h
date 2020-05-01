@@ -31,17 +31,13 @@ class AFrogGameCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* WhirlwindVolume;
 
-	UPROPERTY (EditDefaultsOnly, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"), meta = (
-		EditCondition="bIsDefaultPowerBlueprint"))
-	class UAnimMontage* PunchMontage;
-	UPROPERTY (VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	class UParticleSystemComponent* PunchParticle;
+
 	UPROPERTY (VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UParticleSystemComponent* FireEyeOne;
 	UPROPERTY (VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UParticleSystemComponent* FireEyeTwo;
 	UPROPERTY (VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	class UParticleSystemComponent* PowerUpParticle;
+	class UParticleSystemComponent* PowerUpParticleSystem;
 	FTimerHandle PunchRepeatTimer;
 	FTimerHandle PunchResetHandle;
 
@@ -137,23 +133,18 @@ public:
 	UPROPERTY (EditAnywhere, BlueprintReadWrite, Category = "Character | Particles", meta = (EditCondition=
 		"bIsDefaultPowerBlueprint"))
 	class UParticleSystem* UpperCut;
-	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles", meta = (EditCondition=
-		"!bIsDefaultPowerBlueprint"))
-	class UParticleSystem* WaterShockwave;
-
-	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Particles", meta = (EditCondition=
-		"!bIsDefaultPowerBlueprint"))
-	class UParticleSystem* LandShockwave;
-
+	UPROPERTY (EditDefaultsOnly, BlueprintReadOnly, Category = Character, meta = (
+		EditCondition="bIsDefaultPowerBlueprint"))
+	class UAnimMontage* PunchMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode", meta = (EditCondition=
 		"bIsDefaultPowerBlueprint"))
-	FVector PunchOneOffset{5.f, 10.f, 0.f};
+	FVector PunchOneOffset{0.f, 8.f, 0.f};
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode", meta = (EditCondition=
 		"bIsDefaultPowerBlueprint"))
-	FVector PunchTwoOffset{-5.f, -5.f, -5.f};
+	FVector PunchTwoOffset{0.f, -8.f, 0.f};
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode", meta = (EditCondition=
 		"bIsDefaultPowerBlueprint"))
-	FVector UpperCutOffset{15.f, 0.f, 0.f};
+	FVector UpperCutOffset{0.f, 0.f, 0.f};
 	FVector RegularBoxExtent;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode", meta = (EditCondition=
 		"bIsDefaultPowerBlueprint"))
@@ -210,6 +201,13 @@ public:
 	float WalkSpeed;
 	UPROPERTY(EditAnywhere, Category = "Character | Shockwave", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
 	TSubclassOf<AActor> ShockwaveActor;
+	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Shockwave", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
+	class UParticleSystem* WaterShockwave;
+
+	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Shockwave", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
+	class UParticleSystem* LandShockwave;
 	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Shockwave")
 	float WaterShockwaveScale{0.15f};
 	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Shockwave")
@@ -258,8 +256,16 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void IncreaseGravity() const;
 	UFUNCTION(BlueprintCallable)
-	void PunchAnimNotify();
-	void PunchReset();
+	void PunchOneAnimNotify();
+	UFUNCTION(BlueprintCallable)
+	void PunchTwoAnimNotify();
+	UFUNCTION(BlueprintCallable)
+	void UpperCutAnimNotify();
+	UFUNCTION(BlueprintCallable)
+	void PunchResetNotify();
+	UFUNCTION(BlueprintCallable)
+	void PunchStopNotify();
+
 	UPROPERTY(BlueprintReadWrite)
 	uint8 CurrentPunch{0};
 	bool bPunchMove{false};
@@ -324,9 +330,10 @@ protected:
 	void WhirlwindEvent(bool bStarted);
 	UFUNCTION(BlueprintImplementableEvent)
 	void ActivatePowerupPFX();
+
 private:
 	float ShockwaveColliderRadius;
-	bool bFirstJump{false};
+	bool bJumped{false};
 	void Attack();
 	void EndAttack();
 	void AttachedActorsSetup();
@@ -350,6 +357,9 @@ private:
 	/** Uses fist to punch something, can only be used in power mode **/
 	void Punch();
 	void DoPunch();
+	FTimerHandle NextPunchTimer;
+	void QueuedPunch();
+	bool bAttackHeld{false};
 	void ApplyDamage();
 	void StopPunch();
 	UFUNCTION()
