@@ -17,6 +17,7 @@ AAdvCreature::AAdvCreature()
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
+	GetCapsuleComponent()->SetCollisionProfileName(TEXT("Edible"));
 	EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
 	EdibleComponent->bAllowSuction = true;
 

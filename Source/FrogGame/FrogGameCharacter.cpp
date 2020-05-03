@@ -15,6 +15,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Edible.h"
 #include "EdibleObject.h"
+#include "FrogChild.h"
 #include "FrogGameMode.h"
 #include "SimpleCreature.h"
 #include "SphereDrop.h"
@@ -615,7 +616,19 @@ void AFrogGameCharacter::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 {
 	if (OtherActor != nullptr && OtherActor != this && OtherComp != nullptr)
 	{
-		if (OtherActor->IsA(SmallDestructible))
+		if(AFrogChild* Child = Cast<AFrogChild>(OtherActor))
+		{
+			if(!Child->bIsCollected)
+			{
+				Child->MoveToSwamp();
+				FrogsCollected++;
+				if(FrogsCollected == TotalFrogChildren)
+				{
+					// Add call to show all frogs collected message here. Or in the HUD itself, idc
+				}
+			}
+		}
+		else if (OtherActor->IsA(SmallDestructible))
 		{
 			// TODO: Maybe do a different function if we don't want shit to fly around
 			OtherActor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);

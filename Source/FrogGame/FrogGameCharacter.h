@@ -77,18 +77,19 @@ public:
 	{
 		return bPowerMode;
 	}
-
-	UFUNCTION(BlueprintCallable, Category = "Character | PowerMode")
-	bool CanTransform() const
-	{
-		return CurrentPowerPoints >= MaxPowerPoints / 10.f;
-	}
-	/** Accessor Function for Frogs Collected */
+		/** Accessor Function for Frogs Collected */
 	UFUNCTION(BlueprintCallable, Category = "Character | Objective")
 	int GetCurrentFrogsCollected() const
 	{
 		return FrogsCollected;
 	}
+	UFUNCTION(BlueprintCallable, Category = "Character | PowerMode")
+	bool CanTransform() const
+	{
+		return CurrentPowerPoints >= MaxPowerPoints / 10.f;
+	}
+
+
 
 	UPROPERTY()
 	AFrogGameCharacter* NeutralModeSettings;
@@ -193,7 +194,9 @@ public:
 	float DrainSpeed{-5.f};
 	// The ammount of frogs collected
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | Objective")
-	int FrogsCollected{ 0 };
+	int FrogsCollected{0};
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | Objective")
+	int TotalFrogChildren{10};
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Character)
 	float SwimSpeed{2300.f};
 	float WalkSpeed;
