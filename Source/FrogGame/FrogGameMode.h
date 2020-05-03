@@ -18,11 +18,13 @@ class AFrogGameMode : public AGameModeBase
 public:
 	AFrogGameMode();
 
+	void SetWidgetVisibility();
 protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "User Interface", Meta = (BlueprintProtected = "true"))
 	TSubclassOf<class UUserWidget> FrogHUDClass;
-
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "User Interface")
+	bool bShowWidget{true};
 	UPROPERTY()
 	class UUserWidget* CurrentWidget;
 

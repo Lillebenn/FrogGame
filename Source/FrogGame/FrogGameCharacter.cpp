@@ -15,6 +15,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Edible.h"
 #include "EdibleObject.h"
+#include "FrogGameMode.h"
 #include "SimpleCreature.h"
 #include "SphereDrop.h"
 
@@ -156,6 +157,11 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindAction("TestTrail", IE_Pressed, this, &AFrogGameCharacter::TestTrail);
 	PlayerInputComponent->BindAction("ParticleTest", IE_Pressed, this, &AFrogGameCharacter::PauseMontage);
 	PlayerInputComponent->BindAction("InfinitePower", IE_Pressed, this, &AFrogGameCharacter::InfinitePower);
+	AFrogGameMode* FrogGameMode{Cast<AFrogGameMode>(UGameplayStatics::GetGameMode(GetWorld()))};
+	if (FrogGameMode)
+	{
+		PlayerInputComponent->BindAction("HideUI", IE_Pressed, FrogGameMode, &AFrogGameMode::SetWidgetVisibility);
+	}
 
 #endif
 	PlayerInputComponent->BindAxis("MoveForward", this, &AFrogGameCharacter::MoveForward);
@@ -431,7 +437,7 @@ void AFrogGameCharacter::Punch()
 void AFrogGameCharacter::QueuedPunch()
 {
 	DoPunch();
-	if(!bAttackHeld)
+	if (!bAttackHeld)
 	{
 		GetWorld()->GetTimerManager().ClearTimer(PunchRepeatTimer);
 	}
