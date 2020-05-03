@@ -621,6 +621,7 @@ void AFrogGameCharacter::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 			if(!Child->bIsCollected)
 			{
 				Child->MoveToSwamp();
+				UpdateCurrentScore(Child->EdibleComponent->ScorePoints);
 				FrogsCollected++;
 				if(FrogsCollected == TotalFrogChildren)
 				{
