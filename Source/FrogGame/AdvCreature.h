@@ -5,14 +5,13 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Edible.h"
-#include "Saveable.h"
 #include "AdvCreature.generated.h"
 
 /**
  * Creature with the ability to use animations and more advanced AI.
  */
 UCLASS(Abstract)
-class FROGGAME_API AAdvCreature : public ACharacter, public IEdible, public ISaveable
+class FROGGAME_API AAdvCreature : public ACharacter, public IEdible
 {
 	GENERATED_BODY()
 
@@ -44,18 +43,8 @@ public:
 	void DisableActor_Implementation() override;
 	void PauseAI_Implementation(bool bPause = true) override;
 
-	void OnDisabled_Implementation() override;
-
-	void ActorSaveDataSaved_Implementation() override;
-	void ActorSaveDataLoaded_Implementation() override;
-	FTransform GetStartTransform_Implementation() override;
-		void ResetTransforms_Implementation() override;
-
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
-	void Destroyed() override;
 
-private:
-	FTransform StartTransform;
 };

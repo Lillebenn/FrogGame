@@ -5,11 +5,10 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "FrogGameCharacter.h"
-#include "Saveable.h"
 #include "DestructibleObject.generated.h"
 
 UCLASS()
-class FROGGAME_API ADestructibleObject : public AActor, public ISaveable
+class FROGGAME_API ADestructibleObject : public AActor
 {
 	GENERATED_BODY()
 
@@ -27,7 +26,6 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
-	void Destroyed() override;
 private:
 
 	FTimerHandle TimerHandle;
@@ -43,8 +41,5 @@ public:
 	UFUNCTION()
 	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse,
 	           const FHitResult& Hit);
-	void ActorSaveDataSaved_Implementation() override;
-	void ActorSaveDataLoaded_Implementation() override;
-	FTransform GetStartTransform_Implementation() override;
-	void ResetTransforms_Implementation() override;
+
 };

@@ -28,17 +28,7 @@ ADestructibleObject::ADestructibleObject()
 void ADestructibleObject::BeginPlay()
 {
 	Super::BeginPlay();
-	StartTransform = GetTransform();
-}
 
-void ADestructibleObject::Destroyed()
-{
-	UFrogGameInstance* FrogInstance{Cast<UFrogGameInstance>(GetWorld()->GetGameInstance())};
-	if (FrogInstance)
-	{
-		FrogInstance->OnActorDestroyed(this);
-	}
-	Super::Destroyed();
 }
 
 // Called every frame
@@ -102,26 +92,3 @@ void ADestructibleObject::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor
 	}
 }
 
-
-FTransform ADestructibleObject::GetStartTransform_Implementation()
-{
-	return StartTransform;
-}
-
-void ADestructibleObject::ResetTransforms_Implementation()
-{
-	StaticMesh->SetSimulatePhysics(false);
-	StaticMesh->SetNotifyRigidBodyCollision(false);
-	StaticMesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Block);
-	StaticMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
-	SetActorTransform(StartTransform);
-}
-
-// Custom behaviour when saving or loading
-void ADestructibleObject::ActorSaveDataSaved_Implementation()
-{
-}
-
-void ADestructibleObject::ActorSaveDataLoaded_Implementation()
-{
-}

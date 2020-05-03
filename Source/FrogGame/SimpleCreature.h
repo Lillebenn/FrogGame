@@ -5,11 +5,10 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "Edible.h"
-#include "Saveable.h"
 #include "SimpleCreature.generated.h"
 
 UCLASS(Abstract)
-class FROGGAME_API ASimpleCreature : public APawn, public IEdible, public ISaveable
+class FROGGAME_API ASimpleCreature : public APawn, public IEdible
 {
 	GENERATED_BODY()
 
@@ -33,15 +32,7 @@ public:
 
 	void DisableActor_Implementation() override;
 	void PauseAI_Implementation(bool bPause = true) override;
-	void OnDisabled_Implementation() override;
 	bool IsDisabled_Implementation() override;
-
-	void ActorSaveDataLoaded_Implementation() override;
-	void ActorSaveDataSaved_Implementation() override;
-
-
-	FTransform GetStartTransform_Implementation() override;
-	void ResetTransforms_Implementation() override;
 
 	void ActivatePhysics() const;
 	bool bShouldDestroy{false};
@@ -57,10 +48,6 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
-	void Destroyed() override;
-private:
-	UPROPERTY()
-	FTransform StartTransform;
 public:
 	// Called every frame
 	void Tick(float DeltaTime) override;
