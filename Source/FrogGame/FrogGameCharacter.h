@@ -130,11 +130,11 @@ public:
 	{
 		return CurrentPowerPoints >= MaxPowerPoints / 10.f;
 	}
-	/** Accessor Function for Current Health */
-	UFUNCTION(BlueprintCallable, Category = "Character | Health")
-	float GetCurrentFrogHealth() const
+	/** Accessor Function for Frogs Collected */
+	UFUNCTION(BlueprintCallable, Category = "Character | Objective")
+	int GetCurrentFrogsCollected() const
 	{
-		return FrogHealth;
+		return FrogsCollected;
 	}
 
 	/**
@@ -209,9 +209,9 @@ public:
 	// How quickly the Power Mode bar drains
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode")
 	float DrainSpeed{-5.f};
-	// The frogs health
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | Health")
-	float FrogHealth{1000.f};
+	// The ammount of frogs collected
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | Objective")
+	int FrogsCollected{ 0 };
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Character)
 	float NeutralSwimSpeed{2300.f};
 	float WalkSpeed;
