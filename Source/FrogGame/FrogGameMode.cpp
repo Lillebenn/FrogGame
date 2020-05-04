@@ -10,14 +10,13 @@ AFrogGameMode::AFrogGameMode()
 }
 
 
-
 void AFrogGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 
 	if (FrogHUDClass != nullptr)
 	{
-		CurrentWidget = CreateWidget<UUserWidget>(GetWorld(), FrogHUDClass);
+		CurrentWidget = CreateWidget<UFrogGameUI>(GetWorld(), FrogHUDClass);
 
 		if (CurrentWidget != nullptr && bShowWidget)
 		{
@@ -25,15 +24,21 @@ void AFrogGameMode::BeginPlay()
 		}
 	}
 }
+
 void AFrogGameMode::SetWidgetVisibility()
 {
-	if(CurrentWidget)
+	if (CurrentWidget)
 	{
 		ESlateVisibility CurrentVisibility{ESlateVisibility::Hidden};
-		if(CurrentWidget->GetVisibility() == ESlateVisibility::Hidden)
+		if (CurrentWidget->GetVisibility() == ESlateVisibility::Hidden)
 		{
 			CurrentVisibility = ESlateVisibility::Visible;
 		}
 		CurrentWidget->SetVisibility(CurrentVisibility);
 	}
+}
+
+UFrogGameUI* AFrogGameMode::GetGameHUD() const
+{
+	return CurrentWidget;
 }

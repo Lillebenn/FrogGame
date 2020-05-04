@@ -77,18 +77,19 @@ public:
 	{
 		return bPowerMode;
 	}
-		/** Accessor Function for Frogs Collected */
+
+	/** Accessor Function for Frogs Collected */
 	UFUNCTION(BlueprintCallable, Category = "Character | Objective")
 	int GetCurrentFrogsCollected() const
 	{
 		return FrogsCollected;
 	}
+
 	UFUNCTION(BlueprintCallable, Category = "Character | PowerMode")
 	bool CanTransform() const
 	{
 		return CurrentPowerPoints >= MaxPowerPoints / 10.f;
 	}
-
 
 
 	UPROPERTY()
@@ -332,8 +333,11 @@ protected:
 	void WhirlwindEvent(bool bStarted);
 	UFUNCTION(BlueprintImplementableEvent)
 	void ActivatePowerupPFX();
-
+	UFUNCTION(BlueprintCallable)
+	void TakeScoreDamage(float DamageAmount);
 private:
+	UPROPERTY()
+	class UFrogGameUI* FrogHUD;
 	float ShockwaveColliderRadius;
 	bool bJumped{false};
 	void Attack();

@@ -7,7 +7,6 @@
 #include "GameFramework/GameModeBase.h"
 
 #include "Blueprint/UserWidget.h"
-#include "Kismet/GameplayStatics.h"
 #include "FrogGameMode.generated.h"
 
 UCLASS(minimalapi)
@@ -21,19 +20,17 @@ public:
 
 	void SetWidgetVisibility();
 
-	void ShowAllFrogsGathered() const
-	{
-		Cast<UFrogGameUI>(CurrentWidget)->AllFrogsGathered();
-	}
+	UFrogGameUI* GetGameHUD() const;
+
 
 protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "User Interface", Meta = (BlueprintProtected = "true"))
-	TSubclassOf<class UUserWidget> FrogHUDClass;
+	TSubclassOf<class UFrogGameUI> FrogHUDClass;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "User Interface")
 	bool bShowWidget{true};
 	UPROPERTY()
-	class UUserWidget* CurrentWidget;
+	class UFrogGameUI* CurrentWidget;
 
 
 	void BeginPlay() override;

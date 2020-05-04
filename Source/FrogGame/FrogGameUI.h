@@ -16,4 +16,6 @@ class FROGGAME_API UFrogGameUI : public UUserWidget
 public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void AllFrogsGathered();
+	UFUNCTION(BlueprintImplementableEvent)
+	void DamageTaken(float Damage);
 };

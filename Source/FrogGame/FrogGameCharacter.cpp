@@ -96,7 +96,7 @@ void AFrogGameCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	SetupSettingsCopies();
-
+	FrogHUD = Cast<UFrogGameUI>(Cast<AFrogGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->GetGameHUD());
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnOverlap);
 	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnEndOverlap);
 	WhirlwindVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindBeginOverlap);
@@ -272,7 +272,8 @@ void AFrogGameCharacter::FilterOccludedObjects()
 			if (AEdibleObject* EdibleObject = Cast<AEdibleObject>(Target))
 			{
 				EdibleObject->StaticMesh->SetSimulatePhysics(false);
-			}else if(Target->Implements<UEdible>())
+			}
+			else if (Target->Implements<UEdible>())
 			{
 				IEdible::Execute_PauseAI(Target, true);
 			}
@@ -611,6 +612,15 @@ void AFrogGameCharacter::ApplyDamage()
 	PunchVolume->SetCollisionProfileName(TEXT("NoCollision"));
 }
 
+void AFrogGameCharacter::TakeScoreDamage(const float DamageAmount)
+{
+	UpdateCurrentScore(-DamageAmount);
+	if (FrogHUD)
+	{
+		FrogHUD->DamageTaken(DamageAmount);
+	}
+}
+
 
 void AFrogGameCharacter::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
                                    UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
@@ -628,10 +638,9 @@ void AFrogGameCharacter::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 				FrogsCollected++;
 				if (FrogsCollected == TotalFrogChildren)
 				{
-					AFrogGameMode* GameMode{Cast<AFrogGameMode>(UGameplayStatics::GetGameMode(GetWorld()))};
-					if (GameMode)
+					if (FrogHUD)
 					{
-						GameMode->ShowAllFrogsGathered();
+						FrogHUD->AllFrogsGathered();
 					}
 				}
 			}
@@ -748,6 +757,7 @@ void AFrogGameCharacter::PowerMode()
 {
 	if ((CurrentPowerPoints >= MaxPowerPoints / 10.f || bInfinitePower) && !bPowerMode)
 	{
+		TakeScoreDamage(5000);
 		if (bUsingWhirlwind)
 		{
 			EndWhirlwind();
