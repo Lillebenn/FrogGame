@@ -37,7 +37,7 @@ protected:
 	// Called when the game starts
 	void BeginPlay() override;
 private:
-		UPROPERTY()
+	UPROPERTY()
 	FTransform InitialTransform;
 public:
 	// Called every frame

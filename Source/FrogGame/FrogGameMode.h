@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "FrogGameUI.h"
 #include "GameFramework/GameModeBase.h"
 
 #include "Blueprint/UserWidget.h"
@@ -19,6 +20,12 @@ public:
 	AFrogGameMode();
 
 	void SetWidgetVisibility();
+
+	void ShowAllFrogsGathered() const
+	{
+		Cast<UFrogGameUI>(CurrentWidget)->AllFrogsGathered();
+	}
+
 protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "User Interface", Meta = (BlueprintProtected = "true"))
@@ -27,6 +34,7 @@ protected:
 	bool bShowWidget{true};
 	UPROPERTY()
 	class UUserWidget* CurrentWidget;
+
 
 	void BeginPlay() override;
 };

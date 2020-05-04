@@ -31,10 +31,6 @@ AFrogChild::AFrogChild()
 void AFrogChild::MoveToSwamp()
 {
 	bIsCollected = true;
-	const FVector2D NewLocation2D{FMath::RandPointInCircle(125.f)};
-	const FVector NewLocation{
-		SwampLocation.X + NewLocation2D.X, SwampLocation.Y + NewLocation2D.Y, SwampLocation.Z
-	};
-	SetActorLocation(NewLocation, false, nullptr);
+	SetActorTransform(SwampLocation);
 	GetMesh()->SetAnimInstanceClass(nullptr);
 }

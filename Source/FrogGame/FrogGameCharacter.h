@@ -197,6 +197,7 @@ public:
 	int FrogsCollected{0};
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | Objective")
 	int TotalFrogChildren{10};
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Character)
 	float SwimSpeed{2300.f};
 	float WalkSpeed;

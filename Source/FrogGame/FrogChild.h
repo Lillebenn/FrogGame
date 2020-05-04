@@ -25,5 +25,5 @@ public:
 	void MoveToSwamp();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Frog Child")
-	FVector SwampLocation{0.f};
+	FTransform SwampLocation;
 };

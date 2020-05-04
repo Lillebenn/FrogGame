@@ -6,6 +6,18 @@
 #include "GameFramework/Character.h"
 #include "Edible.h"
 #include "AdvCreature.generated.h"
+USTRUCT(BlueprintType)
+struct FPatrolPath
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FVector> PathPoints;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bIsLooping{false};
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float WaitTime{0.5f};
+};
 
 /**
  * Creature with the ability to use animations and more advanced AI.
@@ -24,6 +36,14 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UCustomDestructibleComponent* DestructibleComponent;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AI")
+	bool bUsePatrolPath{true};
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AI", meta = (EditCondition = "bUsePatrolPath"))
+	FPatrolPath PatrolSettings;
+	
+	
+
 	// Called every frame
 	void Tick(float DeltaTime) override;
 	void ActivatePhysics() const;
@@ -37,14 +57,10 @@ public:
 	bool bShouldDestroy{false};
 
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Edible)
-	FName AttachBoneName{TEXT("None")};
-
 	void DisableActor_Implementation() override;
 	void PauseAI_Implementation(bool bPause = true) override;
 
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
-
 };

@@ -17,6 +17,7 @@
 #include "EdibleObject.h"
 #include "FrogChild.h"
 #include "FrogGameMode.h"
+#include "FrogGameUI.h"
 #include "SimpleCreature.h"
 #include "SphereDrop.h"
 
@@ -268,16 +269,17 @@ void AFrogGameCharacter::FilterOccludedObjects()
 		};
 		if (Hit.GetActor() == Target || ImplementsEdible)
 		{
-			AEdibleObject* EdibleObject{Cast<AEdibleObject>(Target)};
-			if (EdibleObject)
+			if (AEdibleObject* EdibleObject = Cast<AEdibleObject>(Target))
 			{
 				EdibleObject->StaticMesh->SetSimulatePhysics(false);
+			}else if(Target->Implements<UEdible>())
+			{
+				IEdible::Execute_PauseAI(Target, true);
 			}
 			UEdibleComponent* EdibleComponent{Target->FindComponentByClass<UEdibleComponent>()};
 			//UE_LOG(LogTemp, Warning, TEXT("Added %s to WhirlwindAffectedActors map."), *Target->GetName())
 			EdibleComponent->IgnorePawnCollision();
 			EdibleComponent->SetInitialTransform();
-			//IEdible::Execute_PauseAI(Target, true); // TODO: Needs testing
 			// Parent the object to an invisible object at the pivot point
 			// Rotate the entire actor in the X axis
 			FVector2D FrogXY{Target->GetActorLocation() - GetActorLocation()};
@@ -616,16 +618,21 @@ void AFrogGameCharacter::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 {
 	if (OtherActor != nullptr && OtherActor != this && OtherComp != nullptr)
 	{
-		if(AFrogChild* Child = Cast<AFrogChild>(OtherActor))
+		if (AFrogChild* Child = Cast<AFrogChild>(OtherActor))
 		{
-			if(!Child->bIsCollected)
+			if (!Child->bIsCollected)
 			{
 				Child->MoveToSwamp();
+
 				UpdateCurrentScore(Child->EdibleComponent->ScorePoints);
 				FrogsCollected++;
-				if(FrogsCollected == TotalFrogChildren)
+				if (FrogsCollected == TotalFrogChildren)
 				{
-					// Add call to show all frogs collected message here. Or in the HUD itself, idc
+					AFrogGameMode* GameMode{Cast<AFrogGameMode>(UGameplayStatics::GetGameMode(GetWorld()))};
+					if (GameMode)
+					{
+						GameMode->ShowAllFrogsGathered();
+					}
 				}
 			}
 		}
