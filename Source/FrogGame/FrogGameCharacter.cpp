@@ -757,7 +757,6 @@ void AFrogGameCharacter::PowerMode()
 {
 	if ((CurrentPowerPoints >= MaxPowerPoints / 10.f || bInfinitePower) && !bPowerMode)
 	{
-		TakeScoreDamage(5000);
 		if (bUsingWhirlwind)
 		{
 			EndWhirlwind();
