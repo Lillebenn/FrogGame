@@ -15,7 +15,7 @@ struct FPatrolPath
 	TArray<FVector> PathPoints;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bIsLooping{false};
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (MakeEditWidget))
 	float WaitTime{0.5f};
 };
 
