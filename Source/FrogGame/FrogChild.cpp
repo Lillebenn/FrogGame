@@ -12,8 +12,7 @@
 AFrogChild::AFrogChild()
 {
 	GetCapsuleComponent()->SetGenerateOverlapEvents(true);
-	GetCapsuleComponent()->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+	GetCapsuleComponent()->SetCollisionProfileName(TEXT("FrogChild"));
 	
 	DirectionArrow = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Arrow Marker"));
 	DirectionArrow->SetupAttachment(RootComponent);

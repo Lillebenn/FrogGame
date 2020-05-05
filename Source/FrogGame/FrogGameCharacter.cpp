@@ -904,7 +904,7 @@ void AFrogGameCharacter::Jump()
 	bJumped = true;
 	DisableTrail();
 	Super::Jump();
-	ShockwaveCollider->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
+	ShockwaveCollider->SetCollisionProfileName(TEXT("OverlapEdible"));
 	ShockwaveCollider->SetSphereRadius(ShockwaveColliderRadius);
 }
 
