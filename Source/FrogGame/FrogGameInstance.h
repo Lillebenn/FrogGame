@@ -22,7 +22,7 @@ public:
 	explicit UFrogGameInstance(const FObjectInitializer& ObjectInitializer);
 	
 	UFUNCTION(BlueprintCallable)
-	void NewHighScore(FString PlayerName, int HighScore) const;
+	void NewHighScore(FString PlayerName, int HighScore, float PercentDestroyed, float TimeSpent) const;
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE TArray<FSaveInfo>& GetCurrentHighScores() const
 	{

@@ -13,13 +13,15 @@ UFrogGameInstance::UFrogGameInstance(const FObjectInitializer& ObjectInitializer
 	if (!HighScoreSaveGame)
 	{
 		HighScoreSaveGame = Cast<UFrogSaveGame>(UGameplayStatics::CreateSaveGameObject(UFrogSaveGame::StaticClass()));
+		
 	}
 }
 
-void UFrogGameInstance::NewHighScore(const FString PlayerName, const int HighScore) const
+void UFrogGameInstance::NewHighScore(const FString PlayerName, const int HighScore,
+                                     const float PercentDestroyed, const float TimeSpent) const
 {
 	TArray<FSaveInfo> HighScoreArray{HighScoreSaveGame->HighScores};
-	FSaveInfo NewHighScore{PlayerName, HighScore};
+	FSaveInfo NewHighScore{PlayerName, HighScore, PercentDestroyed, TimeSpent};
 	if (HighScoreArray.Num() == 0)
 	{
 		HighScoreArray.Add(NewHighScore);
@@ -42,4 +44,3 @@ void UFrogGameInstance::NewHighScore(const FString PlayerName, const int HighSco
 	}
 	HighScoreSaveGame->HighScores = HighScoreArray;
 }
-
