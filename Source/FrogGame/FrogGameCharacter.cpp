@@ -158,7 +158,7 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	//PlayerInputComponent->BindAction("Jump", IE_Released, this, &AFrogGameCharacter::ExecuteJump);
 #if WITH_EDITOR
 	PlayerInputComponent->BindAction("StopPowerMode", IE_Pressed, this, &AFrogGameCharacter::DeactivatePowerMode);
-	PlayerInputComponent->BindAction("TestTrail", IE_Pressed, this, &AFrogGameCharacter::TestTrail);
+	PlayerInputComponent->BindAction("TestFunction", IE_Pressed, this, &AFrogGameCharacter::TestFunction);
 	PlayerInputComponent->BindAction("ParticleTest", IE_Pressed, this, &AFrogGameCharacter::PauseMontage);
 	PlayerInputComponent->BindAction("InfinitePower", IE_Pressed, this, &AFrogGameCharacter::InfinitePower);
 	AFrogGameMode* FrogGameMode{Cast<AFrogGameMode>(UGameplayStatics::GetGameMode(GetWorld()))};
@@ -769,7 +769,7 @@ void AFrogGameCharacter::PowerMode()
 {
 	if ((CurrentPowerPoints >= MaxPowerPoints / 10.f || bInfinitePower) && !bPowerMode)
 	{
-		FrogHUD->AllFrogsGathered();
+		
 		if (bUsingWhirlwind)
 		{
 			EndWhirlwind();
@@ -1033,19 +1033,22 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 	ShockwaveCollider->SetCollisionProfileName(TEXT("NoCollision"));
 }
 
-void AFrogGameCharacter::TestTrail()
+void AFrogGameCharacter::TestFunction()
 {
-	if (bTestTrail)
-	{
-		bTestTrail = false;
-		DisableTrail();
-	}
-	else
-	{
-		bTestTrail = true;
+	// Use to test UI activated stuff and whatever else you can think of. Bound to U by default.
+	
+	
+	//if (bTestTrail)
+	//{
+	//	bTestTrail = false;
+	//	DisableTrail();
+	//}
+	//else
+	//{
+	//	bTestTrail = true;
 
-		SpawnTrail(WaterBreakChild, WaterBreakOffset, WaterBreakScale, WaterBreakRot);
-	}
+	//	SpawnTrail(WaterBreakChild, WaterBreakOffset, WaterBreakScale, WaterBreakRot);
+	//}
 }
 
 void AFrogGameCharacter::PauseMontage()

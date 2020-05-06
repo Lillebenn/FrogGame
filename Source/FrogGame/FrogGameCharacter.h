@@ -163,7 +163,7 @@ public:
 	// How quickly the Power Mode bar drains
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode", meta = (EditCondition="bIsDefaultPowerBlueprint"))
 	float DrainSpeed{-5.f};
-	// The ammount of frogs collected
+	// The amount of frogs collected
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | Objective")
 	int FrogsCollected{0};
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | Objective")
@@ -293,7 +293,7 @@ protected:
 	AActor* CurrentTrail;
 	UPROPERTY(EditAnywhere, Category = "Character | Particles")
 	bool bTestTrail{false};
-	void TestTrail();
+	void TestFunction();
 	UFUNCTION()
 	void PauseMontage();
 	bool bShouldPauseMontage{false};
