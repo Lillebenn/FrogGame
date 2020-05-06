@@ -28,6 +28,11 @@ public:
 	class UPawnMovementComponent* PawnMovementComponent;
 	UPROPERTY(BlueprintReadOnly)
 	class UFloatingPawnMovement* MovementComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Sound)
+	class USoundCue* ShootingSound;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Sound)
+	class USoundCue* AmbientSound;
 	UStaticMeshComponent* GetMesh();
 
 	void DisableActor_Implementation() override;
