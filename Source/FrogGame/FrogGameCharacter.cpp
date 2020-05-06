@@ -2,6 +2,8 @@
 
 #include "FrogGameCharacter.h"
 
+
+#include "AIController.h"
 #include "CustomDestructibleComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -597,6 +599,16 @@ void AFrogGameCharacter::InfinitePower()
 	}
 }
 
+void AFrogGameCharacter::RunToSwamp()
+{
+	// Might need to set the camera position to a certain point
+	GetController()->DisableInput(nullptr);
+	AAIController* AIController = Cast<AAIController>(AIControllerClass.GetDefaultObject());
+	AIController->Possess(this);
+	// Ideally, on possess the AIController's behaviour tree should play a short thing where it places the player in the correct transform once it reaches the desired point.
+	// After which, it would trigger an event to go back start showing HUD elements like scoreboard or whatever.
+}
+
 
 void AFrogGameCharacter::ApplyDamage()
 {
@@ -757,6 +769,7 @@ void AFrogGameCharacter::PowerMode()
 {
 	if ((CurrentPowerPoints >= MaxPowerPoints / 10.f || bInfinitePower) && !bPowerMode)
 	{
+		FrogHUD->AllFrogsGathered();
 		if (bUsingWhirlwind)
 		{
 			EndWhirlwind();
