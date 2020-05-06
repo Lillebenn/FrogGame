@@ -45,14 +45,6 @@ class AFrogGameCharacter : public ACharacter
 public:
 	AFrogGameCharacter();
 
-
-	/** Accessor Function for Current Score */
-	UFUNCTION(BlueprintCallable, Category = "Character | Score")
-	int GetCurrentScore() const
-	{
-		return CurrentScore;
-	}
-
 	/** Updates the players score 
 	* @Param Score This is the amount to increase the players score by. This should only be positive!
 	*/
@@ -60,29 +52,6 @@ public:
 	void UpdateCurrentScore(const int Score)
 	{
 		CurrentScore = CurrentScore + Score;
-	}
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | Score")
-	int CheckpointScoreReq{500000};
-	/** Accessor Function for Current PowerPoints */
-	UFUNCTION(BlueprintCallable, Category = "Character | PowerMode")
-	float GetCurrentPowerPoints() const
-	{
-		return CurrentPowerPoints;
-	}
-
-	/** Accessor Function for Current Frog Mode */
-	UFUNCTION(BlueprintCallable, Category = "Character | PowerMode")
-	bool GetCurrentFrogState() const
-	{
-		return bPowerMode;
-	}
-
-	/** Accessor Function for Frogs Collected */
-	UFUNCTION(BlueprintCallable, Category = "Character | Objective")
-	int GetCurrentFrogsCollected() const
-	{
-		return FrogsCollected;
 	}
 
 	UFUNCTION(BlueprintCallable, Category = "Character | PowerMode")
@@ -158,6 +127,7 @@ public:
 	bool bInfinitePower{false};
 	UFUNCTION()
 	void InfinitePower();
+
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode", meta = (EditCondition="bIsDefaultPowerBlueprint"))
 	TSubclassOf<AActor> PunchVolumeType;
 	UPROPERTY()
@@ -182,7 +152,7 @@ public:
 		"bIsDefaultPowerBlueprint"))
 	float PunchDamage{500.f};
 
-	UPROPERTY(VisibleAnywhere, Category = "Character | PowerMode")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Character | PowerMode")
 	float CurrentPowerPoints{0.f};
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | PowerMode", meta = (EditCondition=
 		"bIsDefaultPowerBlueprint"))
@@ -193,12 +163,14 @@ public:
 	// How quickly the Power Mode bar drains
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode", meta = (EditCondition="bIsDefaultPowerBlueprint"))
 	float DrainSpeed{-5.f};
-	// The ammount of frogs collected
+	// The amount of frogs collected
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | Objective")
 	int FrogsCollected{0};
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | Objective")
 	int TotalFrogChildren{10};
-
+	
+	void RunToSwamp();
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Character)
 	float SwimSpeed{2300.f};
 	float WalkSpeed;
@@ -225,8 +197,10 @@ public:
 	TSubclassOf<class ADestructibleObject> SmallDestructible;
 	int LastCheckpointScore{0};
 	/** The Player's current score */
-	UPROPERTY(EditAnywhere, Category = "Character | Score")
-	int CurrentScore;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category = "Character | Score")
+	int CurrentScore{0};
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | Score")
+	int CheckpointScoreReq{500000};
 	// How close object has to be to be eaten (destroyed).
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind", meta = (EditCondition=
 		"!bIsDefaultPowerBlueprint"))
@@ -319,7 +293,7 @@ protected:
 	AActor* CurrentTrail;
 	UPROPERTY(EditAnywhere, Category = "Character | Particles")
 	bool bTestTrail{false};
-	void TestTrail();
+	void TestFunction();
 	UFUNCTION()
 	void PauseMontage();
 	bool bShouldPauseMontage{false};

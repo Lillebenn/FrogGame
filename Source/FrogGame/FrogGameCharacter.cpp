@@ -2,6 +2,8 @@
 
 #include "FrogGameCharacter.h"
 
+
+#include "AIController.h"
 #include "CustomDestructibleComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -156,7 +158,7 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	//PlayerInputComponent->BindAction("Jump", IE_Released, this, &AFrogGameCharacter::ExecuteJump);
 #if WITH_EDITOR
 	PlayerInputComponent->BindAction("StopPowerMode", IE_Pressed, this, &AFrogGameCharacter::DeactivatePowerMode);
-	PlayerInputComponent->BindAction("TestTrail", IE_Pressed, this, &AFrogGameCharacter::TestTrail);
+	PlayerInputComponent->BindAction("TestFunction", IE_Pressed, this, &AFrogGameCharacter::TestFunction);
 	PlayerInputComponent->BindAction("ParticleTest", IE_Pressed, this, &AFrogGameCharacter::PauseMontage);
 	PlayerInputComponent->BindAction("InfinitePower", IE_Pressed, this, &AFrogGameCharacter::InfinitePower);
 	AFrogGameMode* FrogGameMode{Cast<AFrogGameMode>(UGameplayStatics::GetGameMode(GetWorld()))};
@@ -597,6 +599,16 @@ void AFrogGameCharacter::InfinitePower()
 	}
 }
 
+void AFrogGameCharacter::RunToSwamp()
+{
+	// Might need to set the camera position to a certain point
+	GetController()->DisableInput(nullptr);
+	AAIController* AIController = Cast<AAIController>(AIControllerClass.GetDefaultObject());
+	AIController->Possess(this);
+	// Ideally, on possess the AIController's behaviour tree should play a short thing where it places the player in the correct transform once it reaches the desired point.
+	// After which, it would trigger an event to go back start showing HUD elements like scoreboard or whatever.
+}
+
 
 void AFrogGameCharacter::ApplyDamage()
 {
@@ -757,6 +769,7 @@ void AFrogGameCharacter::PowerMode()
 {
 	if ((CurrentPowerPoints >= MaxPowerPoints / 10.f || bInfinitePower) && !bPowerMode)
 	{
+		
 		if (bUsingWhirlwind)
 		{
 			EndWhirlwind();
@@ -904,7 +917,7 @@ void AFrogGameCharacter::Jump()
 	bJumped = true;
 	DisableTrail();
 	Super::Jump();
-	ShockwaveCollider->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
+	ShockwaveCollider->SetCollisionProfileName(TEXT("OverlapEdible"));
 	ShockwaveCollider->SetSphereRadius(ShockwaveColliderRadius);
 }
 
@@ -1020,19 +1033,22 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 	ShockwaveCollider->SetCollisionProfileName(TEXT("NoCollision"));
 }
 
-void AFrogGameCharacter::TestTrail()
+void AFrogGameCharacter::TestFunction()
 {
-	if (bTestTrail)
-	{
-		bTestTrail = false;
-		DisableTrail();
-	}
-	else
-	{
-		bTestTrail = true;
+	// Use to test UI activated stuff and whatever else you can think of. Bound to U by default.
+	
+	
+	//if (bTestTrail)
+	//{
+	//	bTestTrail = false;
+	//	DisableTrail();
+	//}
+	//else
+	//{
+	//	bTestTrail = true;
 
-		SpawnTrail(WaterBreakChild, WaterBreakOffset, WaterBreakScale, WaterBreakRot);
-	}
+	//	SpawnTrail(WaterBreakChild, WaterBreakOffset, WaterBreakScale, WaterBreakRot);
+	//}
 }
 
 void AFrogGameCharacter::PauseMontage()
