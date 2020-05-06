@@ -504,8 +504,20 @@ void AFrogGameCharacter::PunchOneAnimNotify()
 	{
 		UGameplayStatics::SpawnEmitterAttached(PunchOne, GetMesh(), TEXT("r_hand_end_j"), PunchOneOffset,
 		                                       FRotator::ZeroRotator, FVector(0.05f));
+		if (PunchHit1)
+		{
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), PunchHit1, GetActorLocation(), FRotator());
+		}
+
 
 		ApplyDamage();
+	}
+	else
+	{
+		if (PunchAir1)
+		{
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), PunchAir1, GetActorLocation(), FRotator());
+		}
 	}
 	bPunchMove = false;
 }
@@ -516,8 +528,19 @@ void AFrogGameCharacter::PunchTwoAnimNotify()
 	{
 		UGameplayStatics::SpawnEmitterAttached(PunchTwo, GetMesh(), TEXT("l_hand_end_j"), PunchTwoOffset,
 		                                       FRotator::ZeroRotator, FVector(0.05f));
+		if(PunchHit2)
+		{
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), PunchHit2, GetActorLocation(), FRotator());
+		}
+
 		ApplyDamage();
 	}
+	else
+	{
+		if(PunchAir2)
+		{
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), PunchAir2, GetActorLocation(), FRotator());
+		}}
 	bPunchMove = false;
 }
 
@@ -527,7 +550,19 @@ void AFrogGameCharacter::UpperCutAnimNotify()
 	{
 		UGameplayStatics::SpawnEmitterAttached(UpperCut, GetMesh(), TEXT("r_hand_end_j"), UpperCutOffset,
 		                                       FRotator::ZeroRotator, FVector(0.05f));
+		if (PunchHit3)
+		{
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), PunchHit3, GetActorLocation(), FRotator());
+		}
+
 		ApplyDamage();
+	}
+	else
+	{
+		if(PunchAir3)
+		{
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), PunchAir3, GetActorLocation(), FRotator());
+		}
 	}
 	bPunchMove = false;
 }
@@ -769,7 +804,6 @@ void AFrogGameCharacter::PowerMode()
 {
 	if ((CurrentPowerPoints >= MaxPowerPoints / 10.f || bInfinitePower) && !bPowerMode)
 	{
-		
 		if (bUsingWhirlwind)
 		{
 			EndWhirlwind();
@@ -791,6 +825,7 @@ void AFrogGameCharacter::ActivatePowerModel()
 	SetPlayerModel(PowerModeSettings);
 	FireEyeOne->Activate();
 	FireEyeTwo->Activate();
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), PowerUpTransition, GetActorLocation(), FRotator());
 }
 
 void AFrogGameCharacter::DeactivatePowerMode()
@@ -1036,8 +1071,7 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 void AFrogGameCharacter::TestFunction()
 {
 	// Use to test UI activated stuff and whatever else you can think of. Bound to U by default.
-	
-	
+
 	//if (bTestTrail)
 	//{
 	//	bTestTrail = false;

@@ -8,6 +8,8 @@
 #include "TimerManager.h"
 #include "FFrogLibrary.h"
 #include "SphereDrop.h"
+#include "Sound/SoundCue.h"
+
 #include "FrogGameCharacter.generated.h"
 
 enum class ECharacterMode
@@ -69,8 +71,41 @@ public:
 	// Tick this if this is just a template we switch to during powermode.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Character)
 	bool bIsDefaultPowerBlueprint{false};
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Character | PowerMode", meta = (AllowPrivateAccess =
-		"true", EditCondition="!bIsDefaultPowerBlueprint"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
+	USoundCue* Splash1;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
+	USoundCue* Splash2;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
+	USoundCue* Splash3;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
+	USoundCue* PowerUpTransition;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
+	USoundCue* PunchAir1;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
+	USoundCue* PunchAir2;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
+	USoundCue* PunchAir3;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
+	USoundCue* PunchAir4;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
+	USoundCue* PunchHit1;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
+	USoundCue* PunchHit2;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
+	USoundCue* PunchHit3;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | PowerMode", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
 	TSubclassOf<AFrogGameCharacter> PowerModeBP;
 	UPROPERTY()
 	AFrogGameCharacter* PowerModeSettings;
@@ -94,29 +129,29 @@ public:
 
 	void Consume(AActor* OtherActor);
 	void Consume(ASphereDrop* Sphere);
-	UPROPERTY (EditAnywhere, BlueprintReadWrite, Category = "Character | Particles", meta = (EditCondition=
+	UPROPERTY (EditAnywhere, BlueprintReadOnly, Category = "Character | Particles", meta = (EditCondition=
 		"bIsDefaultPowerBlueprint"))
 	class UParticleSystem* PunchOne;
-	UPROPERTY (EditAnywhere, BlueprintReadWrite, Category = "Character | Particles", meta = (EditCondition=
+	UPROPERTY (EditAnywhere, BlueprintReadOnly, Category = "Character | Particles", meta = (EditCondition=
 		"bIsDefaultPowerBlueprint"))
 	class UParticleSystem* PunchTwo;
-	UPROPERTY (EditAnywhere, BlueprintReadWrite, Category = "Character | Particles", meta = (EditCondition=
+	UPROPERTY (EditAnywhere, BlueprintReadOnly, Category = "Character | Particles", meta = (EditCondition=
 		"bIsDefaultPowerBlueprint"))
 	class UParticleSystem* UpperCut;
 	UPROPERTY (EditDefaultsOnly, BlueprintReadOnly, Category = Character, meta = (
 		EditCondition="bIsDefaultPowerBlueprint"))
 	class UAnimMontage* PunchMontage;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode", meta = (EditCondition=
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | PowerMode", meta = (EditCondition=
 		"bIsDefaultPowerBlueprint"))
 	FVector PunchOneOffset{0.f, 8.f, 0.f};
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode", meta = (EditCondition=
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | PowerMode", meta = (EditCondition=
 		"bIsDefaultPowerBlueprint"))
 	FVector PunchTwoOffset{0.f, -8.f, 0.f};
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode", meta = (EditCondition=
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | PowerMode", meta = (EditCondition=
 		"bIsDefaultPowerBlueprint"))
 	FVector UpperCutOffset{0.f, 0.f, 0.f};
 	FVector RegularBoxExtent;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode", meta = (EditCondition=
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | PowerMode", meta = (EditCondition=
 		"bIsDefaultPowerBlueprint"))
 	FVector UpperCutBoxExtent{60.f, 30.f, 80.f};
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Character | PowerMode")
@@ -132,7 +167,7 @@ public:
 	TSubclassOf<AActor> PunchVolumeType;
 	UPROPERTY()
 	UBoxComponent* PunchVolume;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode", meta = (EditCondition=
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | PowerMode", meta = (EditCondition=
 		"bIsDefaultPowerBlueprint"))
 	TSubclassOf<class UCameraShake> PunchShake;
 	UPROPERTY()
@@ -144,11 +179,11 @@ public:
 	UPROPERTY()
 	AActor* PunchVolumeActor;
 	// How far the player should "dash" forward each punch. 0 = don't move at all, 1 = Equivalent to holding down W for roughly 0.2 ms. 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode", meta = (EditCondition=
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | PowerMode", meta = (EditCondition=
 		"bIsDefaultPowerBlueprint"))
 	float PunchForwardDistance{1.f};
 	// Amount of damage the punch will do on each hit.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | PowerMode", meta = (EditCondition=
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | PowerMode", meta = (EditCondition=
 		"bIsDefaultPowerBlueprint"))
 	float PunchDamage{500.f};
 
@@ -164,28 +199,28 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode", meta = (EditCondition="bIsDefaultPowerBlueprint"))
 	float DrainSpeed{-5.f};
 	// The amount of frogs collected
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | Objective")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | Objective")
 	int FrogsCollected{0};
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character | Objective")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | Objective")
 	int TotalFrogChildren{10};
-	
+
 	void RunToSwamp();
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Character)
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Character)
 	float SwimSpeed{2300.f};
 	float WalkSpeed;
 	UPROPERTY(EditAnywhere, Category = "Character | Shockwave", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
 	TSubclassOf<AActor> ShockwaveActor;
-	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Shockwave", meta = (EditCondition=
+	UPROPERTY (EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Shockwave", meta = (EditCondition=
 		"!bIsDefaultPowerBlueprint"))
 	class UParticleSystem* WaterShockwave;
 
-	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Shockwave", meta = (EditCondition=
+	UPROPERTY (EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Shockwave", meta = (EditCondition=
 		"!bIsDefaultPowerBlueprint"))
 	class UParticleSystem* LandShockwave;
-	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Shockwave")
+	UPROPERTY (EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Shockwave")
 	float WaterShockwaveScale{0.15f};
-	UPROPERTY (EditDefaultsOnly, BlueprintReadWrite, Category = "Character | Shockwave")
+	UPROPERTY (EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Shockwave")
 	float LandShockwaveScale{0.5f};
 
 	UPROPERTY()
@@ -243,7 +278,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void PunchStopNotify();
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadOnly)
 	uint8 CurrentPunch{0};
 	bool bPunchMove{false};
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character)
