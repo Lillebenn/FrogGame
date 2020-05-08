@@ -114,11 +114,11 @@ void AFrogGameCharacter::BeginPlay()
 	DefaultWhirlwindSwirl.DefaultLinearInSpeed = InSpeed;
 
 	// TODO: Pause Reg ambient and play sea ambient based on overlap volume event
-	if(RegAmbientSound)
+	if (RegAmbientSound)
 	{
 		RegAmbientSoundComponent = UGameplayStatics::SpawnSound2D(GetWorld(), RegAmbientSound);
 	}
-	if(SeaAmbientSound)
+	if (SeaAmbientSound)
 	{
 		SeaAmbientSoundComponent = UGameplayStatics::CreateSound2D(GetWorld(), SeaAmbientSound);
 	}
@@ -410,13 +410,15 @@ void AFrogGameCharacter::EndWhirlwind()
 	WhirlwindAffectedActors.Empty();
 	if (PlayingWhirlwindSound)
 	{
+		PlayingWhirlwindSound->Deactivate();
 		PlayingWhirlwindSound->DestroyComponent();
 		PlayingWhirlwindSound = nullptr;
 	}
-	if (EatSound)
+	if (EatSound && bAteSomething)
 	{
 		UGameplayStatics::PlaySoundAtLocation(GetWorld(), EatSound, GetActorLocation(), FRotator());
 	}
+	bAteSomething = false;
 	UE_LOG(LogTemp, Warning, TEXT("Stopped using whirlwind."))
 }
 
@@ -631,6 +633,7 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 	{
 		Consume_Impl(OtherActor);
 		WhirlwindAffectedActors.Remove(OtherActor);
+		bAteSomething = true;
 	}
 }
 

@@ -150,19 +150,20 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
 		"!bIsDefaultPowerBlueprint"))
-	USoundCue* WhirlwindSound;
+	USoundBase* WhirlwindSound;
 	UPROPERTY()
 	UAudioComponent* PlayingWhirlwindSound;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
 		"!bIsDefaultPowerBlueprint"))
 	USoundCue* EatSound;
+	bool bAteSomething{false};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
 		"!bIsDefaultPowerBlueprint"))
-	USoundCue* RegAmbientSound;
+	USoundBase* RegAmbientSound;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
 		"!bIsDefaultPowerBlueprint"))
-	USoundCue* SeaAmbientSound;
+	USoundBase* SeaAmbientSound;
 	UPROPERTY()
 	UAudioComponent* RegAmbientSoundComponent;
 	UPROPERTY()
