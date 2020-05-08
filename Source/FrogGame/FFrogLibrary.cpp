@@ -61,3 +61,13 @@ float FFrogLibrary::SquaredRadialDistance(const FVector& A, const FVector& B)
 	const float SquaredRadialDistance{(FrogXY.X * FrogXY.X) + (FrogXY.Y * FrogXY.Y)};
 	return SquaredRadialDistance;
 }
+
+USoundCue* FFrogLibrary::GetRandomSoundByArray(const TArray<USoundCue*>& Sounds)
+{
+	const int SoundIndex{FMath::RandRange(0, Sounds.Num() - 1)};
+	if(Sounds.Num() == 0)
+	{
+		return nullptr;
+	}
+	return Sounds[SoundIndex];
+}

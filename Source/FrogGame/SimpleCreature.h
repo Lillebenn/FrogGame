@@ -5,6 +5,9 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "Edible.h"
+#include "FFrogLibrary.h"
+#include "Sound/SoundCue.h"
+
 #include "SimpleCreature.generated.h"
 
 UCLASS(Abstract)
@@ -29,10 +32,19 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	class UFloatingPawnMovement* MovementComponent;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Sound)
-	class USoundCue* ShootingSound;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Sound)
-	class USoundCue* AmbientSound;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Sound)
+	TArray<USoundCue*> ShootingSounds;
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE USoundCue* GetShootSound() const
+	{
+		return FFrogLibrary::GetRandomSoundByArray(ShootingSounds);
+	}
+
+	// Mostly only relevant for tanks and cars
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Sound)
+	USoundCue* AmbientSound;
+
+	
 	UStaticMeshComponent* GetMesh();
 
 	void DisableActor_Implementation() override;
@@ -45,8 +57,6 @@ public:
 	FTimerHandle TimerHandle;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Movement)
 	int MoveDistance{500};
-
-	;
 
 	float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
 	                 AActor* DamageCauser) override;

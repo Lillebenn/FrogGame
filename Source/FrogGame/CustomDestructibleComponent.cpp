@@ -79,11 +79,17 @@ void UCustomDestructibleComponent::KillActor() const
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), DestructionSmoke, GetOwner()->GetActorLocation(),
 		                                         FRotator::ZeroRotator, FVector(SmokeScale));
 	}
-	if(bSpawnSphereDrops)
+	if (DestructionSounds.Num() > 0)
+	{
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), FFrogLibrary::GetRandomSoundByArray(DestructionSounds),
+		                                      GetOwner()->GetActorLocation(), FRotator());
+	}
+	if (bSpawnSphereDrops)
 	{
 		SpawnSpheres();
 		GetOwner()->SetLifeSpan(0.001f);
-	}else
+	}
+	else
 	{
 		Cast<AFrogGameCharacter>(GetWorld()->GetFirstPlayerController()->GetCharacter())->Consume(GetOwner());
 	}

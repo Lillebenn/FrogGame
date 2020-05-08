@@ -26,4 +26,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Frog Child")
 	FTransform SwampLocation;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Sound)
+	USoundCue* FrogScreech;
 };

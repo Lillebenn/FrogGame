@@ -5,6 +5,9 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Edible.h"
+#include "FFrogLibrary.h"
+#include "Sound/SoundCue.h"
+
 #include "AdvCreature.generated.h"
 USTRUCT(BlueprintType)
 struct FPatrolPath
@@ -41,8 +44,16 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AI", meta = (EditCondition = "bUsePatrolPath"))
 	FPatrolPath PatrolSettings;
-	
-	
+
+	// Death sound. Not used for frog child.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Sound)
+	TArray<USoundCue*> HumanSounds;
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE USoundCue* GetHumanSound() const
+	{
+		return FFrogLibrary::GetRandomSoundByArray(HumanSounds);
+	}
 
 	// Called every frame
 	void Tick(float DeltaTime) override;

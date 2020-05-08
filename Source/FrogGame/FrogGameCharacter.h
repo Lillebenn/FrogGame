@@ -71,39 +71,102 @@ public:
 	// Tick this if this is just a template we switch to during powermode.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Character)
 	bool bIsDefaultPowerBlueprint{false};
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
+
+
+	UPROPERTY(EditDefaultsOnly, Category = "Character | Sound", meta = (EditCondition=
 		"!bIsDefaultPowerBlueprint"))
-	USoundCue* Splash1;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
-		"!bIsDefaultPowerBlueprint"))
-	USoundCue* Splash2;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
-		"!bIsDefaultPowerBlueprint"))
-	USoundCue* Splash3;
+	TArray<USoundCue*> SplashSounds;
+	FORCEINLINE bool HasSplashSounds() const
+	{
+		return SplashSounds.Num() > 0;
+	}
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE USoundCue* GetSplashSound() const
+	{
+		return FFrogLibrary::GetRandomSoundByArray(SplashSounds);
+	}
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
 		"!bIsDefaultPowerBlueprint"))
 	USoundCue* PowerUpTransition;
+
+	void PlayPunchSounds(bool bSuccess) const;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
 		"!bIsDefaultPowerBlueprint"))
-	USoundCue* PunchAir1;
+	TArray<USoundCue*> PunchAirSounds;
+	FORCEINLINE bool HasPunchAirSounds() const
+	{
+		return PunchAirSounds.Num() > 0;
+	}
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE USoundCue* GetPunchAirSound() const
+	{
+		return FFrogLibrary::GetRandomSoundByArray(PunchAirSounds);
+	}
+
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
 		"!bIsDefaultPowerBlueprint"))
-	USoundCue* PunchAir2;
+	TArray<USoundCue*> PunchHitSounds;
+	FORCEINLINE bool HasPunchHitSounds() const
+	{
+		return PunchHitSounds.Num() > 0;
+	}
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE USoundCue* GetPunchHitSound() const
+	{
+		return FFrogLibrary::GetRandomSoundByArray(PunchHitSounds);
+	}
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
 		"!bIsDefaultPowerBlueprint"))
-	USoundCue* PunchAir3;
+	TArray<USoundCue*> RegularFootstepSounds;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
 		"!bIsDefaultPowerBlueprint"))
-	USoundCue* PunchAir4;
+	TArray<USoundCue*> ConcreteFootstepSounds;
+	bool bOnConcrete{false};
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE USoundCue* GetFootStepSound() const
+	{
+		if (bOnConcrete)
+		{
+			return FFrogLibrary::GetRandomSoundByArray(ConcreteFootstepSounds);
+		}
+		return FFrogLibrary::GetRandomSoundByArray(RegularFootstepSounds);
+	}
+
+	// Explosion sounds played when taking damage from tanks or helicopter
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
 		"!bIsDefaultPowerBlueprint"))
-	USoundCue* PunchHit1;
+	TArray<USoundCue*> DamageTakenSounds;
+	FORCEINLINE USoundCue* GetDamageTakenSound() const
+	{
+		return FFrogLibrary::GetRandomSoundByArray(DamageTakenSounds);
+	}
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
 		"!bIsDefaultPowerBlueprint"))
-	USoundCue* PunchHit2;
+	USoundCue* WhirlwindSound;
+	UPROPERTY()
+	UAudioComponent* PlayingWhirlwindSound;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
 		"!bIsDefaultPowerBlueprint"))
-	USoundCue* PunchHit3;
+	USoundCue* EatSound;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
+	USoundCue* RegAmbientSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Sound", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
+	USoundCue* SeaAmbientSound;
+	UPROPERTY()
+	UAudioComponent* RegAmbientSoundComponent;
+	UPROPERTY()
+	UAudioComponent* SeaAmbientSoundComponent;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | PowerMode", meta = (EditCondition=
 		"!bIsDefaultPowerBlueprint"))
 	TSubclassOf<AFrogGameCharacter> PowerModeBP;

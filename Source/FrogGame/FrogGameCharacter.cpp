@@ -20,7 +20,6 @@
 #include "FrogChild.h"
 #include "FrogGameMode.h"
 #include "FrogGameUI.h"
-#include "SimpleCreature.h"
 #include "SphereDrop.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -113,6 +112,16 @@ void AFrogGameCharacter::BeginPlay()
 	DefaultWhirlwindSwirl.DefaultLinearUpSpeed = SuctionSpeed;
 	DefaultWhirlwindSwirl.DefaultAngularSpeed = RotationSpeed;
 	DefaultWhirlwindSwirl.DefaultLinearInSpeed = InSpeed;
+
+	// TODO: Pause Reg ambient and play sea ambient based on overlap volume event
+	if(RegAmbientSound)
+	{
+		RegAmbientSoundComponent = UGameplayStatics::SpawnSound2D(GetWorld(), RegAmbientSound);
+	}
+	if(SeaAmbientSound)
+	{
+		SeaAmbientSoundComponent = UGameplayStatics::CreateSound2D(GetWorld(), SeaAmbientSound);
+	}
 }
 
 void AFrogGameCharacter::SetupSettingsCopies()
@@ -314,6 +323,10 @@ void AFrogGameCharacter::Whirlwind()
 		SpawnWhirlwindPfx();
 		GetCharacterMovement()->bOrientRotationToMovement = false;
 		GetCharacterMovement()->MaxWalkSpeed = WhirlwindWalkSpeed;
+		if (WhirlwindSound)
+		{
+			PlayingWhirlwindSound = UGameplayStatics::SpawnSoundAttached(WhirlwindSound, GetMesh(), TEXT("joint1"));
+		}
 	}
 }
 
@@ -395,7 +408,15 @@ void AFrogGameCharacter::EndWhirlwind()
 		Actor->SetActorScale3D(EdibleComp->GetInitialTransform().GetScale3D());
 	}
 	WhirlwindAffectedActors.Empty();
-
+	if (PlayingWhirlwindSound)
+	{
+		PlayingWhirlwindSound->DestroyComponent();
+		PlayingWhirlwindSound = nullptr;
+	}
+	if (EatSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), EatSound, GetActorLocation(), FRotator());
+	}
 	UE_LOG(LogTemp, Warning, TEXT("Stopped using whirlwind."))
 }
 
@@ -500,71 +521,64 @@ void AFrogGameCharacter::DoPunch()
 
 void AFrogGameCharacter::PunchOneAnimNotify()
 {
-	if (HitActors.Num() > 0)
+	const bool bSuccess{HitActors.Num() > 0};
+	if (bSuccess)
 	{
 		UGameplayStatics::SpawnEmitterAttached(PunchOne, GetMesh(), TEXT("r_hand_end_j"), PunchOneOffset,
 		                                       FRotator::ZeroRotator, FVector(0.05f));
-		if (PunchHit1)
-		{
-			UGameplayStatics::PlaySoundAtLocation(GetWorld(), PunchHit1, GetActorLocation(), FRotator());
-		}
 
 
 		ApplyDamage();
 	}
-	else
-	{
-		if (PunchAir1)
-		{
-			UGameplayStatics::PlaySoundAtLocation(GetWorld(), PunchAir1, GetActorLocation(), FRotator());
-		}
-	}
+	PlayPunchSounds(bSuccess);
 	bPunchMove = false;
 }
 
 void AFrogGameCharacter::PunchTwoAnimNotify()
 {
-	if (HitActors.Num() > 0)
+	const bool bSuccess{HitActors.Num() > 0};
+	if (bSuccess)
 	{
 		UGameplayStatics::SpawnEmitterAttached(PunchTwo, GetMesh(), TEXT("l_hand_end_j"), PunchTwoOffset,
 		                                       FRotator::ZeroRotator, FVector(0.05f));
-		if(PunchHit2)
-		{
-			UGameplayStatics::PlaySoundAtLocation(GetWorld(), PunchHit2, GetActorLocation(), FRotator());
-		}
+
 
 		ApplyDamage();
 	}
-	else
-	{
-		if(PunchAir2)
-		{
-			UGameplayStatics::PlaySoundAtLocation(GetWorld(), PunchAir2, GetActorLocation(), FRotator());
-		}}
+	PlayPunchSounds(bSuccess);
 	bPunchMove = false;
 }
 
 void AFrogGameCharacter::UpperCutAnimNotify()
 {
-	if (HitActors.Num() > 0)
+	const bool bSuccess{HitActors.Num() > 0};
+	if (bSuccess)
 	{
 		UGameplayStatics::SpawnEmitterAttached(UpperCut, GetMesh(), TEXT("r_hand_end_j"), UpperCutOffset,
 		                                       FRotator::ZeroRotator, FVector(0.05f));
-		if (PunchHit3)
-		{
-			UGameplayStatics::PlaySoundAtLocation(GetWorld(), PunchHit3, GetActorLocation(), FRotator());
-		}
 
 		ApplyDamage();
 	}
-	else
+	PlayPunchSounds(bSuccess);
+	bPunchMove = false;
+}
+
+void AFrogGameCharacter::PlayPunchSounds(const bool bSuccess) const
+{
+	if (bSuccess)
 	{
-		if(PunchAir3)
+		if (HasPunchHitSounds())
 		{
-			UGameplayStatics::PlaySoundAtLocation(GetWorld(), PunchAir3, GetActorLocation(), FRotator());
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), GetPunchHitSound(), GetActorLocation(), FRotator());
 		}
 	}
-	bPunchMove = false;
+	else
+	{
+		if (HasPunchAirSounds())
+		{
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), GetPunchAirSound(), GetActorLocation(), FRotator());
+		}
+	}
 }
 
 void AFrogGameCharacter::PunchResetNotify()
@@ -665,6 +679,10 @@ void AFrogGameCharacter::TakeScoreDamage(const float DamageAmount)
 	if (FrogHUD)
 	{
 		FrogHUD->DamageTaken(DamageAmount);
+	}
+	if (DamageTakenSounds.Num() > 0)
+	{
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), GetDamageTakenSound(), GetActorLocation(), FRotator());
 	}
 }
 
@@ -1033,6 +1051,10 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 			{
 				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WaterShockwave, Location,
 				                                         FRotator::ZeroRotator, FVector(WaterShockwaveScale));
+			}
+			if (GetSplashSound())
+			{
+				UGameplayStatics::PlaySoundAtLocation(GetWorld(), GetSplashSound(), GetActorLocation(), FRotator());
 			}
 		}
 		else
