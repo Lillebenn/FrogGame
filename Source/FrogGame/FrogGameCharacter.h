@@ -7,7 +7,6 @@
 #include "GameFramework/Character.h"
 #include "TimerManager.h"
 #include "FFrogLibrary.h"
-#include "SphereDrop.h"
 #include "Sound/SoundCue.h"
 
 #include "FrogGameCharacter.generated.h"
@@ -61,7 +60,7 @@ public:
 	{
 		return CurrentPowerPoints >= MaxPowerPoints / 10.f;
 	}
-
+	bool bPressRVisible{false};
 
 	UPROPERTY()
 	AFrogGameCharacter* NeutralModeSettings;
@@ -192,7 +191,7 @@ public:
 	ECharacterMode CurrentMode{ECharacterMode::Neutral};
 
 	void Consume(AActor* OtherActor);
-	void Consume(ASphereDrop* Sphere);
+	void Consume(class ASphereDrop* Sphere);
 	UPROPERTY (EditAnywhere, BlueprintReadOnly, Category = "Character | Particles", meta = (EditCondition=
 		"bIsDefaultPowerBlueprint"))
 	class UParticleSystem* PunchOne;

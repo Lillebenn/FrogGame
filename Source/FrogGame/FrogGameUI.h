@@ -18,4 +18,14 @@ public:
 	void AllFrogsGathered();
 	UFUNCTION(BlueprintImplementableEvent)
 	void DamageTaken(float Damage);
+	UFUNCTION(BlueprintImplementableEvent)
+	void CanEnterPowerMode();
+	UFUNCTION(BlueprintImplementableEvent)
+	void EnteredPowerMode();
+	UFUNCTION(BlueprintImplementableEvent)
+	void EnteredRegularMode();
+	UFUNCTION(BlueprintImplementableEvent)
+	void GainedPowerPoints(bool bInPowerMode);
+	UFUNCTION(BlueprintImplementableEvent)
+	void GainedFrogChild();
 };

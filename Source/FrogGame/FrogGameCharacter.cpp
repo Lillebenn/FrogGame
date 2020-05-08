@@ -704,6 +704,7 @@ void AFrogGameCharacter::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 
 				UpdateCurrentScore(Child->EdibleComponent->ScorePoints);
 				FrogsCollected++;
+				FrogHUD->GainedFrogChild();
 				if (FrogsCollected == TotalFrogChildren)
 				{
 					if (FrogHUD)
@@ -838,6 +839,7 @@ void AFrogGameCharacter::PowerMode()
 void AFrogGameCharacter::ActivatePowerModel()
 {
 	bPowerMode = true;
+	FrogHUD->EnteredPowerMode();
 	CurrentMode = ECharacterMode::Power;
 	if (WaterFloor && bIsInWater)
 	{
@@ -852,6 +854,8 @@ void AFrogGameCharacter::ActivatePowerModel()
 void AFrogGameCharacter::DeactivatePowerMode()
 {
 	bPowerMode = false;
+	FrogHUD->EnteredRegularMode();
+	bPressRVisible = false;
 	EndAttack();
 	CurrentMode = ECharacterMode::Neutral;
 	CurrentPunch = 0;
@@ -910,6 +914,12 @@ void AFrogGameCharacter::SetPlayerModel(AFrogGameCharacter* CharacterSettings)
 void AFrogGameCharacter::UpdatePowerPoints(float Points)
 {
 	CurrentPowerPoints = CurrentPowerPoints + Points;
+	FrogHUD->GainedPowerPoints(bPowerMode);
+	if (CanTransform() && !bPressRVisible)
+	{
+		FrogHUD->CanEnterPowerMode();
+		bPressRVisible = true;
+	}
 	if (CurrentPowerPoints >= MaxPowerPoints)
 	{
 		CurrentPowerPoints = MaxPowerPoints;
@@ -922,7 +932,7 @@ void AFrogGameCharacter::PowerDrain(float DeltaTime)
 	const float DrainPoints = (DeltaTime * DrainSpeed);
 	if (!bInfinitePower)
 	{
-		UpdatePowerPoints(DrainPoints);
+		CurrentPowerPoints = CurrentPowerPoints + DrainPoints;
 		if (CurrentPowerPoints <= 0.f)
 		{
 			DeactivatePowerMode();
@@ -1096,7 +1106,7 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 void AFrogGameCharacter::TestFunction()
 {
 	// Use to test UI activated stuff and whatever else you can think of. Bound to U by default.
-
+	FrogHUD->CanEnterPowerMode();
 	//if (bTestTrail)
 	//{
 	//	bTestTrail = false;
