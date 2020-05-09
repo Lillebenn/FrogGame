@@ -29,7 +29,7 @@ protected:
 	TSubclassOf<class UFrogGameUI> FrogHUDClass;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "User Interface")
 	bool bShowWidget{true};
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	class UFrogGameUI* CurrentWidget;
 
 

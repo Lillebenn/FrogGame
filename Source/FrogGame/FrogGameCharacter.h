@@ -52,7 +52,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Character | Score")
 	void UpdateCurrentScore(const int Score)
 	{
-		CurrentScore = CurrentScore + Score;
+		int NewScore{CurrentScore + Score};
+		if(NewScore < 0)
+		{
+			NewScore = 0;
+		}
+		CurrentScore = NewScore;
 	}
 
 	UFUNCTION(BlueprintCallable, Category = "Character | PowerMode")
@@ -60,6 +65,7 @@ public:
 	{
 		return CurrentPowerPoints >= MaxPowerPoints / 10.f;
 	}
+
 	bool bPressRVisible{false};
 
 	UPROPERTY()
@@ -297,8 +303,15 @@ public:
 	/** The Player's current score */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category = "Character | Score")
 	int CurrentScore{0};
+	// Currently set to an arbitrary value 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | Score")
-	int CheckpointScoreReq{500000};
+	int NumObjectsInGame{50000};
+
+	int CurrentDestroyedNum{0};
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Character | Score")
+	float DestroyedPercent{0.f};
+
+	void UpdateDestroyedPercent();
 	// How close object has to be to be eaten (destroyed).
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character | Whirlwind", meta = (EditCondition=
 		"!bIsDefaultPowerBlueprint"))

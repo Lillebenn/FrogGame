@@ -28,4 +28,5 @@ public:
 	void GainedPowerPoints(bool bInPowerMode);
 	UFUNCTION(BlueprintImplementableEvent)
 	void GainedFrogChild();
+
 };

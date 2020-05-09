@@ -12,7 +12,7 @@ struct FSaveInfo
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FString PlayerName{TEXT("N/A")};
+	FString PlayerName{TEXT("empty")};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int FinalScore{0};
@@ -32,6 +32,7 @@ class FROGGAME_API UFrogSaveGame : public USaveGame
 {
 	GENERATED_BODY()
 public:
+	void Construct(int NumHighScores);
 	UPROPERTY()
 	FString SaveSlotName{TEXT("High Score List")};
 

@@ -632,6 +632,7 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 	if (OtherActor)
 	{
 		Consume_Impl(OtherActor);
+		UpdateDestroyedPercent();
 		WhirlwindAffectedActors.Remove(OtherActor);
 		bAteSomething = true;
 	}
@@ -667,6 +668,7 @@ void AFrogGameCharacter::ApplyDamage()
 	for (auto Actor : HitActors)
 	{
 		Actor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
+		UpdateDestroyedPercent();
 	}
 	if (HitActors.Num() > 0 && PunchShake)
 	{
@@ -987,6 +989,12 @@ void AFrogGameCharacter::Jump()
 	ShockwaveCollider->SetSphereRadius(ShockwaveColliderRadius);
 }
 
+void AFrogGameCharacter::UpdateDestroyedPercent()
+{
+	CurrentDestroyedNum++;
+	DestroyedPercent = static_cast<float>(CurrentDestroyedNum) / static_cast<float>(NumObjectsInGame) * 100.f;
+}
+
 void AFrogGameCharacter::IncreaseGravity() const
 {
 	if (bJumped)
@@ -1098,6 +1106,7 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 		if (Actor->GetComponentByClass(UCustomDestructibleComponent::StaticClass()))
 		{
 			Actor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
+			UpdateDestroyedPercent();
 		}
 	}
 	ShockwaveCollider->SetCollisionProfileName(TEXT("NoCollision"));

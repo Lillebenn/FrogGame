@@ -3,3 +3,10 @@
 
 #include "FrogSaveGame.h"
 
+void UFrogSaveGame::Construct(int NumHighScores)
+{
+	for (int i{0}; i < NumHighScores; i++)
+	{
+		HighScores.Add(FSaveInfo());
+	}
+}
