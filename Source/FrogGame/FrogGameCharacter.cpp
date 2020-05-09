@@ -1086,6 +1086,10 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), LandShockwave, Location,
 				                                         FRotator::ZeroRotator, FVector(LandShockwaveScale));
 			}
+			if (LandingSound)
+			{
+				UGameplayStatics::PlaySoundAtLocation(GetWorld(), LandingSound, GetActorLocation(), FRotator());
+			}
 		}
 		const float ZDiff{GetActorLocation().Z - InitialZValue};
 		if (ZDiff < 0.f)

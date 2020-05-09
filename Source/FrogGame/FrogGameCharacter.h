@@ -53,7 +53,7 @@ public:
 	void UpdateCurrentScore(const int Score)
 	{
 		int NewScore{CurrentScore + Score};
-		if(NewScore < 0)
+		if (NewScore < 0)
 		{
 			NewScore = 0;
 		}
@@ -86,6 +86,8 @@ public:
 		return SplashSounds.Num() > 0;
 	}
 
+	UPROPERTY(EditDefaultsOnly, Category = "Character | Sound", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
+	USoundCue* LandingSound;
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE USoundCue* GetSplashSound() const
 	{
