@@ -42,7 +42,7 @@ public:
 
 	// Mostly only relevant for tanks and cars
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Sound)
-	USoundCue* AmbientSound;
+	USoundBase* AmbientSound;
 
 	
 	UStaticMeshComponent* GetMesh();
