@@ -7,7 +7,7 @@
 #include "Kismet/GameplayStatics.h"
 
 
-UFrogGameInstance::UFrogGameInstance(const FObjectInitializer& ObjectInitializer) : UGameInstance(ObjectInitializer)
+void UFrogGameInstance::Init()
 {
 	HighScoreSaveGame = Cast<UFrogSaveGame>(UGameplayStatics::LoadGameFromSlot(TEXT("High Score List"), 0));
 	if (!HighScoreSaveGame)
@@ -22,24 +22,18 @@ void UFrogGameInstance::NewHighScore(const FString PlayerName, const int HighSco
 {
 	TArray<FSaveInfo> HighScoreArray{HighScoreSaveGame->HighScores};
 	FSaveInfo NewHighScore{PlayerName, HighScore, PercentDestroyed, TimeSpent};
-	if (HighScoreArray.Num() == 0)
+
+	for (int i{0}; i < HighScoreArray.Num(); i++)
 	{
-		HighScoreArray.Add(NewHighScore);
-	}
-	else
-	{
-		for (int i{0}; i < HighScoreArray.Num(); i++)
+		const FSaveInfo& CurrentHighScore{HighScoreArray[i]};
+		if (HighScore >= CurrentHighScore.FinalScore)
 		{
-			const FSaveInfo& CurrentHighScore{HighScoreArray[i]};
-			if (HighScore > CurrentHighScore.FinalScore)
-			{
-				HighScoreArray.EmplaceAt(i, NewHighScore);
-				break;
-			}
+			HighScoreArray.EmplaceAt(i, NewHighScore);
+			break;
 		}
 	}
 
-	while (HighScoreArray.Num() >= MaxNumHighScores)
+	while (HighScoreArray.Num() > MaxNumHighScores)
 	{
 		HighScoreArray.Pop();
 	}

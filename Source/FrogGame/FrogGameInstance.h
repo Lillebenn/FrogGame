@@ -19,8 +19,7 @@ class FROGGAME_API UFrogGameInstance : public UGameInstance
 {
 	GENERATED_BODY()
 public:
-	explicit UFrogGameInstance(const FObjectInitializer& ObjectInitializer);
-	
+	void Init() override;
 	UFUNCTION(BlueprintCallable)
 	void NewHighScore(FString PlayerName, int HighScore, float PercentDestroyed, float TimeSpent) const;
 	UFUNCTION(BlueprintCallable)
@@ -31,7 +30,6 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = SaveGame)
 	uint8 MaxNumHighScores{5};
-	
 
 
 private:

@@ -98,6 +98,7 @@ void AFrogGameCharacter::BeginPlay()
 
 	SetupSettingsCopies();
 	FrogHUD = Cast<UFrogGameUI>(Cast<AFrogGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->GetGameHUD());
+	FrogHUD->SetOwningPlayer(GetWorld()->GetFirstPlayerController());
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnOverlap);
 	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnEndOverlap);
 	WhirlwindVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindBeginOverlap);
