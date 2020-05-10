@@ -15,7 +15,7 @@ AStaticAdvCreature::AStaticAdvCreature()
 	CreatureMesh->SetupAttachment(RootComponent);
 }
 
-UStaticMeshComponent* AStaticAdvCreature::GetStaticMesh()
+UStaticMeshComponent* AStaticAdvCreature::GetStaticMesh() const
 {
 	return CreatureMesh;
 }

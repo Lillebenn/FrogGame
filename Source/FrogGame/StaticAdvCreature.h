@@ -30,7 +30,7 @@ public:
 	USoundBase* AmbientSound;
 
 
-	UStaticMeshComponent* GetStaticMesh();
+	UStaticMeshComponent* GetStaticMesh() const;
 
 	void DisableActor_Implementation() override;
 	void PauseAI_Implementation(bool bPause = true) override;
