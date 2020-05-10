@@ -9,11 +9,15 @@
 /**
  * 
  */
-UCLASS()
+UCLASS(Abstract)
 class FROGGAME_API UFrogGameUI : public UUserWidget
 {
 	GENERATED_BODY()
 public:
+	UFUNCTION(BlueprintImplementableEvent)
+	void PlayInAnimation();
+	UFUNCTION(BlueprintImplementableEvent)
+	void PlayOutAnimation();
 	UFUNCTION(BlueprintImplementableEvent)
 	void AllFrogsGathered();
 	UFUNCTION(BlueprintImplementableEvent)
@@ -28,5 +32,4 @@ public:
 	void GainedPowerPoints(bool bInPowerMode);
 	UFUNCTION(BlueprintImplementableEvent)
 	void GainedFrogChild();
-
 };

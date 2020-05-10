@@ -97,8 +97,9 @@ void AFrogGameCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	SetupSettingsCopies();
-	FrogHUD = Cast<UFrogGameUI>(Cast<AFrogGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->GetGameHUD());
-	FrogHUD->SetOwningPlayer(GetWorld()->GetFirstPlayerController());
+	GameMode = Cast<AFrogGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
+
+	FrogHUD = Cast<UFrogGameUI>(Cast<AFrogGameMode>(UGameplayStatics::GetGameMode(GetWorld()))->GetInGameHUD());
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnOverlap);
 	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnEndOverlap);
 	WhirlwindVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindBeginOverlap);
@@ -171,10 +172,9 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindAction("TestFunction", IE_Pressed, this, &AFrogGameCharacter::TestFunction);
 	PlayerInputComponent->BindAction("ParticleTest", IE_Pressed, this, &AFrogGameCharacter::PauseMontage);
 	PlayerInputComponent->BindAction("InfinitePower", IE_Pressed, this, &AFrogGameCharacter::InfinitePower);
-	AFrogGameMode* FrogGameMode{Cast<AFrogGameMode>(UGameplayStatics::GetGameMode(GetWorld()))};
-	if (FrogGameMode)
+	if (GameMode)
 	{
-		PlayerInputComponent->BindAction("HideUI", IE_Pressed, FrogGameMode, &AFrogGameMode::SetWidgetVisibility);
+		PlayerInputComponent->BindAction("HideUI", IE_Pressed, GameMode, &AFrogGameMode::SetCurrentWidgetVisibility);
 	}
 
 #endif
@@ -216,8 +216,18 @@ void AFrogGameCharacter::AttachedActorsSetup()
 
 void AFrogGameCharacter::OpenPauseMenu()
 {
-	// TODO: Replace this with a call to a pause menu widget, this is just for play-testing purposes so people can quit without Alt-F4
-	UKismetSystemLibrary::QuitGame(GetWorld(), Cast<APlayerController>(GetController()), EQuitPreference::Quit, true);
+	// Only allow pause menu to open from/close to InGameHUD with the OpenPauseMenu keybinding
+	ECurrentWidget CurrentWidget{GameMode->GetCurrentWidget()};
+	if (CurrentWidget == ECurrentWidget::InGameHUD)
+	{
+		GameMode->SetVisibleWidget(ECurrentWidget::PauseMenu);
+		UGameplayStatics::SetGamePaused(GetWorld(), true);
+	}
+	else if (CurrentWidget == ECurrentWidget::PauseMenu)
+	{
+		GameMode->SetVisibleWidget(ECurrentWidget::InGameHUD);
+		UGameplayStatics::SetGamePaused(GetWorld(), false);
+	}
 }
 
 void AFrogGameCharacter::Tick(float DeltaTime)

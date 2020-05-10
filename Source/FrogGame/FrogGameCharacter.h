@@ -425,6 +425,8 @@ protected:
 private:
 	UPROPERTY()
 	class UFrogGameUI* FrogHUD;
+	UPROPERTY()
+	class AFrogGameMode* GameMode;
 	float ShockwaveColliderRadius;
 	bool bJumped{false};
 	void Attack();
