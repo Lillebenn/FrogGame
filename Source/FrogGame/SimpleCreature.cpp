@@ -32,15 +32,9 @@ ASimpleCreature::ASimpleCreature()
 	DestructibleComponent = CreateDefaultSubobject<UCustomDestructibleComponent>(TEXT("Destructible"));
 
 
-
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
-
-bool ASimpleCreature::IsDisabled_Implementation()
-{
-	return bShouldDestroy;
-}
 
 // Called when the game starts or when spawned
 void ASimpleCreature::BeginPlay()
@@ -61,6 +55,10 @@ void ASimpleCreature::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
+bool ASimpleCreature::IsDisabled_Implementation()
+{
+	return bShouldDestroy;
+}
 
 void ASimpleCreature::DisableActor_Implementation()
 {
@@ -96,7 +94,6 @@ UStaticMeshComponent* ASimpleCreature::GetMesh()
 {
 	return CreatureMesh;
 }
-
 
 
 void ASimpleCreature::ActivatePhysics() const
