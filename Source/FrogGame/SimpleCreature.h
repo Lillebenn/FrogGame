@@ -27,10 +27,7 @@ public:
 	class UEdibleComponent* EdibleComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UCustomDestructibleComponent* DestructibleComponent;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	class UPawnMovementComponent* PawnMovementComponent;
-	UPROPERTY(BlueprintReadOnly)
-	class UFloatingPawnMovement* MovementComponent;
+
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Sound)
 	TArray<USoundCue*> ShootingSounds;
