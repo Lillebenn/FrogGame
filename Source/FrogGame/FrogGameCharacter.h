@@ -300,6 +300,9 @@ public:
 	// Blueprint type that should be destroyed when walking on top of it
 	UPROPERTY(EditDefaultsOnly, Category = Character, meta = (EditCondition="!bIsDefaultPowerBlueprint"))
 	TSubclassOf<class ADestructibleObject> SmallDestructible;
+	//// Objects that should not be destructible by jump shockwave in regular mode
+	//UPROPERTY(EditDefaultsOnly, Category = Character, meta = (EditCondition="!bIsDefaultPowerBlueprint"))
+	//TSubclassOf<class ADestructibleObject> GiantDestructible;
 	int LastCheckpointScore{0};
 	/** The Player's current score */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category = "Character | Score")

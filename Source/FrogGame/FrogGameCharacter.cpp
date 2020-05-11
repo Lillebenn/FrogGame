@@ -679,7 +679,7 @@ void AFrogGameCharacter::ApplyDamage()
 	for (auto Actor : HitActors)
 	{
 		Actor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
-		if(ADestructibleObject* Destructible = Cast<ADestructibleObject>(Actor))
+		if (ADestructibleObject* Destructible = Cast<ADestructibleObject>(Actor))
 		{
 			Destructible->PlayHitSound();
 		}
@@ -1000,8 +1000,11 @@ void AFrogGameCharacter::Jump()
 	bJumped = true;
 	DisableTrail();
 	Super::Jump();
-	ShockwaveCollider->SetCollisionProfileName(TEXT("OverlapEdible"));
-	ShockwaveCollider->SetSphereRadius(ShockwaveColliderRadius);
+	if(bPowerMode)
+	{
+		ShockwaveCollider->SetCollisionProfileName(TEXT("OverlapEdible"));
+		ShockwaveCollider->SetSphereRadius(ShockwaveColliderRadius);
+	}
 }
 
 void AFrogGameCharacter::UpdateDestroyedPercent()
@@ -1105,27 +1108,33 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 				UGameplayStatics::PlaySoundAtLocation(GetWorld(), LandingSound, GetActorLocation(), FRotator());
 			}
 		}
-		const float ZDiff{GetActorLocation().Z - InitialZValue};
-		if (ZDiff < 0.f)
+		if (bPowerMode)
 		{
-			const float AdditionalSize{FMath::Abs(ZDiff) * 0.15f};
-			const float NewSize{ShockwaveCollider->GetUnscaledSphereRadius() + AdditionalSize};
-			ShockwaveCollider->SetSphereRadius(NewSize);
-			if (ShockwaveShake)
+			const float ZDiff{GetActorLocation().Z - InitialZValue};
+			if (ZDiff < 0.f)
 			{
-				GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayCameraShake(ShockwaveShake, 2);
+				const float AdditionalSize{FMath::Abs(ZDiff) * 0.15f};
+				const float NewSize{ShockwaveCollider->GetUnscaledSphereRadius() + AdditionalSize};
+				ShockwaveCollider->SetSphereRadius(NewSize);
+				if (ShockwaveShake)
+				{
+					GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayCameraShake(ShockwaveShake, 2);
+				}
 			}
 		}
 		bJumped = false;
 	}
-	TArray<AActor*> OverlappingActors;
-	ShockwaveCollider->GetOverlappingActors(OverlappingActors);
-	for (auto Actor : OverlappingActors)
+	if (bPowerMode)
 	{
-		if (Actor->GetComponentByClass(UCustomDestructibleComponent::StaticClass()))
+		TArray<AActor*> OverlappingActors;
+		ShockwaveCollider->GetOverlappingActors(OverlappingActors);
+		for (auto Actor : OverlappingActors)
 		{
-			Actor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
-			UpdateDestroyedPercent();
+			if (Actor->GetComponentByClass(UCustomDestructibleComponent::StaticClass()))
+			{
+				Actor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
+				UpdateDestroyedPercent();
+			}
 		}
 	}
 	ShockwaveCollider->SetCollisionProfileName(TEXT("NoCollision"));
