@@ -27,6 +27,8 @@ public:
 	class UEdibleComponent* EdibleComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UCustomDestructibleComponent* DestructibleComponent;
+	UPROPERTY(BlueprintReadOnly)
+	class UFloatingPawnMovement* MovementComponent;
 
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Sound)

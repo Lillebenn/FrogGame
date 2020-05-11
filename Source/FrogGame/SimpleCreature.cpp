@@ -31,6 +31,7 @@ ASimpleCreature::ASimpleCreature()
 	EdibleComponent->bAllowSuction = true;
 
 	DestructibleComponent = CreateDefaultSubobject<UCustomDestructibleComponent>(TEXT("Destructible"));
+	MovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComponent"));
 
 
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
