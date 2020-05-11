@@ -29,8 +29,6 @@ public:
 	int32 NumDrops{5};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Destructible)
 	class UParticleSystem* DestructionSmoke;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Destructible)
-	TArray<class USoundCue*> DestructionSounds;
 	UPROPERTY(EditDefaultsOnly, Category = Destructible)
 	float SmokeScale{5.f};
 protected:

@@ -79,11 +79,6 @@ void UCustomDestructibleComponent::KillActor() const
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), DestructionSmoke, GetOwner()->GetActorLocation(),
 		                                         FRotator::ZeroRotator, FVector(SmokeScale));
 	}
-	if (DestructionSounds.Num() > 0)
-	{
-		UGameplayStatics::PlaySoundAtLocation(GetWorld(), FFrogLibrary::GetRandomSoundByArray(DestructionSounds),
-		                                      GetOwner()->GetActorLocation(), FRotator(), 0.2f);
-	}
 	if (bSpawnSphereDrops)
 	{
 		SpawnSpheres();

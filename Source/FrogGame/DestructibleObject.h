@@ -23,6 +23,11 @@ public:
 	class UCustomDestructibleComponent* DestructibleComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UEdibleComponent* EdibleComponent;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Sound)
+	USoundConcurrency* ConcurrencySettings; 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Sound)
+	TArray<class USoundCue*> HitSounds;
+	void PlayHitSound() const;
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;

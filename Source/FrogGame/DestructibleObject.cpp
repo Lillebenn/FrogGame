@@ -8,6 +8,7 @@
 #include "FrogGameCharacter.h"
 #include "FrogGameInstance.h"
 #include "Engine/StaticMesh.h"
+#include "Kismet/GameplayStatics.h"
 
 
 // Sets default values
@@ -22,6 +23,11 @@ ADestructibleObject::ADestructibleObject()
 
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
+}
+
+void ADestructibleObject::PlayHitSound() const
+{
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), FFrogLibrary::GetRandomSoundByArray(HitSounds), GetActorLocation(), FRotator(), 1.f, 1.f,0.f, nullptr, ConcurrencySettings);
 }
 
 // Called when the game starts or when spawned

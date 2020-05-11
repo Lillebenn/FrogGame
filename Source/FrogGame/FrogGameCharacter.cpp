@@ -679,6 +679,10 @@ void AFrogGameCharacter::ApplyDamage()
 	for (auto Actor : HitActors)
 	{
 		Actor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
+		if(ADestructibleObject* Destructible = Cast<ADestructibleObject>(Actor))
+		{
+			Destructible->PlayHitSound();
+		}
 		UpdateDestroyedPercent();
 	}
 	if (HitActors.Num() > 0 && PunchShake)
@@ -928,7 +932,7 @@ void AFrogGameCharacter::UpdatePowerPoints(float Points)
 {
 	CurrentPowerPoints = CurrentPowerPoints + Points;
 	FrogHUD->GainedPowerPoints(bPowerMode);
-	if (CanTransform() && !bPressRVisible)
+	if (CanTransform() && !bPressRVisible && !bPowerMode)
 	{
 		FrogHUD->CanEnterPowerMode();
 		bPressRVisible = true;
