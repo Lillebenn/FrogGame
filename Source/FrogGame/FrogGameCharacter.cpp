@@ -220,13 +220,14 @@ void AFrogGameCharacter::OpenPauseMenu()
 	ECurrentWidget CurrentWidget{GameMode->GetCurrentWidget()};
 	if (CurrentWidget == ECurrentWidget::InGameHUD)
 	{
+		EndAttack();
 		GameMode->SetVisibleWidget(ECurrentWidget::PauseMenu);
 		UGameplayStatics::SetGamePaused(GetWorld(), true);
 	}
 	else if (CurrentWidget == ECurrentWidget::PauseMenu)
 	{
-		GameMode->SetVisibleWidget(ECurrentWidget::InGameHUD);
 		UGameplayStatics::SetGamePaused(GetWorld(), false);
+		GameMode->SetVisibleWidget(ECurrentWidget::InGameHUD);
 	}
 }
 
@@ -1000,7 +1001,7 @@ void AFrogGameCharacter::Jump()
 	bJumped = true;
 	DisableTrail();
 	Super::Jump();
-	if(bPowerMode)
+	if (bPowerMode)
 	{
 		ShockwaveCollider->SetCollisionProfileName(TEXT("OverlapEdible"));
 		ShockwaveCollider->SetSphereRadius(ShockwaveColliderRadius);
