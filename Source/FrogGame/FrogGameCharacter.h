@@ -77,7 +77,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Character)
 	bool bIsDefaultPowerBlueprint{false};
 
-
 	UPROPERTY(EditDefaultsOnly, Category = "Character | Sound", meta = (EditCondition=
 		"!bIsDefaultPowerBlueprint"))
 	TArray<USoundCue*> SplashSounds;

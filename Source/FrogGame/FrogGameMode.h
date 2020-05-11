@@ -58,6 +58,22 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	class UFrogGameUI* EndScreenWidget;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	USoundBase* RegularModeMusic;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	USoundBase* PowerModeMusic;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	USoundBase* MainMenuMusic;
+
+
+	UPROPERTY(BlueprintReadWrite)
+	class UAudioComponent* RegularModeAudio;
+	UPROPERTY(BlueprintReadWrite)
+	class UAudioComponent* PowerModeAudio;
+	UPROPERTY(BlueprintReadWrite)
+	class UAudioComponent* MainMenuAudio;
+
+
 	bool bIsBeginPlay{true};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "User Interface")
 	ECurrentWidget CurrentWidget{ECurrentWidget::InGameHUD};
