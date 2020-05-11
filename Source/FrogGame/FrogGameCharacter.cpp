@@ -137,11 +137,11 @@ void AFrogGameCharacter::SetupSettingsCopies()
 	PunchDamage = PowerModeSettings->PunchDamage;
 	PunchForwardDistance = PowerModeSettings->PunchForwardDistance;
 	PunchOne = PowerModeSettings->PunchOne;
-	PunchOneOffset = PowerModeSettings->PunchOneOffset;
+	PunchOnePFXOffset = PowerModeSettings->PunchOnePFXOffset;
 	PunchTwo = PowerModeSettings->PunchTwo;
-	PunchTwoOffset = PowerModeSettings->PunchTwoOffset;
+	PunchTwoPFXOffset = PowerModeSettings->PunchTwoPFXOffset;
 	UpperCut = PowerModeSettings->UpperCut;
-	UpperCutOffset = PowerModeSettings->UpperCutOffset;
+	UpperCutPFXOffset = PowerModeSettings->UpperCutPFXOffset;
 	PunchVolumeType = PowerModeSettings->PunchVolumeType;
 	PunchShake = PowerModeSettings->PunchShake;
 	RightPunchVolumeYPosition = PowerModeSettings->RightPunchVolumeYPosition;
@@ -487,27 +487,28 @@ void AFrogGameCharacter::QueuedPunch()
 
 void AFrogGameCharacter::DoPunch()
 {
-	FVector PunchVolumePosition{PunchVolume->GetUnscaledBoxExtent().X, 0.f, -10.f};
+	FVector PunchVolumePosition{PunchVolume->GetUnscaledBoxExtent().X};
 	if (GetCharacterMovement()->IsFalling())
 	{
 		CurrentPunch = 2;
 	}
-	FVector BoxExtent{RegularBoxExtent};
+	const FVector BoxExtent{RegularBoxExtent};
 	switch (CurrentPunch)
 	{
 	case 0:
 		PlayAnimMontage(PunchMontage, 1, TEXT("First Punch"));
 		PunchVolumePosition.Y = RightPunchVolumeYPosition;
+		PunchVolumePosition.Z = RightPunchVolumeZPosition;
 		break;
 	case 1:
 		PlayAnimMontage(PunchMontage, 1, TEXT("Second Punch"));
 		PunchVolumePosition.Y = LeftPunchVolumeYPosition;
+		PunchVolumePosition.Z = LeftPunchVolumeZPosition;
 		break;
 	case 2:
 		PlayAnimMontage(PunchMontage, 1, TEXT("UpperCut"));
-		PunchVolumePosition.Y = RightPunchVolumeYPosition;
-		BoxExtent = UpperCutBoxExtent;
-		PunchVolumePosition.Z = 60.f;
+		PunchVolumePosition.Y = UpperCutVolumeYPosition;
+		PunchVolumePosition.Z = UpperCutVolumeZPosition;
 		break;
 	default:
 		break;
@@ -538,7 +539,7 @@ void AFrogGameCharacter::PunchOneAnimNotify()
 	const bool bSuccess{HitActors.Num() > 0};
 	if (bSuccess)
 	{
-		UGameplayStatics::SpawnEmitterAttached(PunchOne, GetMesh(), TEXT("r_hand_end_j"), PunchOneOffset,
+		UGameplayStatics::SpawnEmitterAttached(PunchOne, GetMesh(), TEXT("r_hand_end_j"), PunchOnePFXOffset,
 		                                       FRotator::ZeroRotator, FVector(0.05f));
 
 
@@ -553,7 +554,7 @@ void AFrogGameCharacter::PunchTwoAnimNotify()
 	const bool bSuccess{HitActors.Num() > 0};
 	if (bSuccess)
 	{
-		UGameplayStatics::SpawnEmitterAttached(PunchTwo, GetMesh(), TEXT("l_hand_end_j"), PunchTwoOffset,
+		UGameplayStatics::SpawnEmitterAttached(PunchTwo, GetMesh(), TEXT("l_hand_end_j"), PunchTwoPFXOffset,
 		                                       FRotator::ZeroRotator, FVector(0.05f));
 
 
@@ -568,7 +569,7 @@ void AFrogGameCharacter::UpperCutAnimNotify()
 	const bool bSuccess{HitActors.Num() > 0};
 	if (bSuccess)
 	{
-		UGameplayStatics::SpawnEmitterAttached(UpperCut, GetMesh(), TEXT("r_hand_end_j"), UpperCutOffset,
+		UGameplayStatics::SpawnEmitterAttached(UpperCut, GetMesh(), TEXT("r_hand_end_j"), UpperCutPFXOffset,
 		                                       FRotator::ZeroRotator, FVector(0.05f));
 
 		ApplyDamage();
@@ -688,7 +689,8 @@ void AFrogGameCharacter::ApplyDamage()
 	}
 	if (HitActors.Num() > 0 && PunchShake)
 	{
-		GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayCameraShake(PunchShake, 3);
+		GetWorld()->GetFirstPlayerController()->PlayerCameraManager->
+		            PlayCameraShake(PunchShake, 1.5f * HitActors.Num());
 	}
 	HitActors.Empty();
 	PunchVolume->SetCollisionProfileName(TEXT("NoCollision"));
@@ -902,6 +904,7 @@ void AFrogGameCharacter::SetPlayerModel(AFrogGameCharacter* CharacterSettings)
 	                                      Capsule->GetUnscaledCapsuleHalfHeight());
 	GetMesh()->SetRelativeLocation(CharacterSettings->GetMesh()->GetRelativeLocation());
 	SetActorScale3D(FVector(Capsule->GetRelativeScale3D()));
+	GetCameraBoom()->TargetArmLength = CharacterSettings->GetCameraBoom()->TargetArmLength;
 	if (CurrentMode == ECharacterMode::Neutral)
 	{
 		const float ScaledCapsuleHalfHeightDiff{
@@ -1079,6 +1082,8 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 	case ECharacterMode::Power:
 		GetCharacterMovement()->GravityScale = PowerModeSettings->GetCharacterMovement()->GravityScale;
 	}
+	TArray<AActor*> OverlappingActors;
+	ShockwaveCollider->GetOverlappingActors(OverlappingActors);
 	// use this event to add shockwave etc
 	if (bJumped)
 	{
@@ -1119,7 +1124,8 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 				ShockwaveCollider->SetSphereRadius(NewSize);
 				if (ShockwaveShake)
 				{
-					GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayCameraShake(ShockwaveShake, 2);
+					GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayCameraShake(
+						ShockwaveShake, 1.f * OverlappingActors.Num());
 				}
 			}
 		}
@@ -1127,8 +1133,6 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 	}
 	if (bPowerMode)
 	{
-		TArray<AActor*> OverlappingActors;
-		ShockwaveCollider->GetOverlappingActors(OverlappingActors);
 		for (auto Actor : OverlappingActors)
 		{
 			if (Actor->GetComponentByClass(UCustomDestructibleComponent::StaticClass()))

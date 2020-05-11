@@ -211,19 +211,16 @@ public:
 	UPROPERTY (EditDefaultsOnly, BlueprintReadOnly, Category = Character, meta = (
 		EditCondition="bIsDefaultPowerBlueprint"))
 	class UAnimMontage* PunchMontage;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | PowerMode", meta = (EditCondition=
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | Particles", meta = (EditCondition=
 		"bIsDefaultPowerBlueprint"))
-	FVector PunchOneOffset{0.f, 8.f, 0.f};
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | PowerMode", meta = (EditCondition=
+	FVector PunchOnePFXOffset{0.f, 8.f, 0.f};
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | Particles", meta = (EditCondition=
 		"bIsDefaultPowerBlueprint"))
-	FVector PunchTwoOffset{0.f, -8.f, 0.f};
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | PowerMode", meta = (EditCondition=
+	FVector PunchTwoPFXOffset{0.f, -8.f, 0.f};
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | Particles", meta = (EditCondition=
 		"bIsDefaultPowerBlueprint"))
-	FVector UpperCutOffset{0.f, 0.f, 0.f};
+	FVector UpperCutPFXOffset{0.f, 0.f, 0.f};
 	FVector RegularBoxExtent;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | PowerMode", meta = (EditCondition=
-		"bIsDefaultPowerBlueprint"))
-	FVector UpperCutBoxExtent{60.f, 30.f, 80.f};
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Character | PowerMode")
 	bool bPowerMode{false};
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Character | PowerMode")
@@ -243,9 +240,17 @@ public:
 	UPROPERTY()
 	TArray<AActor*> HitActors;
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode", meta = (EditCondition="bIsDefaultPowerBlueprint"))
-	float RightPunchVolumeYPosition{24.f};
+	float RightPunchVolumeYPosition{0.f};
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode", meta = (EditCondition="bIsDefaultPowerBlueprint"))
-	float LeftPunchVolumeYPosition{-45.f};
+	float RightPunchVolumeZPosition{0.f};
+	UPROPERTY(EditAnywhere, Category = "Character | PowerMode", meta = (EditCondition="bIsDefaultPowerBlueprint"))
+	float LeftPunchVolumeYPosition{0.f};
+	UPROPERTY(EditAnywhere, Category = "Character | PowerMode", meta = (EditCondition="bIsDefaultPowerBlueprint"))
+	float LeftPunchVolumeZPosition{0.f};
+	UPROPERTY(EditAnywhere, Category = "Character | PowerMode", meta = (EditCondition="bIsDefaultPowerBlueprint"))
+	float UpperCutVolumeZPosition{0.f};
+	UPROPERTY(EditAnywhere, Category = "Character | PowerMode", meta = (EditCondition="bIsDefaultPowerBlueprint"))
+	float UpperCutVolumeYPosition{0.f};
 	UPROPERTY()
 	AActor* PunchVolumeActor;
 	// How far the player should "dash" forward each punch. 0 = don't move at all, 1 = Equivalent to holding down W for roughly 0.2 ms. 
