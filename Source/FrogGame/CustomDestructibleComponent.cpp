@@ -82,7 +82,7 @@ void UCustomDestructibleComponent::KillActor() const
 	if (DestructionSounds.Num() > 0)
 	{
 		UGameplayStatics::PlaySoundAtLocation(GetWorld(), FFrogLibrary::GetRandomSoundByArray(DestructionSounds),
-		                                      GetOwner()->GetActorLocation(), FRotator());
+		                                      GetOwner()->GetActorLocation(), FRotator(), 0.2f);
 	}
 	if (bSpawnSphereDrops)
 	{

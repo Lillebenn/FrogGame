@@ -11,6 +11,7 @@
 #include "FrogGameCharacter.h"
 #include "EdibleComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 
 // Sets default values
@@ -127,6 +128,10 @@ float ASimpleCreature::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 				                                       &UCustomDestructibleComponent::KillActor, 1.f,
 				                                       false);
 			}
+		}
+		if(bShouldSqueak)
+		{
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), GetSqueakSound(), GetActorLocation(), FRotator());
 		}
 	}
 	return ActualDamage;

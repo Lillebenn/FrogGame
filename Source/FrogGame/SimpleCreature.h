@@ -40,8 +40,16 @@ public:
 	// Mostly only relevant for tanks and cars
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Sound)
 	USoundBase* AmbientSound;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Sound)
+	bool bShouldSqueak{false};
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Sound)
+	TArray<USoundCue*> SqueakSounds;
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE USoundCue* GetSqueakSound() const
+	{
+		return FFrogLibrary::GetRandomSoundByArray(SqueakSounds);
+	}
 
-	
 	UStaticMeshComponent* GetMesh();
 
 	void DisableActor_Implementation() override;
