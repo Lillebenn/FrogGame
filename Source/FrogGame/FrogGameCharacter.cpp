@@ -1120,7 +1120,7 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 		}
 		else
 		{
-			if (LandShockwave)
+			if (LandShockwave && bPowerMode)
 			{
 				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), LandShockwave, Location,
 				                                         FRotator::ZeroRotator, FVector(LandShockwaveScale));
