@@ -255,6 +255,10 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	{
 		DisableTrail();
 	}
+	if(bShouldZoom)
+	{
+		GetCameraBoom()->TargetArmLength = FMath::FInterpConstantTo(GetCameraBoom()->TargetArmLength, DesiredTargetArmLength, DeltaTime, 1750.f);
+	}
 }
 
 void AFrogGameCharacter::FilterOccludedObjects()
@@ -904,7 +908,8 @@ void AFrogGameCharacter::SetPlayerModel(AFrogGameCharacter* CharacterSettings)
 	                                      Capsule->GetUnscaledCapsuleHalfHeight());
 	GetMesh()->SetRelativeLocation(CharacterSettings->GetMesh()->GetRelativeLocation());
 	SetActorScale3D(FVector(Capsule->GetRelativeScale3D()));
-	GetCameraBoom()->TargetArmLength = CharacterSettings->GetCameraBoom()->TargetArmLength;
+	DesiredTargetArmLength = CharacterSettings->GetCameraBoom()->TargetArmLength;
+	bShouldZoom = true;
 	if (CurrentMode == ECharacterMode::Neutral)
 	{
 		const float ScaledCapsuleHalfHeightDiff{
@@ -931,6 +936,16 @@ void AFrogGameCharacter::SetPlayerModel(AFrogGameCharacter* CharacterSettings)
 	                              CharacterSettings->FireEyeTwo->GetAttachSocketName());
 }
 
+void AFrogGameCharacter::UpdateCurrentScore(const int Score)
+{
+	int NewScore{CurrentScore + Score};
+	FrogHUD->GainedScorePoints();
+	if (NewScore < 0)
+	{
+		NewScore = 0;
+	}
+	CurrentScore = NewScore;
+}
 
 void AFrogGameCharacter::UpdatePowerPoints(float Points)
 {
@@ -1015,6 +1030,7 @@ void AFrogGameCharacter::UpdateDestroyedPercent()
 {
 	CurrentDestroyedNum++;
 	DestroyedPercent = static_cast<float>(CurrentDestroyedNum) / static_cast<float>(NumObjectsInGame) * 100.f;
+	FrogHUD->GainedDestruction();
 }
 
 void AFrogGameCharacter::IncreaseGravity() const

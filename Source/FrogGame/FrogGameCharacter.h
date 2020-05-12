@@ -50,15 +50,8 @@ public:
 	* @Param Score This is the amount to increase the players score by. This should only be positive!
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Character | Score")
-	void UpdateCurrentScore(const int Score)
-	{
-		int NewScore{CurrentScore + Score};
-		if (NewScore < 0)
-		{
-			NewScore = 0;
-		}
-		CurrentScore = NewScore;
-	}
+	void UpdateCurrentScore(const int Score);
+
 
 	UFUNCTION(BlueprintCallable, Category = "Character | PowerMode")
 	bool CanTransform() const
@@ -192,7 +185,8 @@ public:
 	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
-
+	float DesiredTargetArmLength;
+	bool bShouldZoom{false};
 	float CurrentTargetScore{0.f};
 
 	ECharacterMode CurrentMode{ECharacterMode::Neutral};
