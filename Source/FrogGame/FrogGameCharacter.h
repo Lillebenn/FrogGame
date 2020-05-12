@@ -185,7 +185,8 @@ public:
 	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
-
+	float DesiredTargetArmLength;
+	bool bShouldZoom{false};
 	float CurrentTargetScore{0.f};
 
 	ECharacterMode CurrentMode{ECharacterMode::Neutral};

@@ -255,6 +255,10 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	{
 		DisableTrail();
 	}
+	if(bShouldZoom)
+	{
+		GetCameraBoom()->TargetArmLength = FMath::FInterpConstantTo(GetCameraBoom()->TargetArmLength, DesiredTargetArmLength, DeltaTime, 1750.f);
+	}
 }
 
 void AFrogGameCharacter::FilterOccludedObjects()
@@ -904,7 +908,8 @@ void AFrogGameCharacter::SetPlayerModel(AFrogGameCharacter* CharacterSettings)
 	                                      Capsule->GetUnscaledCapsuleHalfHeight());
 	GetMesh()->SetRelativeLocation(CharacterSettings->GetMesh()->GetRelativeLocation());
 	SetActorScale3D(FVector(Capsule->GetRelativeScale3D()));
-	GetCameraBoom()->TargetArmLength = CharacterSettings->GetCameraBoom()->TargetArmLength;
+	DesiredTargetArmLength = CharacterSettings->GetCameraBoom()->TargetArmLength;
+	bShouldZoom = true;
 	if (CurrentMode == ECharacterMode::Neutral)
 	{
 		const float ScaledCapsuleHalfHeightDiff{

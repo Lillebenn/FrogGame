@@ -36,5 +36,6 @@ void AFrogChild::MoveToSwamp()
 	}
 	bIsCollected = true;
 	SetActorTransform(SwampLocation);
-	GetMesh()->SetAnimInstanceClass(nullptr);
+	DirectionArrow->SetVisibility(false);
+	PatrolSettings.PathPoints.Empty();
 }
