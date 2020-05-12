@@ -931,6 +931,16 @@ void AFrogGameCharacter::SetPlayerModel(AFrogGameCharacter* CharacterSettings)
 	                              CharacterSettings->FireEyeTwo->GetAttachSocketName());
 }
 
+void AFrogGameCharacter::UpdateCurrentScore(const int Score)
+{
+	int NewScore{CurrentScore + Score};
+	FrogHUD->GainedScorePoints();
+	if (NewScore < 0)
+	{
+		NewScore = 0;
+	}
+	CurrentScore = NewScore;
+}
 
 void AFrogGameCharacter::UpdatePowerPoints(float Points)
 {
@@ -1015,6 +1025,7 @@ void AFrogGameCharacter::UpdateDestroyedPercent()
 {
 	CurrentDestroyedNum++;
 	DestroyedPercent = static_cast<float>(CurrentDestroyedNum) / static_cast<float>(NumObjectsInGame) * 100.f;
+	FrogHUD->GainedDestruction();
 }
 
 void AFrogGameCharacter::IncreaseGravity() const

@@ -31,5 +31,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void GainedPowerPoints(bool bInPowerMode);
 	UFUNCTION(BlueprintImplementableEvent)
+	void GainedScorePoints();
+	UFUNCTION(BlueprintImplementableEvent)
+	void GainedDestruction();
+	UFUNCTION(BlueprintImplementableEvent)
 	void GainedFrogChild();
 };
