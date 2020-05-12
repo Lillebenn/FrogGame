@@ -30,7 +30,8 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	class UFloatingPawnMovement* MovementComponent;
 
-
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Damage)
+	TSubclassOf<AActor> Projectile;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Sound)
 	TArray<USoundCue*> ShootingSounds;
 	UFUNCTION(BlueprintCallable)
