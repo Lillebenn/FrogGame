@@ -31,7 +31,8 @@ public:
 	UPROPERTY(EditAnywhere, Category = SaveGame)
 	uint8 MaxNumHighScores{5};
 
-
+	UPROPERTY(BlueprintReadWrite)
+	bool bStartInMainMenu{true};
 private:
 	UPROPERTY()
 	UFrogSaveGame* HighScoreSaveGame;

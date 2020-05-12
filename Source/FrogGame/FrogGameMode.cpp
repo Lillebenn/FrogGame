@@ -26,7 +26,6 @@ void AFrogGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetVisibleWidget(CurrentWidget);
 }
 
 
@@ -70,6 +69,7 @@ void AFrogGameMode::SetVisibleWidget(const TEnumAsByte<ECurrentWidget> NewVisibl
 		}
 		MainMenuWidget->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 		MainMenuWidget->PlayInAnimation();
+		OpenedMainMenu();
 		break;
 	case ECurrentWidget::PauseMenu:
 		if (!PauseMenuWidget)
@@ -86,6 +86,7 @@ void AFrogGameMode::SetVisibleWidget(const TEnumAsByte<ECurrentWidget> NewVisibl
 		}
 		EndScreenWidget->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 		EndScreenWidget->PlayInAnimation();
+		OpenedEndScreen();
 	default:
 		break;
 	}
