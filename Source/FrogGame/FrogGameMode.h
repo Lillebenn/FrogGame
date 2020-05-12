@@ -73,10 +73,15 @@ protected:
 	UPROPERTY(BlueprintReadWrite)
 	class UAudioComponent* MainMenuAudio;
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void OpenedMainMenu();
+	UFUNCTION(BlueprintImplementableEvent)
+	void OpenedEndScreen();
+
 
 	bool bIsBeginPlay{true};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "User Interface")
-	ECurrentWidget CurrentWidget{ECurrentWidget::InGameHUD};
+	ECurrentWidget CurrentWidget{ECurrentWidget::MainMenu};
 	class UFrogGameUI* ConstructWidget(TSubclassOf<class UFrogGameUI> Subclass) const;
 	void BeginPlay() override;
 private:
