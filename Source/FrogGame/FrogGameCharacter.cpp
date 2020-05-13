@@ -255,9 +255,10 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	{
 		DisableTrail();
 	}
-	if(bShouldZoom)
+	if (bShouldZoom)
 	{
-		GetCameraBoom()->TargetArmLength = FMath::FInterpConstantTo(GetCameraBoom()->TargetArmLength, DesiredTargetArmLength, DeltaTime, 1750.f);
+		GetCameraBoom()->TargetArmLength = FMath::FInterpConstantTo(GetCameraBoom()->TargetArmLength,
+		                                                            DesiredTargetArmLength, DeltaTime, 1750.f);
 	}
 }
 
@@ -747,6 +748,10 @@ void AFrogGameCharacter::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 		{
 			WaterFloor = OtherActor->FindComponentByClass<UBoxComponent>();
 			Swim(true);
+		}
+		else if (OtherComp->ComponentHasTag(TEXT("SwampTrigger")) && FrogsCollected >= TotalFrogChildren)
+		{
+			GameMode->GameOver();
 		}
 	}
 }

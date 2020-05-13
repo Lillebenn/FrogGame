@@ -120,6 +120,11 @@ void AFrogGameMode::SetCurrentWidgetVisibility()
 	}
 }
 
+void AFrogGameMode::GameOver()
+{
+	ReachedSwamp();
+}
+
 ESlateVisibility AFrogGameMode::GetNewVisibility(UFrogGameUI* WidgetToSet)
 {
 	const ESlateVisibility CurrentVisibility{WidgetToSet->GetVisibility()};

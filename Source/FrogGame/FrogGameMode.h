@@ -38,6 +38,7 @@ public:
 		return CurrentWidget;
 	}
 
+	void GameOver();
 protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "User Interface", Meta = (BlueprintProtected = "true"))
