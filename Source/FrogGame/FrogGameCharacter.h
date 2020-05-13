@@ -32,9 +32,6 @@ class AFrogGameCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* WhirlwindVolume;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	class UBoxComponent* CullingVolume;
-
 	UPROPERTY (VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UParticleSystemComponent* FireEyeOne;
 	UPROPERTY (VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
@@ -487,9 +484,18 @@ private:
 	                                UPrimitiveComponent* OtherComp,
 	                                int32 OtherBodyIndex);
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<AActor> CullingActorType;
+	TSubclassOf<AActor> CullingCreaturesType;
 	UPROPERTY()
-	UBoxComponent* CullingBox;
+	AActor* CullingActorCreatures;
+	UPROPERTY()
+	UBoxComponent* CullingCreaturesBox;
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<AActor> CullingObjectsType;
+	UPROPERTY()
+	AActor* CullingActorObjects;
+	UPROPERTY()
+	UBoxComponent* CullingObjectsBox;
+
 	UFUNCTION()
 	void OnCullingCreaturesOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 	                               UPrimitiveComponent* OtherComp,
@@ -498,6 +504,7 @@ private:
 	void OnCullingCreaturesEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 	                                  UPrimitiveComponent* OtherComp,
 	                                  int32 OtherBodyIndex);
+
 	UFUNCTION(BlueprintCallable)
 	void OnHitPlay() const;
 	void OpenPauseMenu();
@@ -522,5 +529,3 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };
-
-
