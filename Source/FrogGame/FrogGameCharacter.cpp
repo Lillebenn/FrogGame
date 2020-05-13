@@ -20,6 +20,7 @@
 #include "FrogChild.h"
 #include "FrogGameMode.h"
 #include "FrogGameUI.h"
+#include "SimpleCreature.h"
 #include "SphereDrop.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -53,6 +54,9 @@ AFrogGameCharacter::AFrogGameCharacter()
 	WhirlwindVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxTrace"));
 	WhirlwindVolume->SetupAttachment(RootComponent);
 	WhirlwindVolume->SetCollisionProfileName(TEXT("NoCollision"));
+	CullingVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("Culling"));
+	CullingVolume->SetupAttachment(RootComponent);
+	CullingVolume->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
 
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -104,6 +108,9 @@ void AFrogGameCharacter::BeginPlay()
 	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnEndOverlap);
 	WhirlwindVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindBeginOverlap);
 	WhirlwindVolume->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindEndOverlap);
+	CullingVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnCullingObjectsOverlap);
+	CullingVolume->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnCullingObjectsEndOverlap);
+
 	WhirlwindRange = WhirlwindVolume->GetScaledBoxExtent().X;
 	AttachedActorsSetup();
 	// Setting Hud trackers to 0 at the start.
@@ -211,6 +218,14 @@ void AFrogGameCharacter::AttachedActorsSetup()
 		ShockwaveCollider = Actor->FindComponentByClass<USphereComponent>();
 		ShockwaveColliderRadius = ShockwaveCollider->GetUnscaledSphereRadius();
 		ShockwaveCollider->SetCollisionProfileName(TEXT("NoCollision"));
+	}
+	if (CullingActorType)
+	{
+		auto Actor{GetWorld()->SpawnActor<AActor>(CullingActorType)};
+		Actor->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
+		CullingBox = Actor->FindComponentByClass<UBoxComponent>();
+		CullingBox->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnCullingCreaturesOverlap);
+		CullingBox->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnCullingCreaturesEndOverlap);
 	}
 }
 
@@ -751,7 +766,7 @@ void AFrogGameCharacter::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 		}
 		else if (OtherComp->ComponentHasTag(TEXT("SwampTrigger")) && FrogsCollected >= TotalFrogChildren)
 		{
-			GameMode->GameOver();
+			GameMode->ReachedSwamp();
 		}
 	}
 }
@@ -848,6 +863,88 @@ void AFrogGameCharacter::OnWhirlwindEndOverlap(UPrimitiveComponent* OverlappedCo
 		{
 			PotentialTargets.Remove(OtherActor); // Not sure if this works as intended
 		}
+	}
+}
+
+void AFrogGameCharacter::OnHitPlay() const
+{
+	TArray<AActor*> OverlappingActors;
+	CullingVolume->GetOverlappingActors(OverlappingActors);
+	for (auto Actor : OverlappingActors)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s"), *Actor->GetName())
+		if (ADestructibleObject* Object = Cast<ADestructibleObject>(Actor))
+		{
+			Object->EndCullingEvent();
+			Object->StaticMesh->SetMobility(EComponentMobility::Movable);
+		}
+	}
+	OverlappingActors.Empty();
+	CullingBox->GetOverlappingActors(OverlappingActors);
+	for (auto Actor : OverlappingActors)
+	{
+		if (ASimpleCreature* Creature = Cast<ASimpleCreature>(Actor))
+		{
+			Creature->StartActing();
+			Creature->bIsIdle = false;
+		}
+		else if (AAdvCreature* AdvCreature = Cast<AAdvCreature>(Actor))
+		{
+			AdvCreature->StartActing();
+			AdvCreature->bIsIdle = false;
+		}
+	}
+}
+
+void AFrogGameCharacter::OnCullingObjectsOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+                                                 UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+                                                 const FHitResult& SweepResult)
+{
+	if (ADestructibleObject* Object = Cast<ADestructibleObject>(OtherActor))
+	{
+		Object->StaticMesh->SetMobility(EComponentMobility::Movable);
+		Object->EndCullingEvent();
+	}
+}
+
+void AFrogGameCharacter::OnCullingObjectsEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+                                                    UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (ADestructibleObject* Object = Cast<ADestructibleObject>(OtherActor))
+	{
+		Object->CullingEvent();
+		Object->StaticMesh->SetMobility(EComponentMobility::Static);
+	}
+}
+
+void AFrogGameCharacter::OnCullingCreaturesOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+                                                   UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
+                                                   bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (ASimpleCreature* Creature = Cast<ASimpleCreature>(OtherActor))
+	{
+		Creature->StartActing();
+		Creature->bIsIdle = false;
+	}
+	else if (AAdvCreature* AdvCreature = Cast<AAdvCreature>(OtherActor))
+	{
+		AdvCreature->StartActing();
+		AdvCreature->bIsIdle = false;
+	}
+}
+
+void AFrogGameCharacter::OnCullingCreaturesEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+                                                      UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (ASimpleCreature* Creature = Cast<ASimpleCreature>(OtherActor))
+	{
+		Creature->StopAllActions();
+		Creature->bIsIdle = true;
+	}
+	else if (AAdvCreature* AdvCreature = Cast<AAdvCreature>(OtherActor))
+	{
+		AdvCreature->StopAllActions();
+		AdvCreature->bIsIdle = true;
 	}
 }
 

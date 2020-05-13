@@ -20,6 +20,7 @@ ADestructibleObject::ADestructibleObject()
 	DestructibleComponent = CreateDefaultSubobject<UCustomDestructibleComponent>(TEXT("Destructible"));
 	EdibleComponent = CreateDefaultSubobject<UEdibleComponent>(TEXT("Edible Info"));
 	StaticMesh->SetReceivesDecals(false);
+	StaticMesh->SetMobility(EComponentMobility::Static);
 
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
@@ -27,7 +28,7 @@ ADestructibleObject::ADestructibleObject()
 
 void ADestructibleObject::PlayHitSound() const
 {
-	UGameplayStatics::PlaySoundAtLocation(GetWorld(), FFrogLibrary::GetRandomSoundByArray(HitSounds), GetActorLocation(), FRotator(), 1.f, 1.f,0.f, nullptr, ConcurrencySettings);
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), FFrogLibrary::GetRandomSoundByArray(HitSounds), GetActorLocation(), FRotator());
 }
 
 // Called when the game starts or when spawned

@@ -38,7 +38,8 @@ public:
 		return CurrentWidget;
 	}
 
-	void GameOver();
+		UFUNCTION(BlueprintImplementableEvent)
+	void ReachedSwamp();
 protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "User Interface", Meta = (BlueprintProtected = "true"))
@@ -76,8 +77,7 @@ protected:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void OpenedMainMenu();
-	UFUNCTION(BlueprintImplementableEvent)
-	void ReachedSwamp();
+
 	UFUNCTION(BlueprintImplementableEvent)
 	void OpenedEndScreen();
 

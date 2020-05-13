@@ -24,10 +24,15 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UEdibleComponent* EdibleComponent;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Sound)
-	USoundConcurrency* ConcurrencySettings; 
+	USoundConcurrency* ConcurrencySettings;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Sound)
 	TArray<class USoundCue*> HitSounds;
 	void PlayHitSound() const;
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void CullingEvent();
+	UFUNCTION(BlueprintImplementableEvent)
+	void EndCullingEvent();
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
@@ -46,5 +51,4 @@ public:
 	UFUNCTION()
 	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse,
 	           const FHitResult& Hit);
-
 };

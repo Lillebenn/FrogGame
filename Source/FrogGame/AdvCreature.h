@@ -70,7 +70,12 @@ public:
 
 	void DisableActor_Implementation() override;
 	void PauseAI_Implementation(bool bPause = true) override;
-
+	UFUNCTION(BlueprintImplementableEvent)
+	void StopAllActions();
+	UFUNCTION(BlueprintImplementableEvent)
+	void StartActing();
+	UPROPERTY(BlueprintReadWrite)
+	bool bIsIdle{true};
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;

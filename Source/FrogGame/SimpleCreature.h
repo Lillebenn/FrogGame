@@ -68,6 +68,13 @@ public:
 
 	float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
 	                 AActor* DamageCauser) override;
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void StopAllActions();
+	UFUNCTION(BlueprintImplementableEvent)
+	void StartActing();
+	UPROPERTY(BlueprintReadWrite)
+	bool bIsIdle{true};
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;

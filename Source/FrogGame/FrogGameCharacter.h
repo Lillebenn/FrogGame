@@ -32,6 +32,8 @@ class AFrogGameCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* WhirlwindVolume;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+	class UBoxComponent* CullingVolume;
 
 	UPROPERTY (VisibleAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class UParticleSystemComponent* FireEyeOne;
@@ -50,7 +52,7 @@ public:
 	* @Param Score This is the amount to increase the players score by. This should only be positive!
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Character | Score")
-	void UpdateCurrentScore(const int Score);
+	void UpdateCurrentScore(int Score);
 
 
 	UFUNCTION(BlueprintCallable, Category = "Character | PowerMode")
@@ -476,6 +478,28 @@ private:
 	void OnWhirlwindEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                           int32 OtherBodyIndex);
 
+	UFUNCTION()
+	void OnCullingObjectsOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+	                             UPrimitiveComponent* OtherComp,
+	                             int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	UFUNCTION()
+	void OnCullingObjectsEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+	                                UPrimitiveComponent* OtherComp,
+	                                int32 OtherBodyIndex);
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<AActor> CullingActorType;
+	UPROPERTY()
+	UBoxComponent* CullingBox;
+	UFUNCTION()
+	void OnCullingCreaturesOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+	                               UPrimitiveComponent* OtherComp,
+	                               int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	UFUNCTION()
+	void OnCullingCreaturesEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+	                                  UPrimitiveComponent* OtherComp,
+	                                  int32 OtherBodyIndex);
+	UFUNCTION(BlueprintCallable)
+	void OnHitPlay() const;
 	void OpenPauseMenu();
 	/** Changing to PowerMode **/
 	void PowerMode();
@@ -498,3 +522,5 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };
+
+
