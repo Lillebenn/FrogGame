@@ -76,6 +76,8 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent)
 	void OpenedMainMenu();
 	UFUNCTION(BlueprintImplementableEvent)
+	void ReachedSwamp();
+	UFUNCTION(BlueprintImplementableEvent)
 	void OpenedEndScreen();
 
 
