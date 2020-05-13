@@ -710,7 +710,7 @@ void AFrogGameCharacter::ApplyDamage()
 	if (HitActors.Num() > 0 && PunchShake)
 	{
 		GetWorld()->GetFirstPlayerController()->PlayerCameraManager->
-		            PlayCameraShake(PunchShake, 1.5f * HitActors.Num());
+		            PlayCameraShake(PunchShake, 0.5f * HitActors.Num());
 	}
 	HitActors.Empty();
 	PunchVolume->SetCollisionProfileName(TEXT("NoCollision"));
@@ -872,7 +872,6 @@ void AFrogGameCharacter::OnHitPlay() const
 	CullingVolume->GetOverlappingActors(OverlappingActors);
 	for (auto Actor : OverlappingActors)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s"), *Actor->GetName())
 		if (ADestructibleObject* Object = Cast<ADestructibleObject>(Actor))
 		{
 			Object->EndCullingEvent();
@@ -971,6 +970,7 @@ void AFrogGameCharacter::ActivatePowerModel()
 	{
 		WaterFloor->SetRelativeLocation(FVector(0.f, 0.f, -150.f));
 	}
+	CullingBox->GetOwner()->SetActorRelativeScale3D(FVector(0.25f));
 	SetPlayerModel(PowerModeSettings);
 	FireEyeOne->Activate();
 	FireEyeTwo->Activate();
@@ -985,6 +985,7 @@ void AFrogGameCharacter::DeactivatePowerMode()
 	EndAttack();
 	CurrentMode = ECharacterMode::Neutral;
 	CurrentPunch = 0;
+	CullingBox->GetOwner()->SetActorRelativeScale3D(FVector(1.f));
 	SetPlayerModel(NeutralModeSettings);
 	FireEyeOne->Deactivate();
 	FireEyeTwo->Deactivate();
@@ -1009,6 +1010,7 @@ void AFrogGameCharacter::SetPlayerModel(AFrogGameCharacter* CharacterSettings)
 	GetCapsuleComponent()->SetCapsuleSize(Capsule->GetUnscaledCapsuleRadius(),
 	                                      Capsule->GetUnscaledCapsuleHalfHeight());
 	GetMesh()->SetRelativeLocation(CharacterSettings->GetMesh()->GetRelativeLocation());
+	CullingVolume->SetRelativeScale3D(CharacterSettings->CullingVolume->GetRelativeScale3D());
 	SetActorScale3D(FVector(Capsule->GetRelativeScale3D()));
 	DesiredTargetArmLength = CharacterSettings->GetCameraBoom()->TargetArmLength;
 	bShouldZoom = true;
