@@ -54,9 +54,7 @@ AFrogGameCharacter::AFrogGameCharacter()
 	WhirlwindVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxTrace"));
 	WhirlwindVolume->SetupAttachment(RootComponent);
 	WhirlwindVolume->SetCollisionProfileName(TEXT("NoCollision"));
-	CullingVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("Culling"));
-	CullingVolume->SetupAttachment(RootComponent);
-	CullingVolume->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
+
 
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -108,8 +106,6 @@ void AFrogGameCharacter::BeginPlay()
 	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnEndOverlap);
 	WhirlwindVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindBeginOverlap);
 	WhirlwindVolume->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnWhirlwindEndOverlap);
-	CullingVolume->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnCullingObjectsOverlap);
-	CullingVolume->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnCullingObjectsEndOverlap);
 
 	WhirlwindRange = WhirlwindVolume->GetScaledBoxExtent().X;
 	AttachedActorsSetup();
@@ -219,13 +215,19 @@ void AFrogGameCharacter::AttachedActorsSetup()
 		ShockwaveColliderRadius = ShockwaveCollider->GetUnscaledSphereRadius();
 		ShockwaveCollider->SetCollisionProfileName(TEXT("NoCollision"));
 	}
-	if (CullingActorType)
+	if (CullingCreaturesType)
 	{
-		auto Actor{GetWorld()->SpawnActor<AActor>(CullingActorType)};
-		Actor->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
-		CullingBox = Actor->FindComponentByClass<UBoxComponent>();
-		CullingBox->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnCullingCreaturesOverlap);
-		CullingBox->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnCullingCreaturesEndOverlap);
+		CullingActorCreatures = GetWorld()->SpawnActor<AActor>(CullingCreaturesType);
+		CullingCreaturesBox = CullingActorCreatures->FindComponentByClass<UBoxComponent>();
+		CullingCreaturesBox->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnCullingCreaturesOverlap);
+		CullingCreaturesBox->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnCullingCreaturesEndOverlap);
+	}
+	if (CullingObjectsType)
+	{
+		CullingActorObjects = GetWorld()->SpawnActor<AActor>(CullingObjectsType);
+		CullingObjectsBox = CullingActorObjects->FindComponentByClass<UBoxComponent>();
+		CullingObjectsBox->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnCullingObjectsOverlap);
+		CullingObjectsBox->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnCullingObjectsEndOverlap);
 	}
 }
 
@@ -274,6 +276,14 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	{
 		GetCameraBoom()->TargetArmLength = FMath::FInterpConstantTo(GetCameraBoom()->TargetArmLength,
 		                                                            DesiredTargetArmLength, DeltaTime, 1750.f);
+	}
+	if (CullingActorCreatures)
+	{
+		CullingActorCreatures->SetActorLocation(GetActorLocation());
+	}
+	if (CullingActorObjects)
+	{
+		CullingActorObjects->SetActorLocation(GetActorLocation());
 	}
 }
 
@@ -869,7 +879,7 @@ void AFrogGameCharacter::OnWhirlwindEndOverlap(UPrimitiveComponent* OverlappedCo
 void AFrogGameCharacter::OnHitPlay() const
 {
 	TArray<AActor*> OverlappingActors;
-	CullingVolume->GetOverlappingActors(OverlappingActors);
+	CullingObjectsBox->GetOverlappingActors(OverlappingActors);
 	for (auto Actor : OverlappingActors)
 	{
 		if (ADestructibleObject* Object = Cast<ADestructibleObject>(Actor))
@@ -879,7 +889,7 @@ void AFrogGameCharacter::OnHitPlay() const
 		}
 	}
 	OverlappingActors.Empty();
-	CullingBox->GetOverlappingActors(OverlappingActors);
+	CullingCreaturesBox->GetOverlappingActors(OverlappingActors);
 	for (auto Actor : OverlappingActors)
 	{
 		if (ASimpleCreature* Creature = Cast<ASimpleCreature>(Actor))
@@ -970,8 +980,9 @@ void AFrogGameCharacter::ActivatePowerModel()
 	{
 		WaterFloor->SetRelativeLocation(FVector(0.f, 0.f, -150.f));
 	}
-	CullingBox->GetOwner()->SetActorRelativeScale3D(FVector(0.25f));
+
 	SetPlayerModel(PowerModeSettings);
+
 	FireEyeOne->Activate();
 	FireEyeTwo->Activate();
 	UGameplayStatics::PlaySoundAtLocation(GetWorld(), PowerUpTransition, GetActorLocation(), FRotator());
@@ -985,7 +996,6 @@ void AFrogGameCharacter::DeactivatePowerMode()
 	EndAttack();
 	CurrentMode = ECharacterMode::Neutral;
 	CurrentPunch = 0;
-	CullingBox->GetOwner()->SetActorRelativeScale3D(FVector(1.f));
 	SetPlayerModel(NeutralModeSettings);
 	FireEyeOne->Deactivate();
 	FireEyeTwo->Deactivate();
@@ -1010,7 +1020,6 @@ void AFrogGameCharacter::SetPlayerModel(AFrogGameCharacter* CharacterSettings)
 	GetCapsuleComponent()->SetCapsuleSize(Capsule->GetUnscaledCapsuleRadius(),
 	                                      Capsule->GetUnscaledCapsuleHalfHeight());
 	GetMesh()->SetRelativeLocation(CharacterSettings->GetMesh()->GetRelativeLocation());
-	CullingVolume->SetRelativeScale3D(CharacterSettings->CullingVolume->GetRelativeScale3D());
 	SetActorScale3D(FVector(Capsule->GetRelativeScale3D()));
 	DesiredTargetArmLength = CharacterSettings->GetCameraBoom()->TargetArmLength;
 	bShouldZoom = true;
