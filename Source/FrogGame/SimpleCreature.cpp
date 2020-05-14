@@ -62,6 +62,22 @@ bool ASimpleCreature::IsDisabled_Implementation()
 	return bShouldDestroy;
 }
 
+
+void ASimpleCreature::SetActive_Implementation(const bool bActive)
+{
+	bIsIdle = !bActive;
+	SetActorTickEnabled(bActive);
+
+	if (bActive)
+	{
+		StartActing();
+	}
+	else
+	{
+		StopAllActions();
+	}
+}
+
 void ASimpleCreature::DisableActor_Implementation()
 {
 	// Not 100% sure if this is necessary, but we don't need the AI to keep running after being snatched.
@@ -130,7 +146,7 @@ float ASimpleCreature::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 				                                       false);
 			}
 		}
-		if(bShouldSqueak)
+		if (bShouldSqueak)
 		{
 			UGameplayStatics::PlaySoundAtLocation(GetWorld(), GetSqueakSound(), GetActorLocation(), FRotator());
 		}

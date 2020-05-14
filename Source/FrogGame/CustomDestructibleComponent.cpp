@@ -72,7 +72,7 @@ void UCustomDestructibleComponent::KillActor() const
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), DestructionSmoke, GetOwner()->GetActorLocation(),
 		                                         FRotator::ZeroRotator, FVector(SmokeScale));
 	}
-	if (bSpawnSphereDrops)
+	if (bSpawnSphereDrops && GetOwner())
 	{
 		SpawnSpheres();
 		GetOwner()->SetLifeSpan(0.001f);

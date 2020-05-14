@@ -28,14 +28,39 @@ ADestructibleObject::ADestructibleObject()
 
 void ADestructibleObject::PlayHitSound() const
 {
-	UGameplayStatics::PlaySoundAtLocation(GetWorld(), FFrogLibrary::GetRandomSoundByArray(HitSounds), GetActorLocation(), FRotator());
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), FFrogLibrary::GetRandomSoundByArray(HitSounds),
+	                                      GetActorLocation(), FRotator());
+}
+
+void ADestructibleObject::SetActive_Implementation(bool bActive)
+{
+	if(bIsActive == bActive)
+	{
+		return;
+	}
+	bIsActive = bActive;
+	SetActorTickEnabled(bIsActive);
+	//SetActorEnableCollision(bActive); // Tried this, it seems too expensive for this purpose
+}
+
+void ADestructibleObject::SetMobility_Implementation(bool bShouldActivate)
+{
+	if (bShouldActivate)
+	{
+		StaticMesh->SetMobility(EComponentMobility::Movable);
+		EndCullingEvent();
+	}
+	else
+	{
+		CullingEvent();
+		StaticMesh->SetMobility(EComponentMobility::Static);
+	}
 }
 
 // Called when the game starts or when spawned
 void ADestructibleObject::BeginPlay()
 {
 	Super::BeginPlay();
-
 }
 
 // Called every frame
@@ -48,7 +73,7 @@ float ADestructibleObject::TakeDamage(float DamageAmount, FDamageEvent const& Da
                                       AActor* DamageCauser)
 {
 	const float ActualDamage{Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser)};
-	UE_LOG(LogTemp, Warning, TEXT("Taking %f damage."), ActualDamage);
+	//UE_LOG(LogTemp, Warning, TEXT("Taking %f damage."), ActualDamage);
 	if (ActualDamage > 0.f)
 	{
 		float& CurrentHealth{DestructibleComponent->CurrentHealth};
@@ -98,4 +123,3 @@ void ADestructibleObject::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor
 		}
 	}
 }
-

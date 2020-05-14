@@ -3,12 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Edible.h"
 #include "GameFramework/Actor.h"
 #include "FrogGameCharacter.h"
 #include "DestructibleObject.generated.h"
 
 UCLASS()
-class FROGGAME_API ADestructibleObject : public AActor
+class FROGGAME_API ADestructibleObject : public AActor, public IEdible
 {
 	GENERATED_BODY()
 
@@ -33,6 +34,15 @@ public:
 	void CullingEvent();
 	UFUNCTION(BlueprintImplementableEvent)
 	void EndCullingEvent();
+
+	void SetActive_Implementation(bool bActive) override;
+
+	bool IsActive_Implementation() override
+	{
+		return bIsActive;
+	}
+	void SetMobility_Implementation(bool bShouldActivate) override;
+
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
@@ -42,6 +52,7 @@ private:
 	FTransform StartTransform;
 	FVector ImpulseVector;
 	float DeathDamage{500.f};
+	bool bIsActive{true};
 public:
 	// Called every frame
 	void Tick(float DeltaTime) override;

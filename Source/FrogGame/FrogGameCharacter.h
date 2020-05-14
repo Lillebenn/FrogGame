@@ -475,7 +475,12 @@ private:
 	UFUNCTION()
 	void OnWhirlwindEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                           int32 OtherBodyIndex);
-
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<AActor> CullingObjectsType;
+	UPROPERTY()
+	AActor* CullingActorObjects;
+	UPROPERTY()
+	USphereComponent* CullingObjectsSphere;
 	UFUNCTION()
 	void OnCullingObjectsOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 	                             UPrimitiveComponent* OtherComp,
@@ -484,27 +489,7 @@ private:
 	void OnCullingObjectsEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 	                                UPrimitiveComponent* OtherComp,
 	                                int32 OtherBodyIndex);
-	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<AActor> CullingCreaturesType;
-	UPROPERTY()
-	AActor* CullingActorCreatures;
-	UPROPERTY()
-	UBoxComponent* CullingCreaturesBox;
-	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<AActor> CullingObjectsType;
-	UPROPERTY()
-	AActor* CullingActorObjects;
-	UPROPERTY()
-	UBoxComponent* CullingObjectsBox;
 
-	UFUNCTION()
-	void OnCullingCreaturesOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-	                               UPrimitiveComponent* OtherComp,
-	                               int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-	UFUNCTION()
-	void OnCullingCreaturesEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-	                                  UPrimitiveComponent* OtherComp,
-	                                  int32 OtherBodyIndex);
 
 	UFUNCTION(BlueprintCallable)
 	void OnHitPlay() const;

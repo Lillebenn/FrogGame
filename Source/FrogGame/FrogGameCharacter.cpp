@@ -215,19 +215,12 @@ void AFrogGameCharacter::AttachedActorsSetup()
 		ShockwaveColliderRadius = ShockwaveCollider->GetUnscaledSphereRadius();
 		ShockwaveCollider->SetCollisionProfileName(TEXT("NoCollision"));
 	}
-	if (CullingCreaturesType)
-	{
-		CullingActorCreatures = GetWorld()->SpawnActor<AActor>(CullingCreaturesType);
-		CullingCreaturesBox = CullingActorCreatures->FindComponentByClass<UBoxComponent>();
-		CullingCreaturesBox->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnCullingCreaturesOverlap);
-		CullingCreaturesBox->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnCullingCreaturesEndOverlap);
-	}
 	if (CullingObjectsType)
 	{
 		CullingActorObjects = GetWorld()->SpawnActor<AActor>(CullingObjectsType);
-		CullingObjectsBox = CullingActorObjects->FindComponentByClass<UBoxComponent>();
-		CullingObjectsBox->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnCullingObjectsOverlap);
-		CullingObjectsBox->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnCullingObjectsEndOverlap);
+		CullingObjectsSphere = CullingActorObjects->FindComponentByClass<USphereComponent>();
+		CullingObjectsSphere->OnComponentBeginOverlap.AddDynamic(this, &AFrogGameCharacter::OnCullingObjectsOverlap);
+		CullingObjectsSphere->OnComponentEndOverlap.AddDynamic(this, &AFrogGameCharacter::OnCullingObjectsEndOverlap);
 	}
 }
 
@@ -277,10 +270,6 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 		GetCameraBoom()->TargetArmLength = FMath::FInterpConstantTo(GetCameraBoom()->TargetArmLength,
 		                                                            DesiredTargetArmLength, DeltaTime, 1750.f);
 	}
-	if (CullingActorCreatures)
-	{
-		CullingActorCreatures->SetActorLocation(GetActorLocation());
-	}
 	if (CullingActorObjects)
 	{
 		CullingActorObjects->SetActorLocation(GetActorLocation());
@@ -314,7 +303,15 @@ void AFrogGameCharacter::FilterOccludedObjects()
 		};
 		if (!Success)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s failed trace."), *Target->GetName())
+			if (Hit.GetActor())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s failed trace. Hit %s instead"), *Target->GetName(),
+				       *Hit.GetActor()->GetName())
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s failed trace."), *Target->GetName());
+			}
 		}
 		// if hit actor is the same as target, no occluding actor was found
 		const auto ImplementsEdible{
@@ -665,7 +662,7 @@ void AFrogGameCharacter::Consume_Impl(AActor* OtherActor)
 		{
 			UpdatePowerPoints(Edible->PowerPoints);
 		}
-		UE_LOG(LogTemp, Warning, TEXT("Destroying %s"), *OtherActor->GetName())
+		//UE_LOG(LogTemp, Warning, TEXT("Destroying %s"), *OtherActor->GetName())
 		OtherActor->SetLifeSpan(0.001f);
 	}
 }
@@ -859,7 +856,7 @@ void AFrogGameCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComp, AA
 {
 	if (OtherActor != nullptr && OtherActor != this && OtherComp != nullptr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Hit Event with %s!"), *OtherActor->GetName())
+		//UE_LOG(LogTemp, Warning, TEXT("Hit Event with %s!"), *OtherActor->GetName())
 
 		if (!HitActors.Contains(OtherActor))
 		{
@@ -897,28 +894,12 @@ void AFrogGameCharacter::OnWhirlwindEndOverlap(UPrimitiveComponent* OverlappedCo
 void AFrogGameCharacter::OnHitPlay() const
 {
 	TArray<AActor*> OverlappingActors;
-	CullingObjectsBox->GetOverlappingActors(OverlappingActors);
+	CullingObjectsSphere->GetOverlappingActors(OverlappingActors);
 	for (auto Actor : OverlappingActors)
 	{
-		if (ADestructibleObject* Object = Cast<ADestructibleObject>(Actor))
+		if (Actor->Implements<UEdible>())
 		{
-			Object->EndCullingEvent();
-			Object->StaticMesh->SetMobility(EComponentMobility::Movable);
-		}
-	}
-	OverlappingActors.Empty();
-	CullingCreaturesBox->GetOverlappingActors(OverlappingActors);
-	for (auto Actor : OverlappingActors)
-	{
-		if (ASimpleCreature* Creature = Cast<ASimpleCreature>(Actor))
-		{
-			Creature->StartActing();
-			Creature->bIsIdle = false;
-		}
-		else if (AAdvCreature* AdvCreature = Cast<AAdvCreature>(Actor))
-		{
-			AdvCreature->StartActing();
-			AdvCreature->bIsIdle = false;
+			IEdible::Execute_SetMobility(Actor, true);
 		}
 	}
 }
@@ -927,54 +908,20 @@ void AFrogGameCharacter::OnCullingObjectsOverlap(UPrimitiveComponent* Overlapped
                                                  UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
                                                  const FHitResult& SweepResult)
 {
-	if (ADestructibleObject* Object = Cast<ADestructibleObject>(OtherActor))
+	if (OtherActor->Implements<UEdible>())
 	{
-		Object->StaticMesh->SetMobility(EComponentMobility::Movable);
-		Object->EndCullingEvent();
+		IEdible::Execute_SetMobility(OtherActor, true);
 	}
 }
 
 void AFrogGameCharacter::OnCullingObjectsEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
                                                     UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (ADestructibleObject* Object = Cast<ADestructibleObject>(OtherActor))
+	if (OtherActor->Implements<UEdible>())
 	{
-		Object->CullingEvent();
-		Object->StaticMesh->SetMobility(EComponentMobility::Static);
+		IEdible::Execute_SetMobility(OtherActor, false);
 	}
 }
-
-void AFrogGameCharacter::OnCullingCreaturesOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-                                                   UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
-                                                   bool bFromSweep, const FHitResult& SweepResult)
-{
-	if (ASimpleCreature* Creature = Cast<ASimpleCreature>(OtherActor))
-	{
-		Creature->StartActing();
-		Creature->bIsIdle = false;
-	}
-	else if (AAdvCreature* AdvCreature = Cast<AAdvCreature>(OtherActor))
-	{
-		AdvCreature->StartActing();
-		AdvCreature->bIsIdle = false;
-	}
-}
-
-void AFrogGameCharacter::OnCullingCreaturesEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-                                                      UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	if (ASimpleCreature* Creature = Cast<ASimpleCreature>(OtherActor))
-	{
-		Creature->StopAllActions();
-		Creature->bIsIdle = true;
-	}
-	else if (AAdvCreature* AdvCreature = Cast<AAdvCreature>(OtherActor))
-	{
-		AdvCreature->StopAllActions();
-		AdvCreature->bIsIdle = true;
-	}
-}
-
 void AFrogGameCharacter::PowerMode()
 {
 	if ((CurrentPowerPoints >= MaxPowerPoints / 10.f || bInfinitePower) && !bPowerMode)

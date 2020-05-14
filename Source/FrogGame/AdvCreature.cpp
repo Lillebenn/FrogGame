@@ -11,6 +11,7 @@
 #include "FrogGameCharacter.h"
 #include "EdibleComponent.h"
 #include "TimerManager.h"
+#include "GameFramework/PawnMovementComponent.h"
 
 // Sets default values
 AAdvCreature::AAdvCreature()
@@ -25,6 +26,22 @@ AAdvCreature::AAdvCreature()
 	GetMesh()->SetReceivesDecals(false);
 	GetMesh()->SetCollisionProfileName(TEXT("NoCollision"));
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+}
+
+
+void AAdvCreature::SetActive_Implementation(const bool bActive)
+{
+	bIsIdle = !bActive;
+	SetActorTickEnabled(bActive);
+
+	if (bActive)
+	{
+		StartActing();
+	}
+	else
+	{
+		StopAllActions();
+	}
 }
 
 // Called when the game starts or when spawned
@@ -118,4 +135,3 @@ void AAdvCreature::PauseAI_Implementation(bool bPause)
 		}
 	}
 }
-

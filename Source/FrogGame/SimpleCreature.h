@@ -58,6 +58,7 @@ public:
 	void DisableActor_Implementation() override;
 	void PauseAI_Implementation(bool bPause = true) override;
 	bool IsDisabled_Implementation() override;
+	void SetActive_Implementation(bool bActive) override;
 
 	void ActivatePhysics() const;
 	bool bShouldDestroy{false};
@@ -75,6 +76,8 @@ public:
 	void StartActing();
 	UPROPERTY(BlueprintReadWrite)
 	bool bIsIdle{true};
+
+
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;

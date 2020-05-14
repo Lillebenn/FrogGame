@@ -11,7 +11,7 @@
  * 
  */
 UCLASS(Abstract)
-class FROGGAME_API AEdibleObject : public ADestructibleObject, public IEdible
+class FROGGAME_API AEdibleObject : public ADestructibleObject
 {
 	GENERATED_BODY()
 

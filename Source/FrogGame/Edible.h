@@ -32,4 +32,10 @@ public:
 	void DisableActor();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void PauseAI(bool bPause = true);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void SetActive(bool bActive);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	bool IsActive();
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void SetMobility(bool bShouldActivate);
 };

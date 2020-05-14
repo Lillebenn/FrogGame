@@ -76,6 +76,8 @@ public:
 	void StartActing();
 	UPROPERTY(BlueprintReadWrite)
 	bool bIsIdle{true};
+	void SetActive_Implementation(bool bActive) override;
+
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
