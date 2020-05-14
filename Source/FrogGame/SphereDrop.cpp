@@ -21,6 +21,31 @@ ASphereDrop::ASphereDrop()
 	RootComponent = StaticMesh;
 }
 
+void ASphereDrop::Activate()
+{
+	GetWorld()->GetTimerManager().SetTimer(SphereLifeSpan, this, &ASphereDrop::Consume, 2.5f);
+	SetActorHiddenInGame(false);
+	if (Frog)
+	{
+		if (Frog->CurrentMode == ECharacterMode::Neutral)
+		{
+			InitialRadius = InitialRadius * 1.5f;
+		}
+		else
+		{
+			SwirlInfo.LinearUpSpeed = SwirlInfo.LinearUpSpeed * 2.f;
+			SwirlInfo.LinearInSpeed = 0;
+		}
+	}
+}
+
+void ASphereDrop::Deactivate()
+{
+	SetActorHiddenInGame(true);
+	bShouldSwirl = false;
+	GetWorld()->GetTimerManager().ClearTimer(SphereLifeSpan);
+}
+
 // Called when the game starts or when spawned
 void ASphereDrop::BeginPlay()
 {
@@ -29,18 +54,7 @@ void ASphereDrop::BeginPlay()
 	Frog = Cast<AFrogGameCharacter>(GetWorld()->GetFirstPlayerController()->GetCharacter());
 	SwirlInfo.LinearUpPosition = InitialZPosition;
 	SwirlInfo.Construct();
-	GetWorld()->GetTimerManager().SetTimer(SphereLifeSpan, this, &ASphereDrop::Consume, 2.5f);
-	if(Frog)
-	{
-		if(Frog->CurrentMode == ECharacterMode::Neutral)
-		{
-			InitialRadius = InitialRadius * 1.5f;
-		}else
-		{
-			SwirlInfo.LinearUpSpeed = SwirlInfo.LinearUpSpeed * 2.f;
-			SwirlInfo.LinearInSpeed = 0;
-		}
-	}
+	SetActorHiddenInGame(true);
 }
 
 void ASphereDrop::MoveToPlayer(const float DeltaTime)
@@ -68,7 +82,7 @@ void ASphereDrop::Consume()
 void ASphereDrop::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if (Frog)
+	if (Frog && !IsHidden())
 	{
 		if (!bShouldSwirl)
 		{
@@ -98,5 +112,4 @@ void ASphereDrop::Tick(float DeltaTime)
 			}
 		}
 	}
-
 }

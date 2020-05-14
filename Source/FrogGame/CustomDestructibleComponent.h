@@ -36,9 +36,10 @@ protected:
 	void BeginPlay() override;
 
 public:
-	// Called every frame
-	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	FVector CalculateImpulseVector(AActor* Actor) const;
 	void SpawnSpheres() const;
 	void KillActor() const;
+
+private:
+	class AFrogGameMode* GameMode;
 };

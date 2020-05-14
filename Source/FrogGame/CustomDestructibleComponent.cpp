@@ -9,6 +9,7 @@
 #include "FrogGameCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "UObject/ConstructorHelpers.h"
+#include "FrogGameMode.h"
 
 // Sets default values for this component's properties
 UCustomDestructibleComponent::UCustomDestructibleComponent()
@@ -27,17 +28,7 @@ void UCustomDestructibleComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	CurrentHealth = MaxHealth;
-
-	// ...
-}
-
-
-// Called every frame
-void UCustomDestructibleComponent::TickComponent(float DeltaTime, ELevelTick TickType,
-                                                 FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
+	GameMode = Cast<AFrogGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
 	// ...
 }
 
@@ -60,13 +51,15 @@ void UCustomDestructibleComponent::SpawnSpheres() const
 			const FVector SpawnLocation{
 				ActorLocation.X + SpawnLocation2D.X, ActorLocation.Y + SpawnLocation2D.Y, ActorLocation.Z
 			};
-			const FVector Scale{0.5f, 0.5f, 0.5f};
-			const FTransform SpawnTransform{FRotator(), SpawnLocation, Scale};
-			ASphereDrop* Sphere{GetWorld()->SpawnActor<ASphereDrop>(Drop, SpawnTransform)};
-			if (Edible)
+			ASphereDrop* Sphere{GameMode->SpawnAvailableSphere(SpawnLocation)};
+			if (Edible && Sphere)
 			{
 				Sphere->EdibleComponent->ScorePoints = Edible->ScorePoints / NumDrops;
 				Sphere->EdibleComponent->PowerPoints = Edible->PowerPoints / NumDrops;
+			}
+			else
+			{
+				Cast<AFrogGameCharacter>(GetWorld()->GetFirstPlayerController()->GetCharacter())->Consume(GetOwner());
 			}
 		}
 	}

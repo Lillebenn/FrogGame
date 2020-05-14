@@ -25,7 +25,12 @@ class AFrogGameMode : public AGameModeBase
 
 
 public:
+	UPROPERTY(EditDefaultsOnly, Category = Destruction)
+	int MaxNumSphere{25};
+	UPROPERTY(EditDefaultsOnly, Category = Destruction)
+	TSubclassOf<class ASphereDrop> SphereType;
 
+	class ASphereDrop* SpawnAvailableSphere(FVector SpawnPosition);
 	UFUNCTION(BlueprintCallable)
 	void SetVisibleWidget(TEnumAsByte<ECurrentWidget> NewVisibleWidget);
 
@@ -89,4 +94,7 @@ protected:
 	void BeginPlay() override;
 private:
 	ESlateVisibility GetNewVisibility(class UFrogGameUI* WidgetToSet);
+
+	UPROPERTY()
+	TArray<class ASphereDrop*> Spheres;
 };

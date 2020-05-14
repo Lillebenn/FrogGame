@@ -670,6 +670,19 @@ void AFrogGameCharacter::Consume_Impl(AActor* OtherActor)
 	}
 }
 
+void AFrogGameCharacter::Consume_Impl(const float PowerPoints, const float ScorePoints)
+{
+	UpdateCurrentScore(ScorePoints);
+	if (bPowerMode)
+	{
+		UpdatePowerPoints(PowerPoints / PowerPointsDivisor);
+	}
+	else
+	{
+		UpdatePowerPoints(PowerPoints);
+	}
+}
+
 void AFrogGameCharacter::Consume(AActor* OtherActor)
 {
 	if (OtherActor)
@@ -683,7 +696,8 @@ void AFrogGameCharacter::Consume(AActor* OtherActor)
 
 void AFrogGameCharacter::Consume(ASphereDrop* Sphere)
 {
-	Consume_Impl(Sphere);
+	Sphere->Deactivate();
+	Consume_Impl(Sphere->EdibleComponent->PowerPoints, Sphere->EdibleComponent->ScorePoints);
 }
 
 void AFrogGameCharacter::InfinitePower()
@@ -710,6 +724,10 @@ void AFrogGameCharacter::ApplyDamage()
 {
 	for (auto Actor : HitActors)
 	{
+		if (!Actor)
+		{
+			continue;
+		}
 		Actor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
 		if (ADestructibleObject* Destructible = Cast<ADestructibleObject>(Actor))
 		{
@@ -991,6 +1009,7 @@ void AFrogGameCharacter::ActivatePowerModel()
 void AFrogGameCharacter::DeactivatePowerMode()
 {
 	bPowerMode = false;
+	bPunchMove = false;
 	FrogHUD->EnteredRegularMode();
 	bPressRVisible = false;
 	EndAttack();

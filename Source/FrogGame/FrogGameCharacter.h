@@ -437,6 +437,7 @@ private:
 	void DoWhirlwind(float DeltaTime);
 	void EndWhirlwind();
 	void Consume_Impl(AActor* OtherActor);
+	void Consume_Impl(float PowerPoints, float ScorePoints);
 	bool bUsingWhirlwind{false};
 	UPROPERTY(EditAnywhere, Category = "Character | Whirlwind", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
 	TSubclassOf<AActor> BPWhirlwindPFX;

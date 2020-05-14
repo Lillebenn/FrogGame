@@ -4,6 +4,7 @@
 #include "FrogGameCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "FrogGameInstance.h"
+#include "SphereDrop.h"
 
 
 UFrogGameUI* AFrogGameMode::ConstructWidget(const TSubclassOf<UFrogGameUI> Subclass) const
@@ -25,7 +26,31 @@ UFrogGameUI* AFrogGameMode::ConstructWidget(const TSubclassOf<UFrogGameUI> Subcl
 void AFrogGameMode::BeginPlay()
 {
 	Super::BeginPlay();
+	if (SphereType)
+	{
+		for (int i{0}; i < MaxNumSphere; i++)
+		{
+			const FVector Scale{0.5f, 0.5f, 0.5f};
+			const FTransform SpawnTransform{FRotator(), FVector(), Scale};
+			Spheres.Add(GetWorld()->SpawnActor<ASphereDrop>(SphereType, SpawnTransform));
+		}
+	}
+}
 
+
+
+ASphereDrop* AFrogGameMode::SpawnAvailableSphere(const FVector SpawnPosition)
+{
+	for (auto Sphere : Spheres)
+	{
+		if (Sphere->IsHidden())
+		{
+			Sphere->SetActorLocation(SpawnPosition);
+			Sphere->Activate();
+			return Sphere;
+		}
+	}
+	return nullptr;
 }
 
 
@@ -119,7 +144,6 @@ void AFrogGameMode::SetCurrentWidgetVisibility()
 		EndScreenWidget->SetVisibility(GetNewVisibility(EndScreenWidget));
 	}
 }
-
 
 
 ESlateVisibility AFrogGameMode::GetNewVisibility(UFrogGameUI* WidgetToSet)

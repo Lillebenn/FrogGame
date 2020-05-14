@@ -32,6 +32,9 @@ public:
 	FSwirlInfo SwirlInfo;
 
 	FTimerHandle SphereLifeSpan;
+
+	void Activate();
+	void Deactivate();
 protected:
 	// Called when the game starts or when spawned
 	void BeginPlay() override;
