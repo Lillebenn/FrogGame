@@ -53,7 +53,10 @@ void ADestructibleObject::SetMobility_Implementation(bool bShouldActivate)
 	else
 	{
 		CullingEvent();
-		StaticMesh->SetMobility(EComponentMobility::Static);
+		if(!StaticMesh->IsSimulatingPhysics())
+		{
+			StaticMesh->SetMobility(EComponentMobility::Static);
+		}
 	}
 }
 
