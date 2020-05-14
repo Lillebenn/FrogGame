@@ -1220,7 +1220,7 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 				if (ShockwaveShake)
 				{
 					GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayCameraShake(
-						ShockwaveShake, 1.f * OverlappingActors.Num());
+						ShockwaveShake, 2.f);
 				}
 			}
 		}
