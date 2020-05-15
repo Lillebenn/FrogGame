@@ -404,7 +404,9 @@ void AFrogGameCharacter::DoWhirlwind(float DeltaTime)
 		}
 		FVector ParentToActor{Actor->GetActorLocation() - Parent->GetActorLocation()};
 		// Rotate the actor around the pivot
-		FVector NewRelativePosition{ParentToActor.RotateAngleAxis(RotationSpeed, GetActorForwardVector())};
+		FVector NewRelativePosition{
+			ParentToActor.RotateAngleAxis(RotationSpeed, GetActorForwardVector())
+		};
 		if (FVector::Dist(Actor->GetActorLocation(), Parent->GetActorLocation()) > MinRadius)
 		{
 			// Move the actor slightly towards the pivot point
