@@ -59,7 +59,8 @@ void UCustomDestructibleComponent::SpawnSpheres() const
 			}
 			else
 			{
-				Cast<AFrogGameCharacter>(GetWorld()->GetFirstPlayerController()->GetCharacter())->Consume(GetOwner());
+				// No available spheres found, don't bother looking for more.
+				break;
 			}
 		}
 	}
@@ -72,7 +73,7 @@ void UCustomDestructibleComponent::KillActor() const
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), DestructionSmoke, GetOwner()->GetActorLocation(),
 		                                         FRotator::ZeroRotator, FVector(SmokeScale));
 	}
-	if (bSpawnSphereDrops && GetOwner())
+	if (bSpawnSphereDrops)
 	{
 		SpawnSpheres();
 		GetOwner()->SetLifeSpan(0.001f);

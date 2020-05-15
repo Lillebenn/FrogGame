@@ -139,11 +139,9 @@ void AFrogGameCharacter::SetupSettingsCopies()
 	PunchMontage = PowerModeSettings->PunchMontage;
 	PunchDamage = PowerModeSettings->PunchDamage;
 	PunchForwardDistance = PowerModeSettings->PunchForwardDistance;
-	PunchOne = PowerModeSettings->PunchOne;
+	PunchParticleSystems = PowerModeSettings->PunchParticleSystems;
 	PunchOnePFXOffset = PowerModeSettings->PunchOnePFXOffset;
-	PunchTwo = PowerModeSettings->PunchTwo;
 	PunchTwoPFXOffset = PowerModeSettings->PunchTwoPFXOffset;
-	UpperCut = PowerModeSettings->UpperCut;
 	UpperCutPFXOffset = PowerModeSettings->UpperCutPFXOffset;
 	PunchVolumeType = PowerModeSettings->PunchVolumeType;
 	PunchShake = PowerModeSettings->PunchShake;
@@ -173,7 +171,6 @@ void AFrogGameCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 #if WITH_EDITOR
 	PlayerInputComponent->BindAction("StopPowerMode", IE_Pressed, this, &AFrogGameCharacter::DeactivatePowerMode);
 	PlayerInputComponent->BindAction("TestFunction", IE_Pressed, this, &AFrogGameCharacter::TestFunction);
-	PlayerInputComponent->BindAction("ParticleTest", IE_Pressed, this, &AFrogGameCharacter::PauseMontage);
 	PlayerInputComponent->BindAction("InfinitePower", IE_Pressed, this, &AFrogGameCharacter::InfinitePower);
 	if (GameMode)
 	{
@@ -261,14 +258,14 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 
 		SetActorRotation(Orientation);
 	}
-	if ((GetVelocity().IsZero() || GetCharacterMovement()->IsFalling()) && !bTestTrail)
+	if (GetVelocity().IsZero() || GetCharacterMovement()->IsFalling())
 	{
-		DisableTrail();
+		DisableWaterBreak();
 	}
-	if (bShouldZoom)
+	if (bCameraZoom)
 	{
 		GetCameraBoom()->TargetArmLength = FMath::FInterpConstantTo(GetCameraBoom()->TargetArmLength,
-		                                                            DesiredTargetArmLength, DeltaTime, 1750.f);
+		                                                            DesiredCamDistance, DeltaTime, 1750.f);
 	}
 	if (CullingActorObjects)
 	{
@@ -561,42 +558,13 @@ void AFrogGameCharacter::DoPunch()
 }
 
 
-void AFrogGameCharacter::PunchOneAnimNotify()
+void AFrogGameCharacter::PunchAnimNotify(const FName Socket)
 {
 	const bool bSuccess{HitActors.Num() > 0};
 	if (bSuccess)
 	{
-		UGameplayStatics::SpawnEmitterAttached(PunchOne, GetMesh(), TEXT("r_hand_end_j"), PunchOnePFXOffset,
-		                                       FRotator::ZeroRotator, FVector(0.05f));
-
-
-		ApplyDamage();
-	}
-	PlayPunchSounds(bSuccess);
-	bPunchMove = false;
-}
-
-void AFrogGameCharacter::PunchTwoAnimNotify()
-{
-	const bool bSuccess{HitActors.Num() > 0};
-	if (bSuccess)
-	{
-		UGameplayStatics::SpawnEmitterAttached(PunchTwo, GetMesh(), TEXT("l_hand_end_j"), PunchTwoPFXOffset,
-		                                       FRotator::ZeroRotator, FVector(0.05f));
-
-
-		ApplyDamage();
-	}
-	PlayPunchSounds(bSuccess);
-	bPunchMove = false;
-}
-
-void AFrogGameCharacter::UpperCutAnimNotify()
-{
-	const bool bSuccess{HitActors.Num() > 0};
-	if (bSuccess)
-	{
-		UGameplayStatics::SpawnEmitterAttached(UpperCut, GetMesh(), TEXT("r_hand_end_j"), UpperCutPFXOffset,
+		UGameplayStatics::SpawnEmitterAttached(GetNextPunchParticle(), GetMesh(),
+		                                       Socket, PunchOnePFXOffset,
 		                                       FRotator::ZeroRotator, FVector(0.05f));
 
 		ApplyDamage();
@@ -662,8 +630,8 @@ void AFrogGameCharacter::Consume_Impl(AActor* OtherActor)
 		{
 			UpdatePowerPoints(Edible->PowerPoints);
 		}
-		//UE_LOG(LogTemp, Warning, TEXT("Destroying %s"), *OtherActor->GetName())
-		OtherActor->SetLifeSpan(0.001f);
+
+		OtherActor->Destroy();
 	}
 }
 
@@ -705,17 +673,6 @@ void AFrogGameCharacter::InfinitePower()
 		PowerMode();
 	}
 }
-
-void AFrogGameCharacter::RunToSwamp()
-{
-	// Might need to set the camera position to a certain point
-	GetController()->DisableInput(nullptr);
-	AAIController* AIController = Cast<AAIController>(AIControllerClass.GetDefaultObject());
-	AIController->Possess(this);
-	// Ideally, on possess the AIController's behaviour tree should play a short thing where it places the player in the correct transform once it reaches the desired point.
-	// After which, it would trigger an event to go back start showing HUD elements like scoreboard or whatever.
-}
-
 
 void AFrogGameCharacter::ApplyDamage()
 {
@@ -786,7 +743,7 @@ void AFrogGameCharacter::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 		}
 		else if (OtherComp->ComponentHasTag(TEXT("Water")))
 		{
-			WaterFloor = OtherActor->FindComponentByClass<UBoxComponent>();
+			WaterFloorCollider = OtherActor->FindComponentByClass<UBoxComponent>();
 			Swim(true);
 		}
 		else if (OtherComp->ComponentHasTag(TEXT("SwampTrigger")) && FrogsCollected >= TotalFrogChildren)
@@ -806,14 +763,14 @@ void AFrogGameCharacter::OnEndOverlap(UPrimitiveComponent* OverlappedComp, AActo
 		{
 			Swim(false);
 		}
-		WaterFloor = nullptr;
+		WaterFloorCollider = nullptr;
 	}
 }
 
 void AFrogGameCharacter::Swim(const bool bActivate)
 {
 	bIsInWater = bActivate;
-	DisableTrail();
+	DisableWaterBreak();
 	WalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
 	if (bActivate)
 	{
@@ -835,15 +792,15 @@ void AFrogGameCharacter::Swim(const bool bActivate)
 	}
 	if (bPowerMode)
 	{
-		if (WaterFloor)
+		if (WaterFloorCollider)
 		{
 			if (bActivate)
 			{
-				WaterFloor->SetRelativeLocation(FVector(0, 0, -150.f));
+				WaterFloorCollider->SetRelativeLocation(FVector(0, 0, -150.f));
 			}
 			else
 			{
-				WaterFloor->SetRelativeLocation(FVector(0, 0, -200.f));
+				WaterFloorCollider->SetRelativeLocation(FVector(0, 0, -200.f));
 			}
 		}
 		EndAttack();
@@ -922,9 +879,10 @@ void AFrogGameCharacter::OnCullingObjectsEndOverlap(UPrimitiveComponent* Overlap
 		IEdible::Execute_SetMobility(OtherActor, false);
 	}
 }
+
 void AFrogGameCharacter::PowerMode()
 {
-	if ((CurrentPowerPoints >= MaxPowerPoints / 10.f || bInfinitePower) && !bPowerMode)
+	if ((CanTransform() || bInfinitePower) && !bPowerMode)
 	{
 		if (bUsingWhirlwind)
 		{
@@ -941,9 +899,9 @@ void AFrogGameCharacter::ActivatePowerModel()
 	bPowerMode = true;
 	FrogHUD->EnteredPowerMode();
 	CurrentMode = ECharacterMode::Power;
-	if (WaterFloor && bIsInWater)
+	if (WaterFloorCollider && bIsInWater)
 	{
-		WaterFloor->SetRelativeLocation(FVector(0.f, 0.f, -150.f));
+		WaterFloorCollider->SetRelativeLocation(FVector(0.f, 0.f, -150.f));
 	}
 
 	SetPlayerModel(PowerModeSettings);
@@ -967,9 +925,9 @@ void AFrogGameCharacter::DeactivatePowerMode()
 	FireEyeTwo->Deactivate();
 	DisableWhirlwindPfx();
 	HitActors.Empty();
-	if (WaterFloor && bIsInWater)
+	if (WaterFloorCollider && bIsInWater)
 	{
-		WaterFloor->SetRelativeLocation(FVector(0.f, 0.f, -200.f));
+		WaterFloorCollider->SetRelativeLocation(FVector(0.f, 0.f, -200.f));
 	}
 	if (PunchVolume)
 	{
@@ -987,8 +945,8 @@ void AFrogGameCharacter::SetPlayerModel(AFrogGameCharacter* CharacterSettings)
 	                                      Capsule->GetUnscaledCapsuleHalfHeight());
 	GetMesh()->SetRelativeLocation(CharacterSettings->GetMesh()->GetRelativeLocation());
 	SetActorScale3D(FVector(Capsule->GetRelativeScale3D()));
-	DesiredTargetArmLength = CharacterSettings->GetCameraBoom()->TargetArmLength;
-	bShouldZoom = true;
+	DesiredCamDistance = CharacterSettings->GetCameraBoom()->TargetArmLength;
+	bCameraZoom = true;
 	if (CurrentMode == ECharacterMode::Neutral)
 	{
 		const float ScaledCapsuleHalfHeightDiff{
@@ -1005,8 +963,6 @@ void AFrogGameCharacter::SetPlayerModel(AFrogGameCharacter* CharacterSettings)
 	LandShockwaveScale = CharacterSettings->LandShockwaveScale;
 	auto Actor{ShockwaveCollider->GetOwner()};
 	Actor->SetActorRelativeScale3D(FVector(1.f / GetActorScale().Z));
-	SmokeTrailOffset.Z = CharacterSettings->SmokeTrailOffset.Z;
-	SmokeTrailScale = CharacterSettings->SmokeTrailScale;
 	WaterBreakOffset = CharacterSettings->WaterBreakOffset;
 	WaterBreakScale = CharacterSettings->WaterBreakScale;
 	FireEyeOne->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform,
@@ -1096,7 +1052,6 @@ void AFrogGameCharacter::Jump()
 {
 	InitialZValue = GetActorLocation().Z;
 	bJumped = true;
-	DisableTrail();
 	Super::Jump();
 	if (bPowerMode)
 	{
@@ -1135,7 +1090,7 @@ void AFrogGameCharacter::MoveForward(float Value)
 		}
 		if (bIsInWater)
 		{
-			SpawnTrail(WaterBreakChild, WaterBreakOffset, WaterBreakScale, WaterBreakRot);
+			SpawnWaterBreak();
 		}
 		// get forward vector
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
@@ -1156,7 +1111,7 @@ void AFrogGameCharacter::MoveRight(float Value)
 		}
 		if (bIsInWater)
 		{
-			SpawnTrail(WaterBreakChild, WaterBreakOffset, WaterBreakScale, WaterBreakRot);
+			SpawnWaterBreak();
 		}
 		// get right vector 
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
@@ -1177,8 +1132,7 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 	case ECharacterMode::Power:
 		GetCharacterMovement()->GravityScale = PowerModeSettings->GetCharacterMovement()->GravityScale;
 	}
-	TArray<AActor*> OverlappingActors;
-	ShockwaveCollider->GetOverlappingActors(OverlappingActors);
+
 	// use this event to add shockwave etc
 	if (bJumped)
 	{
@@ -1192,9 +1146,9 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WaterShockwave, Location,
 				                                         FRotator::ZeroRotator, FVector(WaterShockwaveScale));
 			}
-			if (GetSplashSound())
+			if (USoundCue* Splash{GetSplashSound()})
 			{
-				UGameplayStatics::PlaySoundAtLocation(GetWorld(), GetSplashSound(), GetActorLocation(), FRotator());
+				UGameplayStatics::PlaySoundAtLocation(GetWorld(), Splash, GetActorLocation(), FRotator());
 			}
 		}
 		else
@@ -1223,19 +1177,18 @@ void AFrogGameCharacter::Landed(const FHitResult& Hit)
 						ShockwaveShake, 2.f);
 				}
 			}
-		}
-		bJumped = false;
-	}
-	if (bPowerMode)
-	{
-		for (auto Actor : OverlappingActors)
-		{
-			if (Actor->GetComponentByClass(UCustomDestructibleComponent::StaticClass()))
+			TArray<AActor*> OverlappingActors;
+			ShockwaveCollider->GetOverlappingActors(OverlappingActors);
+			for (auto Actor : OverlappingActors)
 			{
-				Actor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
-				UpdateDestroyedPercent();
+				if (Actor->GetComponentByClass(UCustomDestructibleComponent::StaticClass()))
+				{
+					Actor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
+					UpdateDestroyedPercent();
+				}
 			}
 		}
+		bJumped = false;
 	}
 	ShockwaveCollider->SetCollisionProfileName(TEXT("NoCollision"));
 }
@@ -1244,49 +1197,29 @@ void AFrogGameCharacter::TestFunction()
 {
 	// Use to test UI activated stuff and whatever else you can think of. Bound to U by default.
 	FrogHUD->CanEnterPowerMode();
-	//if (bTestTrail)
-	//{
-	//	bTestTrail = false;
-	//	DisableTrail();
-	//}
-	//else
-	//{
-	//	bTestTrail = true;
-
-	//	SpawnTrail(WaterBreakChild, WaterBreakOffset, WaterBreakScale, WaterBreakRot);
-	//}
 }
 
-void AFrogGameCharacter::PauseMontage()
-{
-	bShouldPauseMontage = !bShouldPauseMontage;
-	if (!bShouldPauseMontage)
-	{
-		GetMesh()->GetAnimInstance()->Montage_Resume(GetMesh()->GetAnimInstance()->GetCurrentActiveMontage());
-	}
-}
 
-void AFrogGameCharacter::SpawnTrail(const TSubclassOf<AActor> TrailType, const FVector Offset, const FVector Scale,
-                                    const FRotator Rotation)
+void AFrogGameCharacter::SpawnWaterBreak()
 {
-	if (!CurrentTrail)
+	if (!WaterBreakActor)
 	{
-		CurrentTrail = GetWorld()->SpawnActor<AActor>(TrailType);
+		WaterBreakActor = GetWorld()->SpawnActor<AActor>(WaterBreakType);
 		const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
-		CurrentTrail->AttachToActor(this, InRule);
-		CurrentTrail->SetActorScale3D(Scale);
-		CurrentTrail->SetActorRelativeLocation(Offset);
-		CurrentTrail->SetActorRelativeRotation(Rotation);
+		WaterBreakActor->AttachToActor(this, InRule);
+		WaterBreakActor->SetActorScale3D(WaterBreakScale);
+		WaterBreakActor->SetActorRelativeLocation(WaterBreakOffset);
+		WaterBreakActor->SetActorRelativeRotation(WaterBreakRot);
 	}
 }
 
-void AFrogGameCharacter::DisableTrail()
+void AFrogGameCharacter::DisableWaterBreak()
 {
-	if (CurrentTrail)
+	if (WaterBreakActor)
 	{
-		CurrentTrail->SetLifeSpan(1.f);
-		CurrentTrail->GetComponentByClass(UParticleSystemComponent::StaticClass())->Deactivate();
-		CurrentTrail->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-		CurrentTrail = nullptr;
+		WaterBreakActor->SetLifeSpan(1.f);
+		WaterBreakActor->GetComponentByClass(UParticleSystemComponent::StaticClass())->Deactivate();
+		WaterBreakActor->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		WaterBreakActor = nullptr;
 	}
 }

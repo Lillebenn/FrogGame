@@ -27,7 +27,7 @@ void ASphereDrop::Activate()
 	SetActorHiddenInGame(false);
 	if (Frog)
 	{
-		if (Frog->CurrentMode == ECharacterMode::Neutral)
+		if (Frog->GetCurrentMode() == ECharacterMode::Neutral)
 		{
 			InitialRadius = InitialRadius * 1.5f;
 		}

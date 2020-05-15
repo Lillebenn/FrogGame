@@ -51,17 +51,29 @@ public:
 	 * Returns true if the current distance from the pivot point is less than the minimum radius set in FSwirlInfo.
 	 */
 	static bool Swirl(float DeltaTime, FSwirlInfo& SwirlInfo, const FVector& PivotPoint, FVector& OutPosition);
+	/**
+	 * @copydoc Swirl
+	 */
 	static bool HorizontalSwirl(float DeltaTime, FSwirlInfo& SwirlInfo, const FVector& PivotPoint,
 	                            FVector& OutPosition);
 	/**
 	 * Finds the squared distance between vector A and B according to a capsule coordinate system. Get the square root for a more accurate value.
 	 */
 	static float SquaredRadialDistance(const FVector& A, const FVector& B);
-
+	/**
+	 * Simple function that gets a random integer in the range of 0 to (Array.Num() - 1) and returns the SoundCue* at that index.
+	 * @param Sounds array is the array containing the sounds (duh).
+	 */
 	static USoundCue* GetRandomSoundByArray(const TArray<USoundCue*>& Sounds);
+
 
 
 private:
 	FFrogLibrary() = default;
+	/**
+	 * Does the actual swirl calculations.
+	 */
 	static bool UpdateSwirlInfo(float DeltaTime, FSwirlInfo& SwirlInfo);
+
+	
 };
