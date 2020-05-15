@@ -563,9 +563,12 @@ void AFrogGameCharacter::PunchAnimNotify(const FName Socket)
 	const bool bSuccess{HitActors.Num() > 0};
 	if (bSuccess)
 	{
-		UGameplayStatics::SpawnEmitterAttached(GetNextPunchParticle(), GetMesh(),
-		                                       Socket, PunchOnePFXOffset,
-		                                       FRotator::ZeroRotator, FVector(0.05f));
+		if (UParticleSystem* Particle{GetNextPunchParticle()})
+		{
+			UGameplayStatics::SpawnEmitterAttached(Particle, GetMesh(),
+			                                       Socket, PunchOnePFXOffset,
+			                                       FRotator::ZeroRotator, FVector(0.05f));
+		}
 
 		ApplyDamage();
 	}
@@ -1202,7 +1205,7 @@ void AFrogGameCharacter::TestFunction()
 
 void AFrogGameCharacter::SpawnWaterBreak()
 {
-	if (!WaterBreakActor)
+	if (!WaterBreakActor && WaterBreakType)
 	{
 		WaterBreakActor = GetWorld()->SpawnActor<AActor>(WaterBreakType);
 		const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};

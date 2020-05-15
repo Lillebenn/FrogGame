@@ -81,10 +81,10 @@ public:
 	float MaxPowerPoints{400.f};
 
 	// The amount of "frog children" collected.
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | Objective")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Character | Objective")
 	int FrogsCollected{0};
 	// How many "frog children" are needed to win the game.
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | Objective")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | Objective", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
 	int TotalFrogChildren{10};
 
 
@@ -93,7 +93,7 @@ public:
 	TSubclassOf<class ADestructibleObject> SmallDestructible;
 
 	/** The Player's current score */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | Score")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Character | Score")
 	int CurrentScore{0};
 
 	// How much of the world, percentage-wise, has been destroyed (this is not accurate).
@@ -181,7 +181,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = Character)
 	bool bIsDefaultPowerBlueprint{false};
 	UPROPERTY(EditDefaultsOnly, Category = "Character | PowerMode", meta = (EditCondition=
-		"!bIsDefaultPowerBlueprint"))
+		"!bIsDefaultPowerBlueprint", DisplayPriority="1"))
 	TSubclassOf<AFrogGameCharacter> PowerModeBP;
 	UPROPERTY()
 	AFrogGameCharacter* PowerModeSettings;
@@ -221,7 +221,7 @@ private:
 	float WalkSpeed;
 
 	// Currently set to an arbitrary value 
-	UPROPERTY(EditDefaultsOnly, Category = "Character | Score")
+	UPROPERTY(EditDefaultsOnly, Category = "Character | Score", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
 	int NumObjectsInGame{70000};
 	// How much less a power point should be worth during Power mode, to stop the player from being in that mode indefinitely.
 	UPROPERTY(EditDefaultsOnly, Category = "Character | PowerMode", meta = (EditCondition="bIsDefaultPowerBlueprint"))
@@ -234,8 +234,7 @@ private:
 	bool bInfinitePower{false};
 
 
-	UPROPERTY (EditDefaultsOnly, Category = Character, meta = (
-		EditCondition="bIsDefaultPowerBlueprint"))
+	UPROPERTY (EditDefaultsOnly, Category = Character, meta = (EditCondition="bIsDefaultPowerBlueprint"))
 	class UAnimMontage* PunchMontage;
 	UPROPERTY(EditAnywhere, Category = "Character | PowerMode", meta = (EditCondition="bIsDefaultPowerBlueprint"))
 	TSubclassOf<AActor> PunchVolumeType;
@@ -312,6 +311,7 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = Character)
 	float SwimSpeed{2300.f};
+	void Swim(bool bActivate);
 	// Actor containing a particle system component that plays while the player is moving in water.
 	UPROPERTY(EditDefaultsOnly, Category = "Character | Particles", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
 	TSubclassOf<AActor> WaterBreakType;
@@ -336,7 +336,7 @@ private:
 	UPROPERTY (EditDefaultsOnly, Category = "Character | Shockwave")
 	float WaterShockwaveScale{0.15f};
 	// Size of the ground shockwave particle system.
-	UPROPERTY (EditDefaultsOnly, Category = "Character | Shockwave")
+	UPROPERTY (EditDefaultsOnly, Category = "Character | Shockwave", meta = (EditCondition="bIsDefaultPowerBlueprint"))
 	float LandShockwaveScale{0.5f};
 
 	// Type of camera shake to play when landing for a shockwave (any type).
@@ -430,7 +430,7 @@ private:
 	UFUNCTION()
 	void OnEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                  int32 OtherBodyIndex);
-	void Swim(bool bActivate);
+
 	UFUNCTION()
 	void OnAttackOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                     int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -441,7 +441,7 @@ private:
 	UFUNCTION()
 	void OnWhirlwindEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                           int32 OtherBodyIndex);
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, meta = (EditCondition="!bIsDefaultPowerBlueprint"))
 	TSubclassOf<AActor> CullingObjectsType;
 	UPROPERTY()
 	AActor* CullingActorObjects;
