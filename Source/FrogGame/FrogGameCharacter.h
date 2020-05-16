@@ -111,8 +111,9 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = Animation)
 	void PunchAnimNotify(FName Socket);
-	FORCEINLINE UFUNCTION(BlueprintCallable, Category = Animation)
-	 void PunchResetNotify()
+	
+	UFUNCTION(BlueprintCallable, Category = Animation)
+	void PunchResetNotify()
 	{
 		if (!bIsPunching)
 		{
@@ -120,8 +121,8 @@ public:
 		}
 	}
 
-	FORCEINLINE UFUNCTION(BlueprintCallable, Category = Animation)
-	 void PunchStopNotify()
+	UFUNCTION(BlueprintCallable, Category = Animation)
+	void PunchStopNotify()
 	{
 		bIsPunching = false;
 	}
@@ -315,7 +316,7 @@ private:
 	TArray<class UParticleSystem*> PunchParticleSystems;
 	int PunchParticleIndex{0};
 
-	UParticleSystem* GetNextPunchParticle()
+	FORCEINLINE UParticleSystem* GetNextPunchParticle()
 	{
 		const int CurParticleIndex{PunchParticleIndex};
 		PunchParticleIndex++;
