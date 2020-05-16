@@ -38,4 +38,6 @@ public:
 	bool IsActive();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void SetMobility(bool bShouldActivate);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void PlayHitSound() const;
 };

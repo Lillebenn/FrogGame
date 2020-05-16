@@ -58,7 +58,9 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Character | PowerMode")
 	void UpdatePowerPoints(float Points);
-
+	/**
+	 * Checks if the player may enter Power mode.
+	 */
 	UFUNCTION(BlueprintCallable, Category = "Character | PowerMode")
 	bool CanTransform() const
 	{
@@ -84,7 +86,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Character | Objective")
 	int FrogsCollected{0};
 	// How many "frog children" are needed to win the game.
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | Objective", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character | Objective", meta = (EditCondition=
+		"!bIsDefaultPowerBlueprint"))
 	int TotalFrogChildren{10};
 
 
@@ -102,12 +105,26 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void IncreaseGravity() const;
+	/**
+	 * Called by the anim blueprint when receiving a punch animation notify event.
+	 * @param Socket is the socket the particle effect will be attached to.
+	 */
 	UFUNCTION(BlueprintCallable, Category = Animation)
 	void PunchAnimNotify(FName Socket);
 	UFUNCTION(BlueprintCallable, Category = Animation)
-	void PunchResetNotify();
+	FORCEINLINE void PunchResetNotify()
+	{
+		if (!bIsPunching)
+		{
+			CurrentPunch = 0;
+		}
+	}
+
 	UFUNCTION(BlueprintCallable, Category = Animation)
-	void PunchStopNotify();
+	FORCEINLINE void PunchStopNotify()
+	{
+		bIsPunching = false;
+	}
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character)
 	bool bIsInWater{false};
@@ -311,6 +328,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = Character)
 	float SwimSpeed{2300.f};
+	/**
+	 * Turn on swimming animations and other related settings.
+	 */
 	void Swim(bool bActivate);
 	// Actor containing a particle system component that plays while the player is moving in water.
 	UPROPERTY(EditDefaultsOnly, Category = "Character | Particles", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
@@ -342,7 +362,9 @@ private:
 	// Type of camera shake to play when landing for a shockwave (any type).
 	UPROPERTY(EditAnywhere, Category = "Character | Shockwave", meta = (EditCondition="!bIsDefaultPowerBlueprint"))
 	TSubclassOf<class UCameraShake> ShockwaveShake;
-
+	/**
+	* Debugging function to go instantly from Power mode to Regular mode and back again at will.
+	*/
 	UFUNCTION()
 	void InfinitePower();
 	/**
@@ -421,7 +443,7 @@ private:
 	void DoPunch();
 	FTimerHandle NextPunchTimer;
 	void QueuedPunch();
-	bool bAttackHeld{false};
+	bool bAttacking{false};
 	void ApplyDamage();
 	void StopPunch();
 	UFUNCTION()
@@ -447,11 +469,16 @@ private:
 	AActor* CullingActorObjects;
 	UPROPERTY()
 	USphereComponent* CullingObjectsSphere;
-	// We cull ADestructible actors by distance, by setting them to Mobility = Static by default, and flipping to Movable when we get within reach of them.
+	/**
+	 * We cull ADestructible actors by distance, by setting them to Mobility = Static by default, and flipping to Movable when we get within reach of them.
+	 */
 	UFUNCTION()
 	void OnCullingObjectsOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 	                             UPrimitiveComponent* OtherComp,
 	                             int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	/**
+	 * Set object mobility to Static when they leave this volume.
+	 */
 	UFUNCTION()
 	void OnCullingObjectsEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 	                                UPrimitiveComponent* OtherComp,
@@ -507,6 +534,9 @@ private:
 		return SplashSounds.Num() > 0;
 	}
 
+	/**
+	* Randomly picks a sound from the SplashSounds array.
+	*/
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE USoundCue* GetSplashSound() const
 	{
@@ -531,6 +561,9 @@ private:
 		return PunchAirSounds.Num() > 0;
 	}
 
+	/**
+	 * Randomly picks a sound from the PunchAirSounds array.
+	 */
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE USoundCue* GetPunchAirSound() const
 	{
@@ -546,6 +579,9 @@ private:
 		return PunchHitSounds.Num() > 0;
 	}
 
+	/**
+	* Randomly picks a sound from the PunchHitSounds array.
+	*/
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE USoundCue* GetPunchHitSound() const
 	{
@@ -562,7 +598,9 @@ private:
 		"!bIsDefaultPowerBlueprint"))
 	TArray<USoundCue*> ConcreteFootstepSounds;
 
-
+	/**
+	* Randomly picks a sound from the RegularFootstepSounds array (or the ConcreteFootstepSounds array if bOnConcrete is true).
+	*/
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE USoundCue* GetFootStepSound() const
 	{

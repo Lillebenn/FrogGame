@@ -28,7 +28,7 @@ public:
 	USoundConcurrency* ConcurrencySettings;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Sound)
 	TArray<class USoundCue*> HitSounds;
-	void PlayHitSound() const;
+	void PlayHitSound_Implementation() const;
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void CullingEvent();

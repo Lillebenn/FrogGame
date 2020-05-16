@@ -84,12 +84,6 @@ AFrogGameCharacter::AFrogGameCharacter()
 	PowerUpParticleSystem->SetAutoActivate(false);
 	PowerUpParticleSystem->SetupAttachment(RootComponent);
 
-	//const ConstructorHelpers::FObjectFinder<UAnimMontage> AnimPunchMontage(
-	//	TEXT("/Game/Models/Player/Player_Powered/PunchingMontage"));
-	//if (AnimPunchMontage.Object)
-	//{
-	//	PunchMontage = AnimPunchMontage.Object;
-	//}
 	NeutralModeBP = this->StaticClass();
 }
 
@@ -109,16 +103,12 @@ void AFrogGameCharacter::BeginPlay()
 
 	WhirlwindRange = WhirlwindVolume->GetScaledBoxExtent().X;
 	AttachedActorsSetup();
-	// Setting Hud trackers to 0 at the start.
-	CurrentScore = 0;
-	CurrentPowerPoints = 0.f;
 
 	// Setup the default whirlwind swirl settings
 	DefaultWhirlwindSwirl.DefaultLinearUpSpeed = SuctionSpeed;
 	DefaultWhirlwindSwirl.DefaultAngularSpeed = RotationSpeed;
 	DefaultWhirlwindSwirl.DefaultLinearInSpeed = InSpeed;
 
-	// TODO: Pause Reg ambient and play sea ambient based on overlap volume event
 	if (RegAmbientSound)
 	{
 		RegAmbientSoundComponent = UGameplayStatics::SpawnSound2D(GetWorld(), RegAmbientSound);
@@ -253,10 +243,6 @@ void AFrogGameCharacter::Tick(float DeltaTime)
 	{
 		FilterOccludedObjects();
 		DoWhirlwind(DeltaTime);
-		FRotator Orientation{FollowCamera->GetForwardVector().ToOrientationRotator()};
-		Orientation.Pitch = 0.f;
-
-		SetActorRotation(Orientation);
 	}
 	if (GetVelocity().IsZero() || GetCharacterMovement()->IsFalling())
 	{
@@ -368,10 +354,12 @@ void AFrogGameCharacter::Whirlwind()
 
 void AFrogGameCharacter::DoWhirlwind(float DeltaTime)
 {
+	// Make the player character rotate based on the camera direction while using whirlwind.
+	FRotator Orientation{FollowCamera->GetForwardVector().ToOrientationRotator()};
+	Orientation.Pitch = 0.f;
+	SetActorRotation(Orientation);
+
 	// for every edible object in the volume, apply an interpolated movement towards the player, and if it gets close enough use Consume.
-	// Instead of giving every object its own FSwirlInfo, we can just generate one for each new object that enters the whirlwind,
-	// and place them in a map where each actor has its own FSwirlInfo for easy lookup.
-	// This happens in OnWhirlwindBeginOverlap.
 	TArray<AActor*> TempArray{WhirlwindAffectedActors};
 	for (auto Actor : TempArray)
 	{
@@ -426,7 +414,6 @@ void AFrogGameCharacter::EndWhirlwind()
 	DisableWhirlwindPfx();
 	WhirlwindEvent(false);
 	GetCharacterMovement()->bOrientRotationToMovement = true;
-	GetCharacterMovement()->MaxWalkSpeed = NeutralModeSettings->GetCharacterMovement()->MaxWalkSpeed;
 	for (const auto Actor : WhirlwindAffectedActors)
 	{
 		if (auto Edible = Cast<AEdibleObject>(Actor))
@@ -434,6 +421,7 @@ void AFrogGameCharacter::EndWhirlwind()
 			Edible->StaticMesh->SetSimulatePhysics(true);
 		}
 		auto EdibleComp{Actor->FindComponentByClass<UEdibleComponent>()};
+		// Destroy the pivot actor (used to give the Edible object something to rotate around)
 		if (EdibleComp->Parent)
 		{
 			EdibleComp->Parent->Destroy();
@@ -442,7 +430,7 @@ void AFrogGameCharacter::EndWhirlwind()
 		{
 			IEdible::Execute_PauseAI(Actor, false);
 		}
-
+		// Return the actor to its original scale so we don't have a bunch of tiny objects flying around
 		Actor->SetActorScale3D(EdibleComp->GetInitialTransform().GetScale3D());
 	}
 	WhirlwindAffectedActors.Empty();
@@ -455,14 +443,39 @@ void AFrogGameCharacter::EndWhirlwind()
 	if (EatSound && bAteSomething)
 	{
 		UGameplayStatics::PlaySoundAtLocation(GetWorld(), EatSound, GetActorLocation(), FRotator());
+		bAteSomething = false;
 	}
-	bAteSomething = false;
+
 	UE_LOG(LogTemp, Warning, TEXT("Stopped using whirlwind."))
+}
+
+void AFrogGameCharacter::SpawnWhirlwindPfx()
+{
+	if (BPWhirlwindPFX && !WhirlwindPFX)
+	{
+		WhirlwindPFX = GetWorld()->SpawnActor<AActor>(BPWhirlwindPFX);
+		const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
+		WhirlwindPFX->AttachToComponent(GetMesh(), InRule, TEXT("joint1"));
+
+		WhirlwindPFX->SetActorRelativeRotation(FRotator(-90.f, 0.f, 0.f));
+		WhirlwindPFX->SetActorRelativeLocation(FVector(325.f, -75.f, 0.f));
+
+		//WhirlwindPFX->SetActorRelativeScale3D(FVector(0.1f));
+	}
+}
+
+void AFrogGameCharacter::DisableWhirlwindPfx()
+{
+	if (WhirlwindPFX)
+	{
+		WhirlwindPFX->Destroy();
+		WhirlwindPFX = nullptr;
+	}
 }
 
 void AFrogGameCharacter::Attack()
 {
-	bAttackHeld = true;
+	bAttacking = true;
 	if (bPowerMode && !bIsInWater)
 	{
 		Punch();
@@ -475,7 +488,7 @@ void AFrogGameCharacter::Attack()
 
 void AFrogGameCharacter::EndAttack()
 {
-	bAttackHeld = false;
+	bAttacking = false;
 	if (bPowerMode)
 	{
 		StopPunch();
@@ -491,7 +504,6 @@ void AFrogGameCharacter::Punch()
 	if (bPowerMode && !bIsPunching)
 	{
 		const float AnimDuration{PunchMontage->GetSectionLength(CurrentPunch) - 0.075f};
-		UE_LOG(LogTemp, Warning, TEXT("Section length: %f"), AnimDuration)
 		GetWorld()->GetTimerManager().SetTimer(PunchRepeatTimer, this, &AFrogGameCharacter::DoPunch, AnimDuration,
 		                                       true, 0.f);
 	}
@@ -504,7 +516,7 @@ void AFrogGameCharacter::Punch()
 void AFrogGameCharacter::QueuedPunch()
 {
 	DoPunch();
-	if (!bAttackHeld)
+	if (!bAttacking)
 	{
 		GetWorld()->GetTimerManager().ClearTimer(PunchRepeatTimer);
 	}
@@ -513,18 +525,19 @@ void AFrogGameCharacter::QueuedPunch()
 
 void AFrogGameCharacter::DoPunch()
 {
-	FVector PunchVolumePosition{PunchVolume->GetUnscaledBoxExtent().X};
-	if (GetCharacterMovement()->IsFalling())
-	{
-		CurrentPunch = 2;
-	}
+	FVector PunchVolumePosition{
+		PunchVolume->GetUnscaledBoxExtent().X, RightPunchVolumeYPosition, RightPunchVolumeZPosition
+	};
+	// Uncomment to only use uppercut while in the air
+	//if (GetCharacterMovement()->IsFalling())
+	//{
+	//	CurrentPunch = 2;
+	//}
 	const FVector BoxExtent{RegularBoxExtent};
 	switch (CurrentPunch)
 	{
 	case 0:
 		PlayAnimMontage(PunchMontage, 1, TEXT("First Punch"));
-		PunchVolumePosition.Y = RightPunchVolumeYPosition;
-		PunchVolumePosition.Z = RightPunchVolumeZPosition;
 		break;
 	case 1:
 		PlayAnimMontage(PunchMontage, 1, TEXT("Second Punch"));
@@ -596,14 +609,6 @@ void AFrogGameCharacter::PlayPunchSounds(const bool bSuccess) const
 	}
 }
 
-void AFrogGameCharacter::PunchResetNotify()
-{
-	if (!bIsPunching)
-	{
-		CurrentPunch = 0;
-	}
-}
-
 void AFrogGameCharacter::StopPunch()
 {
 	GetWorld()->GetTimerManager().ClearTimer(PunchRepeatTimer);
@@ -612,12 +617,6 @@ void AFrogGameCharacter::StopPunch()
 		PunchVolume->SetCollisionProfileName(TEXT("NoCollision"));
 	}
 }
-
-void AFrogGameCharacter::PunchStopNotify()
-{
-	bIsPunching = false;
-}
-
 
 void AFrogGameCharacter::Consume_Impl(AActor* OtherActor)
 {
@@ -688,16 +687,15 @@ void AFrogGameCharacter::ApplyDamage()
 			continue;
 		}
 		Actor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
-		if (ADestructibleObject* Destructible = Cast<ADestructibleObject>(Actor))
+		if (Actor->Implements<UEdible>())
 		{
-			Destructible->PlayHitSound();
+			IEdible::Execute_PlayHitSound(Actor);
 		}
 		UpdateDestroyedPercent();
 	}
 	if (HitActors.Num() > 0 && PunchShake)
 	{
-		GetWorld()->GetFirstPlayerController()->PlayerCameraManager->
-		            PlayCameraShake(PunchShake, 0.5f * HitActors.Num());
+		GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayCameraShake(PunchShake, 3.f);
 	}
 	HitActors.Empty();
 	PunchVolume->SetCollisionProfileName(TEXT("NoCollision"));
@@ -734,6 +732,7 @@ void AFrogGameCharacter::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 				FrogHUD->GainedFrogChild();
 				if (FrogsCollected == TotalFrogChildren)
 				{
+					// Call an event in the InGameHUD to show the All Frogs Collected message on screen.
 					if (FrogHUD)
 					{
 						FrogHUD->AllFrogsGathered();
@@ -741,9 +740,9 @@ void AFrogGameCharacter::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 				}
 			}
 		}
+			// Small destructible objects may be destroyed by walking on them.
 		else if (OtherActor->IsA(SmallDestructible))
 		{
-			// TODO: Maybe do a different function if we don't want shit to fly around
 			OtherActor->TakeDamage(PunchDamage, FDamageEvent(), GetController(), this);
 		}
 		else if (OtherComp->ComponentHasTag(TEXT("Water")))
@@ -751,10 +750,11 @@ void AFrogGameCharacter::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 			WaterFloorCollider = OtherActor->FindComponentByClass<UBoxComponent>();
 			Swim(true);
 			RegAmbientSoundComponent->SetPaused(true);
-			if(bStartedSeaAmbient)
+			if (bStartedSeaAmbient)
 			{
 				SeaAmbientSoundComponent->SetPaused(false);
-			}else
+			}
+			else
 			{
 				SeaAmbientSoundComponent->Play();
 			}
@@ -779,7 +779,7 @@ void AFrogGameCharacter::OnEndOverlap(UPrimitiveComponent* OverlappedComp, AActo
 		if (OtherComp->ComponentHasTag(TEXT("Water")))
 		{
 			Swim(false);
-			
+
 			RegAmbientSoundComponent->SetPaused(false);
 			SeaAmbientSoundComponent->SetPaused(true);
 			WaterFloorCollider = nullptr;
@@ -791,45 +791,6 @@ void AFrogGameCharacter::OnEndOverlap(UPrimitiveComponent* OverlappedComp, AActo
 	}
 }
 
-void AFrogGameCharacter::Swim(const bool bActivate)
-{
-	bIsInWater = bActivate;
-	DisableWaterBreak();
-	WalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
-	if (bActivate)
-	{
-		switch (CurrentMode)
-		{
-		case ECharacterMode::Neutral:
-			GetCharacterMovement()->MaxWalkSpeed = NeutralModeSettings->SwimSpeed;
-			break;
-		case ECharacterMode::Power:
-			GetCharacterMovement()->MaxWalkSpeed = PowerModeSettings->SwimSpeed;
-			break;
-		default:
-			break;
-		}
-	}
-	else
-	{
-		GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
-	}
-	if (bPowerMode)
-	{
-		if (WaterFloorCollider)
-		{
-			if (bActivate)
-			{
-				WaterFloorCollider->SetRelativeLocation(FVector(0, 0, -150.f));
-			}
-			else
-			{
-				WaterFloorCollider->SetRelativeLocation(FVector(0, 0, -200.f));
-			}
-		}
-		EndAttack();
-	}
-}
 
 void AFrogGameCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
                                          UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
@@ -884,7 +845,6 @@ void AFrogGameCharacter::OnHitPlay() const
 		}
 	}
 }
-
 void AFrogGameCharacter::OnCullingObjectsOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
                                                  UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
                                                  const FHitResult& SweepResult)
@@ -894,7 +854,6 @@ void AFrogGameCharacter::OnCullingObjectsOverlap(UPrimitiveComponent* Overlapped
 		IEdible::Execute_SetMobility(OtherActor, true);
 	}
 }
-
 void AFrogGameCharacter::OnCullingObjectsEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
                                                     UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
@@ -1006,6 +965,13 @@ void AFrogGameCharacter::UpdateCurrentScore(const int Score)
 	CurrentScore = NewScore;
 }
 
+void AFrogGameCharacter::UpdateDestroyedPercent()
+{
+	CurrentDestroyedNum++;
+	DestroyedPercent = static_cast<float>(CurrentDestroyedNum) / static_cast<float>(NumObjectsInGame) * 100.f;
+	FrogHUD->GainedDestruction();
+}
+
 void AFrogGameCharacter::UpdatePowerPoints(float Points)
 {
 	CurrentPowerPoints = CurrentPowerPoints + Points;
@@ -1036,39 +1002,43 @@ void AFrogGameCharacter::PowerDrain(float DeltaTime)
 }
 
 
-void AFrogGameCharacter::TurnAtRate(float Rate)
+void AFrogGameCharacter::Swim(const bool bActivate)
 {
-	// calculate delta for this frame from the rate information
-	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
-}
-
-void AFrogGameCharacter::LookUpAtRate(float Rate)
-{
-	// calculate delta for this frame from the rate information
-	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
-}
-
-void AFrogGameCharacter::SpawnWhirlwindPfx()
-{
-	if (BPWhirlwindPFX && !WhirlwindPFX)
+	bIsInWater = bActivate;
+	DisableWaterBreak();
+	WalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
+	if (bActivate)
 	{
-		WhirlwindPFX = GetWorld()->SpawnActor<AActor>(BPWhirlwindPFX);
-		const FAttachmentTransformRules InRule{EAttachmentRule::SnapToTarget, false};
-		WhirlwindPFX->AttachToComponent(GetMesh(), InRule, TEXT("joint1"));
-
-		WhirlwindPFX->SetActorRelativeRotation(FRotator(-90.f, 0.f, 0.f));
-		WhirlwindPFX->SetActorRelativeLocation(FVector(325.f, -75.f, 0.f));
-
-		//WhirlwindPFX->SetActorRelativeScale3D(FVector(0.1f));
+		switch (CurrentMode)
+		{
+		case ECharacterMode::Neutral:
+			GetCharacterMovement()->MaxWalkSpeed = NeutralModeSettings->SwimSpeed;
+			break;
+		case ECharacterMode::Power:
+			GetCharacterMovement()->MaxWalkSpeed = PowerModeSettings->SwimSpeed;
+			break;
+		default:
+			break;
+		}
 	}
-}
-
-void AFrogGameCharacter::DisableWhirlwindPfx()
-{
-	if (WhirlwindPFX)
+	else
 	{
-		WhirlwindPFX->Destroy();
-		WhirlwindPFX = nullptr;
+		GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+	}
+	if (bPowerMode)
+	{
+		if (WaterFloorCollider)
+		{
+			if (bActivate)
+			{
+				WaterFloorCollider->SetRelativeLocation(FVector(0, 0, -150.f));
+			}
+			else
+			{
+				WaterFloorCollider->SetRelativeLocation(FVector(0, 0, -200.f));
+			}
+		}
+		EndAttack();
 	}
 }
 
@@ -1084,13 +1054,6 @@ void AFrogGameCharacter::Jump()
 	}
 }
 
-void AFrogGameCharacter::UpdateDestroyedPercent()
-{
-	CurrentDestroyedNum++;
-	DestroyedPercent = static_cast<float>(CurrentDestroyedNum) / static_cast<float>(NumObjectsInGame) * 100.f;
-	FrogHUD->GainedDestruction();
-}
-
 void AFrogGameCharacter::IncreaseGravity() const
 {
 	if (bJumped)
@@ -1100,6 +1063,18 @@ void AFrogGameCharacter::IncreaseGravity() const
 	}
 }
 
+
+void AFrogGameCharacter::TurnAtRate(float Rate)
+{
+	// calculate delta for this frame from the rate information
+	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
+}
+
+void AFrogGameCharacter::LookUpAtRate(float Rate)
+{
+	// calculate delta for this frame from the rate information
+	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
+}
 
 void AFrogGameCharacter::MoveForward(float Value)
 {

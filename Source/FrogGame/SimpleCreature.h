@@ -59,6 +59,7 @@ public:
 	void PauseAI_Implementation(bool bPause = true) override;
 	bool IsDisabled_Implementation() override;
 	void SetActive_Implementation(bool bActive) override;
+	void PlayHitSound_Implementation() const override;
 
 	void ActivatePhysics() const;
 	bool bShouldDestroy{false};

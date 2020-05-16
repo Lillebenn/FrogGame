@@ -48,7 +48,9 @@ public:
 	// Death sound. Not used for frog child.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Sound)
 	TArray<USoundCue*> HumanSounds;
-
+	/**
+	 * Supposed to be used to get death sounds for humans, but due to some miscommunication, we don't use AdvCreature for humans.
+	 */
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE USoundCue* GetHumanSound() const
 	{

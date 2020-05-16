@@ -78,6 +78,14 @@ void ASimpleCreature::SetActive_Implementation(const bool bActive)
 	}
 }
 
+void ASimpleCreature::PlayHitSound_Implementation() const
+{
+	if (bShouldSqueak)
+	{
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), GetSqueakSound(), GetActorLocation(), FRotator());
+	}
+}
+
 void ASimpleCreature::DisableActor_Implementation()
 {
 	// Not 100% sure if this is necessary, but we don't need the AI to keep running after being snatched.
@@ -145,10 +153,6 @@ float ASimpleCreature::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 				                                       &UCustomDestructibleComponent::KillActor, 1.f,
 				                                       false);
 			}
-		}
-		if (bShouldSqueak)
-		{
-			UGameplayStatics::PlaySoundAtLocation(GetWorld(), GetSqueakSound(), GetActorLocation(), FRotator());
 		}
 	}
 	return ActualDamage;

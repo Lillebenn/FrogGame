@@ -11,7 +11,6 @@
 #include "FrogGameCharacter.h"
 #include "EdibleComponent.h"
 #include "TimerManager.h"
-#include "GameFramework/PawnMovementComponent.h"
 
 // Sets default values
 AAdvCreature::AAdvCreature()

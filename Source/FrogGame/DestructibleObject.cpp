@@ -26,7 +26,7 @@ ADestructibleObject::ADestructibleObject()
 	PrimaryActorTick.bCanEverTick = false;
 }
 
-void ADestructibleObject::PlayHitSound() const
+void ADestructibleObject::PlayHitSound_Implementation() const
 {
 	UGameplayStatics::PlaySoundAtLocation(GetWorld(), FFrogLibrary::GetRandomSoundByArray(HitSounds),
 	                                      GetActorLocation(), FRotator());
