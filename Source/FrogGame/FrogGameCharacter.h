@@ -201,7 +201,7 @@ private:
 	UAudioComponent* RegAmbientSoundComponent;
 	UPROPERTY()
 	UAudioComponent* SeaAmbientSoundComponent;
-
+	bool bStartedSeaAmbient{false};
 	float ShockwaveColliderRadius;
 	float InitialZValue;
 	UPROPERTY()

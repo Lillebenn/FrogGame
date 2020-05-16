@@ -750,10 +750,22 @@ void AFrogGameCharacter::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 		{
 			WaterFloorCollider = OtherActor->FindComponentByClass<UBoxComponent>();
 			Swim(true);
+			RegAmbientSoundComponent->SetPaused(true);
+			if(bStartedSeaAmbient)
+			{
+				SeaAmbientSoundComponent->SetPaused(false);
+			}else
+			{
+				SeaAmbientSoundComponent->Play();
+			}
 		}
 		else if (OtherComp->ComponentHasTag(TEXT("SwampTrigger")) && FrogsCollected >= TotalFrogChildren)
 		{
 			GameMode->ReachedSwamp();
+		}
+		else if (OtherComp->ComponentHasTag(TEXT("Concrete")))
+		{
+			bOnConcrete = true;
 		}
 	}
 }
@@ -767,8 +779,15 @@ void AFrogGameCharacter::OnEndOverlap(UPrimitiveComponent* OverlappedComp, AActo
 		if (OtherComp->ComponentHasTag(TEXT("Water")))
 		{
 			Swim(false);
+			
+			RegAmbientSoundComponent->SetPaused(false);
+			SeaAmbientSoundComponent->SetPaused(true);
+			WaterFloorCollider = nullptr;
 		}
-		WaterFloorCollider = nullptr;
+		else if (OtherComp->ComponentHasTag(TEXT("Concrete")))
+		{
+			bOnConcrete = false;
+		}
 	}
 }
 
