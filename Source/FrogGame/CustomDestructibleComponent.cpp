@@ -68,18 +68,22 @@ void UCustomDestructibleComponent::SpawnSpheres() const
 
 void UCustomDestructibleComponent::KillActor() const
 {
-	if (DestructionSmoke)
+	if(GetOwner()->GetLifeSpan() == 0)
 	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), DestructionSmoke, GetOwner()->GetActorLocation(),
-		                                         FRotator::ZeroRotator, FVector(SmokeScale));
-	}
-	if (bSpawnSphereDrops)
-	{
-		SpawnSpheres();
-		GetOwner()->SetLifeSpan(0.001f);
-	}
-	else
-	{
-		Cast<AFrogGameCharacter>(GetWorld()->GetFirstPlayerController()->GetCharacter())->Consume(GetOwner());
+		if (DestructionSmoke)
+		{
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), DestructionSmoke, GetOwner()->GetActorLocation(),
+			                                         FRotator::ZeroRotator, FVector(SmokeScale));
+		}
+		if (bSpawnSphereDrops)
+		{
+			SpawnSpheres();
+
+			GetOwner()->SetLifeSpan(0.001f);
+		}
+		else
+		{
+			Cast<AFrogGameCharacter>(GetWorld()->GetFirstPlayerController()->GetCharacter())->Consume(GetOwner());
+		}
 	}
 }
