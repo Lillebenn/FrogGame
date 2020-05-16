@@ -111,8 +111,8 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = Animation)
 	void PunchAnimNotify(FName Socket);
-	UFUNCTION(BlueprintCallable, Category = Animation)
-	FORCEINLINE void PunchResetNotify()
+	FORCEINLINE UFUNCTION(BlueprintCallable, Category = Animation)
+	 void PunchResetNotify()
 	{
 		if (!bIsPunching)
 		{
@@ -120,8 +120,8 @@ public:
 		}
 	}
 
-	UFUNCTION(BlueprintCallable, Category = Animation)
-	FORCEINLINE void PunchStopNotify()
+	FORCEINLINE UFUNCTION(BlueprintCallable, Category = Animation)
+	 void PunchStopNotify()
 	{
 		bIsPunching = false;
 	}
