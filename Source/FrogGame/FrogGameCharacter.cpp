@@ -414,6 +414,7 @@ void AFrogGameCharacter::EndWhirlwind()
 	DisableWhirlwindPfx();
 	WhirlwindEvent(false);
 	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->MaxWalkSpeed = NeutralModeSettings->GetCharacterMovement()->MaxWalkSpeed;
 	for (const auto Actor : WhirlwindAffectedActors)
 	{
 		if (auto Edible = Cast<AEdibleObject>(Actor))
@@ -845,6 +846,7 @@ void AFrogGameCharacter::OnHitPlay() const
 		}
 	}
 }
+
 void AFrogGameCharacter::OnCullingObjectsOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
                                                  UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
                                                  const FHitResult& SweepResult)
@@ -854,6 +856,7 @@ void AFrogGameCharacter::OnCullingObjectsOverlap(UPrimitiveComponent* Overlapped
 		IEdible::Execute_SetMobility(OtherActor, true);
 	}
 }
+
 void AFrogGameCharacter::OnCullingObjectsEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
                                                     UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
